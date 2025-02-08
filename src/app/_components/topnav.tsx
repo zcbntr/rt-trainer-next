@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { getBasicLoggedInUser } from "~/server/queries/users";
+import { api } from "~/trpc/server";
 import {
   MdOutlineCalendarMonth,
   MdOutlinePets,
@@ -17,11 +17,12 @@ import {
   MdPerson,
 } from "react-icons/md";
 import { initials } from "~/lib/utils";
+import { auth, signOut } from "~/server/auth";
 
-export async function TopNav() {
-  const user = await getBasicLoggedInUser();
+export default async function TopNav() {
+  const session = await auth();
 
-  if (!user) {
+  if (!session) {
     return (
       <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-3 md:px-6">
         <div className="container mx-auto flex items-center justify-between">
@@ -37,6 +38,13 @@ export async function TopNav() {
       </header>
     );
   } else {
+    const loggedInUser = await api.user.getLoggedInUser();
+
+    // Sign user out if they don't have a user account
+    if (!loggedInUser) {
+      await signOut();
+    }
+
     return (
       <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-3 md:px-6">
         <div className="container mx-auto flex items-center justify-between">
@@ -51,11 +59,11 @@ export async function TopNav() {
                   <div className="relative inline-block">
                     <Avatar className="border-2 border-opacity-50">
                       <AvatarImage
-                        src={user.image ? user.image : undefined}
-                        alt={`${user.name}'s avatar`}
+                        src={loggedInUser?.image ?? undefined}
+                        alt={`${loggedInUser?.name}'s avatar`}
                       />
                       <AvatarFallback>
-                        {user.name ? initials(user.name) : <MdPerson />}
+                        {loggedInUser?.name ? initials(loggedInUser?.name) : <MdPerson />}
                       </AvatarFallback>
                     </Avatar>
                   </div>

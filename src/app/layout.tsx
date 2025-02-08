@@ -1,7 +1,7 @@
 import "~/styles/globals.css";
 
-import { TopNav } from "~/app/_components/topnav";
-import { Footer } from "~/app/_components/footer";
+import TopNav from "~/app/_components/topnav";
+import Footer from "~/app/_components/footer";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
@@ -12,11 +12,19 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: { template: "%s | RT-Trainer", default: "RT-Trainer" },
-  description: "Practice your Radio Telephony Skills from the comfort of your browser",
+  description:
+    "Practice your Radio Telephony Skills from the comfort of your browser",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   applicationName: "RT-Trainer",
   referrer: "origin-when-cross-origin",
-  keywords: ["Radio", "Radio Telephony", "Pilot", "Practice", "FRTOL", "Flight School"],
+  keywords: [
+    "Radio",
+    "Radio Telephony",
+    "Pilot",
+    "Practice",
+    "FRTOL",
+    "Flight School",
+  ],
   authors: [{ name: "Zac Benattar" }],
   creator: "Zac Benattar",
   publisher: "Zac Benattar",

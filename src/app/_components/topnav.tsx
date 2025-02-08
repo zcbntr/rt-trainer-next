@@ -11,9 +11,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/server";
 import {
-  MdOutlineCalendarMonth,
-  MdOutlinePets,
-  MdOutlineSettings,
+  MdAirplaneTicket,
+  MdHome,
+  MdSettings,
   MdPerson,
 } from "react-icons/md";
 import { initials } from "~/lib/utils";
@@ -75,7 +75,7 @@ export default async function TopNav() {
                       className="flex flex-row place-content-start gap-2"
                     >
                       <div className="flex flex-col place-content-center">
-                        <MdOutlineCalendarMonth />
+                        <MdHome />
                       </div>
                       Dashboard
                     </Link>
@@ -86,7 +86,7 @@ export default async function TopNav() {
                       className="flex flex-row place-content-start gap-2"
                     >
                       <div className="flex flex-col place-content-center">
-                        <MdOutlinePets />
+                        <MdAirplaneTicket />
                       </div>
                       My Scenarios
                     </Link>
@@ -97,7 +97,7 @@ export default async function TopNav() {
                       className="flex flex-row place-content-start gap-2"
                     >
                       <div className="flex flex-col place-content-center">
-                        <MdOutlineSettings />
+                        <MdSettings />
                       </div>
                       Settings
                     </Link>

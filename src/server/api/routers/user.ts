@@ -3,17 +3,24 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
+  publicProcedure,
 } from "~/server/api/trpc";
+import { auth } from "~/server/auth";
 
 export const userRouter = createTRPCRouter({
-  getLoggedInUser: protectedProcedure
-    .query(async ({ ctx }) => {
-      const user = await ctx.db.query.users.findFirst({
-        where: (users, { eq }) => eq(users.id, ctx.session.user.id),
-      });
+  getLoggedInUser: publicProcedure.query(async ({ ctx }) => {
+    const session = await auth();
 
-      return user ?? null;
-    }),
+    if (!session || !session?.user) {
+      return null;
+    }
+
+    const user = await ctx.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, session.user.id),
+    });
+
+    return user ?? null;
+  }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))

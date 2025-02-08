@@ -27,7 +27,7 @@ export default async function TopNav() {
       <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-3 md:px-6">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/" className="text-4xl font-bold">
-            sittr
+            RT-Trainer
           </Link>
           <nav className="items-center space-x-6 md:flex">
             <div className="flex place-content-center">

@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <div className="flex h-full w-full flex-col place-content-center">
       <div className="flex h-full w-full flex-col place-content-center sm:place-content-start">
-        <div className="xs:pr-3 flex h-full w-full flex-col">
+        <div className="xs:pr-3 flex h-full min-h-96 w-full min-w-96 flex-col">
           <RoutePlanner />
         </div>
         <div className="flex h-20 w-full flex-row">

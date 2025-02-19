@@ -165,17 +165,17 @@ export enum LandingToParkedStage {
 }
 
 export const StartAerodromeStage = {
-  ...StartUpStage,
-  ...TaxiStage,
-  ...TakeOffStage,
+  StartUpStage,
+  TaxiStage,
+  TakeOffStage,
 };
 
 export const AirborneStage = {};
 
 export const LandingStage = {
-  ...InboundForJoinStage,
-  ...CircuitAndLandingStage,
-  ...LandingToParkedStage,
+  InboundForJoinStage,
+  CircuitAndLandingStage,
+  LandingToParkedStage,
 };
 
 export const RouteStage = {
@@ -183,3 +183,5 @@ export const RouteStage = {
   ...AirborneStage,
   ...LandingStage,
 };
+
+export type RouteStage = typeof RouteStage;

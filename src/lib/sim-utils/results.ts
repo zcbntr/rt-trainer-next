@@ -10,8 +10,14 @@ export function getStartUpAndTaxiCalls(radioCalls: RadioCall[]): RadioCall[] {
     return [];
   }
 
+  const startAreodromStages = [
+    ...Object.values(StartAerodromeStage.StartUpStage).map((x) => x.toString()),
+    ...Object.values(StartAerodromeStage.TaxiStage).map((x) => x.toString()),
+    ...Object.values(StartAerodromeStage.TakeOffStage).map((x) => x.toString()),
+  ];
+
   return radioCalls.filter((calls) =>
-    Object.values(StartAerodromeStage).includes(calls.scenarioPointStage),
+    startAreodromStages.includes(calls.scenarioPointStage),
   );
 }
 
@@ -20,9 +26,16 @@ export function getAirborneCalls(radioCalls: RadioCall[]): RadioCall[] {
     return [];
   }
 
-  return radioCalls.filter((calls) =>
-    Object.values(AirborneStage).includes(calls.scenarioPointStage),
-  );
+  throw new Error("Not implemented");
+
+  //   To Fix
+  //   const airborneStages = [
+  //     ...Object.values(AirborneStage).map((x) => x.toString()),
+  //   ];
+
+  //   return radioCalls.filter((calls) =>
+  //     airborneStages.includes(calls.scenarioPointStage),
+  //   );
 }
 
 export function getLandingCalls(radioCalls: RadioCall[]): RadioCall[] {
@@ -30,7 +43,17 @@ export function getLandingCalls(radioCalls: RadioCall[]): RadioCall[] {
     return [];
   }
 
+  const landingStages = [
+    ...Object.values(LandingStage.InboundForJoinStage).map((x) => x.toString()),
+    ...Object.values(LandingStage.CircuitAndLandingStage).map((x) =>
+      x.toString(),
+    ),
+    ...Object.values(LandingStage.LandingToParkedStage).map((x) =>
+      x.toString(),
+    ),
+  ];
+
   return radioCalls.filter((calls) =>
-    Object.values(LandingStage).includes(calls.scenarioPointStage),
+    landingStages.includes(calls.scenarioPointStage),
   );
 }

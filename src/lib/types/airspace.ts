@@ -1,6 +1,6 @@
-import type { Frequency } from "../Frequency";
+import { type Frequency } from "./frequency";
 
-export default interface Airspace {
+export type Airspace = {
   id: string;
   name: string;
   type: number;
@@ -18,4 +18,4 @@ export default interface Airspace {
   upperLimitMax: number;
   lowerLimitMin: number;
   frequencies: Frequency[];
-}
+};

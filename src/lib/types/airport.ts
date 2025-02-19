@@ -1,5 +1,7 @@
+import { type AirportReportingPoint } from "./reporting-point";
+
 /* Airport data. */
-export default interface Airport {
+export type Airport = {
   id: string;
   name: string;
   icaoCode: string;
@@ -8,11 +10,11 @@ export default interface Airport {
   type: number;
   country: string;
   coordinates: [number, number];
-  reportingPoints: AirportReportingPointDBData[];
+  reportingPoints: AirportReportingPoint[];
   elevation: number;
   trafficType: number[];
   ppr: boolean;
   private: boolean;
   skydiveActivity: boolean;
   winchOnly: boolean;
-}
+};

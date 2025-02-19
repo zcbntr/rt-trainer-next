@@ -1,5 +1,3 @@
-import { simpleHash } from ".";
-
 /**
  * Splits a number into two halves and pads them with zeros to make sure they are the same length
  * @param input - number to split
@@ -11,26 +9,6 @@ export function splitAndPadNumber(input: number): [number, number] {
 	const firstHalf = parseInt(numberString.padEnd(halfLength, '0').slice(0, halfLength));
 	const secondHalf = parseInt(numberString.slice(halfLength).padEnd(halfLength, '0'));
 	return [firstHalf, secondHalf];
-}
-
-// Function to generate a seeded normal distribution
-export function seededNormalDistribution(
-	seedString: string,
-	mean: number,
-	standardDeviation: number
-): number {
-	// Generate two pseudo-random numbers from seed for the Box-Muller transform
-	const [v1, v2] = splitAndPadNumber(simpleHash(seedString));
-	const u1: number = 1 / v1;
-	const u2: number = 1 / v2;
-
-	// Box-Muller transform
-	const z0: number = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-
-	// Scale and shift to get the desired mean and standard deviation
-	const result: number = z0 * standardDeviation + mean;
-
-	return result;
 }
 
 /* Returns a lower copy of the string with single length spaces and no punctuation. */

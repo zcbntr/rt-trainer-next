@@ -4,8 +4,8 @@ export function isCallsignStandardRegistration(callsign: string): boolean {
 
 /* Returns a abbreviated callsign. Read up on this lol */
 export function getAbbreviatedCallsign(
-  scenarioSeed: number,
-  aircraftType: string,
+  _scenarioSeed: number,
+  _aircraftType: string,
   callsign: string,
 ): string {
   let abbreviatedCallsign = "";

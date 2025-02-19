@@ -17,7 +17,7 @@ export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
  * @param seed - seed for the random number generator
  * @returns - pseudo-random number
  */
-export function simpleHash(str: string): number {
+export function seedStringToNumber(str: string): number {
 	let hash = 5381;
 
 	for (let i = 0; i < str.length; i++) {
@@ -95,7 +95,7 @@ export function convertMinutesToTimeString(minutes: number): string {
  * @returns pseudo-random squawk code
  */
 export function getRandomSqwuakCode(seed: number, airspaceId: string): string {
-	const idHash = simpleHash(airspaceId);
+	const idHash = seedStringToNumber(airspaceId);
 	let code = 0;
 	for (let i = 0; i < 4; i++) {
 		// Swap this out for a big prime
@@ -112,7 +112,7 @@ export function getRandomSqwuakCode(seed: number, airspaceId: string): string {
  * @returns pseudo-random frequency
  */
 export function getRandomFrequency(seed: number, objectId: string): string {
-	const idHash = simpleHash(objectId);
+	const idHash = seedStringToNumber(objectId);
 	const prePointFrequency = (118 + ((7759 * seed * idHash) % 20)).toString();
 	let afterPointFreq = (((7757 * seed * idHash) % 30) * 30).toString();
 	if (afterPointFreq.length < 3) {

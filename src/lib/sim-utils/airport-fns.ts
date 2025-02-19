@@ -1,5 +1,9 @@
 import * as turf from "@turf/turf";
-import Airport from "../interfaces/airport";
+import { type Airport } from "../types/airport";
+import { type Runway } from "../types/runway";
+import { type Frequency } from "../types/frequency";
+import { type METORData } from "../types/metor-data";
+import { getSeededTimeInMinutes } from ".";
 
 /**
  * Gets a runway suitable for takeoff based on the seed and the available runways
@@ -11,21 +15,34 @@ export function getTakeoffRunwayFromSeed(
   runways: Runway[],
   seed: number,
 ): Runway {
+  if (runways.length == 0) {
+    throw new Error("No suitable takeoff runway found - no runways provided");
+  }
+
+  // Local variable needed to avoid ts(2532)
+  let chosenRunway: Runway | undefined = undefined;
   let iterations = 0;
   let index = seed % runways.length;
-  while (runways[index].landingOnly) {
+  while (runways[index]?.landingOnly) {
+    chosenRunway = runways[index];
     index = (index + 1) % runways.length;
     iterations++;
     if (iterations > runways.length) {
-      throw new Error("No suitable takeoff runway found");
+      break;
     }
   }
 
-  return runways[index];
+  if (chosenRunway != undefined) {
+    return chosenRunway;
+  } else {
+    throw new Error(
+      "No suitable takeoff runway found in provided runways array",
+    );
+  }
 }
 
 // Needs to be implemented for each aerodrome depending on when pilots move to next frequency from takeoff
-export function getTakeoffTransitionAltitude(): number {
+export function getTakeoffTransitionAltitude(_airport: Airport): number {
   throw new Error("Not implemented");
 }
 
@@ -36,17 +53,32 @@ export function getTakeoffTransitionAltitude(): number {
  * @returns Runway suitable for landing
  */
 export function getLandingRunway(runways: Runway[], seed: number): Runway {
+  if (runways.length == 0) {
+    throw new Error("No suitable landing runway found - no runways provided");
+  }
+
+  // Local variable needed to avoid ts(2532)
+  let chosenRunway: Runway | undefined = undefined;
   let iterations = 0;
   let index = seed % runways.length;
-  while (runways[index].takeOffOnly) {
+  while (runways[index]?.takeOffOnly) {
+    chosenRunway = runways[index];
     index = (index + 1) % runways.length;
     iterations++;
     if (iterations > runways.length) {
-      throw new Error("No suitable landing runway found");
+      throw new Error(
+        "No suitable landing runway found in provided runways array",
+      );
     }
   }
 
-  return runways[index];
+  if (chosenRunway != undefined) {
+    return chosenRunway;
+  } else {
+    throw new Error(
+      "No suitable landing runway found in provided runways array",
+    );
+  }
 }
 
 /**
@@ -141,12 +173,13 @@ export function getATISLetterFromSeed(seed: number): string {
 }
 
 export function generateMETORData(lat: number, elevation: number): METORData {
-  const avgWindDirection = 180;
-  const meanWindSpeed = 15;
-  const stdWindSpeed = 8;
-  const meanPressure =
-    1013.25 * Math.pow(1 - (6.5 * elevation) / 288150, 5.255); // Formula from https://rechneronline.de/physics/air-pressure-altitude.php
-  const stdPressure = 0.5;
+  if (lat > 90 || lat < -90) {
+    throw new Error("Invalid latitude provided");
+  }
+
+  if (elevation < 0 || elevation > 8848) {
+    throw new Error("Invalid elevation provided");
+  }
 
   /* Based on a simple model of temperature used by David Waltham in his blog to 
     illustrate the effects of global warming in a simple model.
@@ -157,22 +190,20 @@ export function generateMETORData(lat: number, elevation: number): METORData {
     More info:
     https://davidwaltham.com/global-warming-model/
     */
-  const meanTemperature =
-    30 - 30 * Math.pow(Math.sin((lat * Math.PI) / 180), 2);
 
-  const stdTemperature = 5;
-  const meanDewpoint = meanTemperature - 3;
-  const stdDewpoint = 1;
+  const meanTemp = 30 - 30 * Math.pow(Math.sin((lat * Math.PI) / 180), 2);
 
-  return new METORData(
-    avgWindDirection,
-    meanWindSpeed,
-    stdWindSpeed,
-    meanPressure,
-    stdPressure,
-    meanTemperature,
-    stdTemperature,
-    meanDewpoint,
-    stdDewpoint,
-  );
+  const data: METORData = {
+    avgWindDirection: 180,
+    meanWindSpeed: 15,
+    stdWindSpeed: 8,
+    meanPressure: 1013.25 * Math.pow(1 - (6.5 * elevation) / 288150, 5.255),
+    stdPressure: 0.5,
+    meanTemperature: meanTemp,
+    stdTemperature: 5,
+    meanDewpoint: meanTemp,
+    stdDewpoint: 1,
+  };
+
+  return data;
 }

@@ -1,3 +1,5 @@
+import { seedStringToNumber } from "../utils";
+
 /**
  * Default coordinates for the map center
  */
@@ -11,21 +13,6 @@ export const wellesbourneMountfordCoords: [number, number] = [52.192, -1.614];
  * @returns - interpolated value
  */
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
-
-/**
- * Generates a pseudo-random number based on a seed. Based on djb2 algorithm
- * @param seed - seed for the random number generator
- * @returns - pseudo-random number
- */
-export function seedStringToNumber(str: string): number {
-	let hash = 5381;
-
-	for (let i = 0; i < str.length; i++) {
-		hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
-	}
-
-	return Math.abs(hash >>> 0);
-}
 
 /**
  * Generates a pseudo-random time of day in minutes based on a seed
@@ -94,7 +81,7 @@ export function convertMinutesToTimeString(minutes: number): string {
  * @param airspaceId - ID of the airspace
  * @returns pseudo-random squawk code
  */
-export function getRandomSqwuakCode(seed: number, airspaceId: string): string {
+export function getRandomSqwuakCodeFromSeed(seed: number, airspaceId: string): string {
 	const idHash = seedStringToNumber(airspaceId);
 	let code = 0;
 	for (let i = 0; i < 4; i++) {
@@ -111,7 +98,7 @@ export function getRandomSqwuakCode(seed: number, airspaceId: string): string {
  * @param objectId - ID of the object
  * @returns pseudo-random frequency
  */
-export function getRandomFrequency(seed: number, objectId: string): string {
+export function getRandomFrequencyFromSeed(seed: number, objectId: string): string {
 	const idHash = seedStringToNumber(objectId);
 	const prePointFrequency = (118 + ((7759 * seed * idHash) % 20)).toString();
 	let afterPointFreq = (((7757 * seed * idHash) % 30) * 30).toString();

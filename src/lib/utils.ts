@@ -8,7 +8,6 @@ import {
   differenceInYears,
 } from "date-fns";
 import { splitAndPadNumber } from "./sim-utils/string-processors";
-import { simpleHash } from "./sim-utils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -117,6 +116,21 @@ export function randomString(length: number, chars: string) {
   return result;
 }
 
+/**
+ * Generates a pseudo-random number based on a seed. Based on djb2 algorithm
+ * @param seed - seed for the random number generator
+ * @returns - pseudo-random number
+ */
+export function seedStringToNumber(str: string): number {
+  let hash = 5381;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+
+  return Math.abs(hash >>> 0);
+}
+
 export function initials(name: string): string {
   const nameParts = name.split(" ");
   if (nameParts.length === 1) {
@@ -134,10 +148,10 @@ export function initials(name: string): string {
 export function seededNormalDistribution(
   seedString: string,
   mean: number,
-  standardDeviation: number
+  standardDeviation: number,
 ): number {
   // Generate two pseudo-random numbers from seed for the Box-Muller transform
-  const [v1, v2] = splitAndPadNumber(simpleHash(seedString));
+  const [v1, v2] = splitAndPadNumber(seedStringToNumber(seedString));
   const u1: number = 1 / v1;
   const u2: number = 1 / v2;
 

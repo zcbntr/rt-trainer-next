@@ -1,5 +1,6 @@
 import type { Position } from "geojson";
 import * as turf from "@turf/turf";
+import { type Airspace } from "../types/airspace";
 
 /**
  * Calculates the distance along a route a given target point in meters
@@ -7,39 +8,51 @@ import * as turf from "@turf/turf";
  * @param targetPoint - target point on route
  * @returns - distance along the route in meters
  */
-export function calculateDistanceAlongRoute(route: Position[], targetPoint: Position): number {
-	let totalDistanceAlongRoute = 0;
+export function calculateDistanceAlongRoute(
+  route: Position[],
+  targetPoint: Position,
+): number {
+  let totalDistanceAlongRoute = 0;
 
-	for (let i = 0; i < route.length - 1; i++) {
-        if (!route[i] || !route[i + 1]) {
-            throw new Error('Invalid route');
-        }
+  for (let i = 0; i < route.length - 1; i++) {
+    const currentPoint = route[i];
+    const nextPoint = route[i + 1];
 
-		const segmentLength = turf.distance(route[i], route[i + 1], { units: 'meters' });
+    if (!currentPoint || !nextPoint) {
+      throw new Error("Invalid route");
+    }
 
-		// Check if the target point is between the current segment
-		const distanceToTarget = turf.distance(route[i], targetPoint, { units: 'meters' });
-		const distanceToNext = turf.distance(route[i + 1], targetPoint, { units: 'meters' });
+    const segmentLength = turf.distance(currentPoint, nextPoint, {
+      units: "meters",
+    });
 
-		// If the target point is within 5m of the segment, we consider it to be on the segment
-		if (distanceToTarget + distanceToNext - segmentLength < 5) {
-			// Target point lies on the current segment
-			totalDistanceAlongRoute += distanceToTarget;
-			break;
-		}
+    // Check if the target point is between the current segment
+    const distanceToTarget = turf.distance(currentPoint, targetPoint, {
+      units: "meters",
+    });
+    const distanceToNext = turf.distance(nextPoint, targetPoint, {
+      units: "meters",
+    });
 
-		// Add the distance of the current segment to the total distance
-		totalDistanceAlongRoute += segmentLength;
-	}
+    // If the target point is within 5m of the segment, we consider it to be on the segment
+    if (distanceToTarget + distanceToNext - segmentLength < 5) {
+      // Target point lies on the current segment
+      totalDistanceAlongRoute += distanceToTarget;
+      break;
+    }
 
-	return totalDistanceAlongRoute;
+    // Add the distance of the current segment to the total distance
+    totalDistanceAlongRoute += segmentLength;
+  }
+
+  return totalDistanceAlongRoute;
 }
 
 export interface Intersection {
-	position: Position;
-	airspaceId: string;
-	enteringAirspace: boolean; // True if the intersection is the entering of an airspace, false if it is the exiting
-	distanceAlongRoute: number;
+  position: Position;
+  airspaceId: string;
+  enteringAirspace: boolean; // True if the intersection is the entering of an airspace, false if it is the exiting
+  distanceAlongRoute: number;
 }
 
 /**
@@ -48,52 +61,71 @@ export interface Intersection {
  * @param airspaces - list of airspaces
  * @returns - list of intersections sorted by distance along the route
  */
-export function findIntersections(route: Position[], airspaces: Airspace[]): Intersection[] {
-	const routeLine = turf.lineString(route);
+export function findIntersections(
+  route: Position[],
+  airspaces: Airspace[],
+): Intersection[] {
+  const routeLine = turf.lineString(route);
 
-	const intersections: Intersection[] = [];
+  const intersections: Intersection[] = [];
 
-	airspaces.forEach((airspace) => {
-		if (airspace.lowerLimit > 30) return;
+  airspaces.forEach((airspace) => {
+    if (airspace.lowerLimit > 30) return;
 
-		const airspacePolygon = turf.polygon(airspace.coordinates);
-		if (turf.booleanIntersects(routeLine, airspacePolygon)) {
-			route.forEach((point, pointIndex) => {
-				if (pointIndex < route.length - 1) {
-					const lineSegment = turf.lineString([point, route[pointIndex + 1]]);
+    const airspacePolygon = turf.polygon(airspace.coordinates);
+    if (turf.booleanIntersects(routeLine, airspacePolygon)) {
+      route.forEach((point, pointIndex) => {
+        if (pointIndex < route.length - 1) {
+          const nextPoint = route[pointIndex + 1];
+          if (!nextPoint) {
+            throw new Error("Invalid route tested againt for intersections");
+          }
 
-					if (turf.booleanIntersects(lineSegment, airspacePolygon)) {
-						const intersection = turf.lineIntersect(lineSegment, airspacePolygon);
-						intersection.features.forEach((feature) => {
-							const intersectionPoint: Position = feature.geometry.coordinates;
+          const lineSegment = turf.lineString([point, nextPoint]);
 
-							const distanceAlongRoute = calculateDistanceAlongRoute(route, intersectionPoint);
+          if (turf.booleanIntersects(lineSegment, airspacePolygon)) {
+            const intersection = turf.lineIntersect(
+              lineSegment,
+              airspacePolygon,
+            );
+            intersection.features.forEach((feature) => {
+              const intersectionPoint: Position = feature.geometry.coordinates;
 
-							const heading = turf.bearing(turf.point(point), intersectionPoint);
+              const distanceAlongRoute = calculateDistanceAlongRoute(
+                route,
+                intersectionPoint,
+              );
 
-							// Determine whether the intersection is the entering of an airspace by defining a point 50m
-							// in the direction of the heading and checking if it is inside the airspace
-							const enteringAirspace = turf.booleanPointInPolygon(
-								turf.destination(intersectionPoint, 0.005, heading, { units: 'kilometers' }),
-								airspacePolygon
-							);
+              const heading = turf.bearing(
+                turf.point(point),
+                intersectionPoint,
+              );
 
-							intersections.push({
-								position: intersectionPoint,
-								airspaceId: airspace.id,
-								enteringAirspace,
-								distanceAlongRoute
-							});
-						});
-					}
-				}
-			});
-		}
-	});
+              // Determine whether the intersection is the entering of an airspace by defining a point 50m
+              // in the direction of the heading and checking if it is inside the airspace
+              const enteringAirspace = turf.booleanPointInPolygon(
+                turf.destination(intersectionPoint, 0.005, heading, {
+                  units: "kilometers",
+                }),
+                airspacePolygon,
+              );
 
-	intersections.sort((a, b) => a.distanceAlongRoute - b.distanceAlongRoute);
+              intersections.push({
+                position: intersectionPoint,
+                airspaceId: airspace.id,
+                enteringAirspace,
+                distanceAlongRoute,
+              });
+            });
+          }
+        }
+      });
+    }
+  });
 
-	return intersections;
+  intersections.sort((a, b) => a.distanceAlongRoute - b.distanceAlongRoute);
+
+  return intersections;
 }
 
 /**
@@ -104,13 +136,13 @@ export function findIntersections(route: Position[], airspaces: Airspace[]): Int
  * @returns - true if the point is inside the airspace, false otherwise
  */
 export function isInAirspace(
-	point: Position,
-	airspace: Airspace,
-	maxFlightLevel: number = 30
+  point: Position,
+  airspace: Airspace,
+  maxFlightLevel = 30,
 ): boolean {
-	if (airspace.lowerLimit > maxFlightLevel) return false;
+  if (airspace.lowerLimit > maxFlightLevel) return false;
 
-	return turf.booleanPointInPolygon(point, turf.polygon(airspace.coordinates));
+  return turf.booleanPointInPolygon(point, turf.polygon(airspace.coordinates));
 }
 
 /**
@@ -123,20 +155,27 @@ export function isInAirspace(
  * @returns - true if the airspace is included in the route, false otherwise
  */
 export function isAirspaceIncludedInRoute(
-	route: Position[],
-	airspace: Airspace,
-	maxFlightLevel: number = 30
+  route: Position[],
+  airspace: Airspace,
+  maxFlightLevel = 30,
 ): boolean {
-	if (route.length > 1) {
-		const routeLine = turf.lineString(route);
-		if (turf.booleanIntersects(routeLine, turf.polygon(airspace.coordinates))) return true;
-	}
+  if (route.length > 1) {
+    const routeLine = turf.lineString(route);
+    if (turf.booleanIntersects(routeLine, turf.polygon(airspace.coordinates)))
+      return true;
+  }
 
-	if (airspace.lowerLimit > maxFlightLevel) return false;
+  if (airspace.lowerLimit > maxFlightLevel) return false;
 
-	for (let i = 0; i < route.length; i++) {
-		if (turf.booleanContains(turf.polygon(airspace.coordinates), turf.point(route[i]))) return true;
-	}
+  for (const point of route) {
+    if (
+      turf.booleanContains(
+        turf.polygon(airspace.coordinates),
+        turf.point(point),
+      )
+    )
+      return true;
+  }
 
-	return false;
+  return false;
 }

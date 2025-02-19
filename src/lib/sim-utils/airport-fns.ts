@@ -1,9 +1,11 @@
 import * as turf from "@turf/turf";
+import { getRandomFrequencyFromSeed, getSeededTimeInMinutes } from ".";
+import { type Position } from "geojson";
 import { type Airport } from "../types/airport";
 import { type Runway } from "../types/runway";
 import { type Frequency } from "../types/frequency";
 import { type METORData } from "../types/metor-data";
-import { getSeededTimeInMinutes } from ".";
+import { seedStringToNumber } from "../utils";
 
 /**
  * Gets a runway suitable for takeoff based on the seed and the available runways
@@ -90,7 +92,7 @@ export function getLandingRunway(runways: Runway[], seed: number): Runway {
 export function getPointAlongRunwayVector(
   runway: Runway,
   distance: number,
-): turf.Position {
+): Position {
   return turf.destination(runway.coordinates, distance, runway.trueHeading, {
     units: "kilometers",
   }).geometry.coordinates;
@@ -134,7 +136,7 @@ export function getParkedFrequency(airport: Airport): Frequency | undefined {
   }
   if (groundOrInformationFrequency == undefined) {
     groundOrInformationFrequency = new Frequency(
-      getRandomFrequency(simpleHash(this.id), this.id),
+      getRandomFrequencyFromSeed(seedStringToNumber(this.id), this.id),
       9,
       "Ground",
       9,

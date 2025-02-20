@@ -72,7 +72,7 @@ const MessageInputBox = ({
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
+  function onSubmit(data: z.infer<typeof formSchema>) {
     submitMessage.detail.message = data.message;
     document.dispatchEvent(submitMessage);
   }

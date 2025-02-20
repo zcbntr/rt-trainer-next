@@ -13,9 +13,8 @@ type MessageOutputBoxProps = {
   disabled?: boolean;
   message?: string;
   currentContext?: string;
-  currentTarget?: string;
-  currentTargetFrequency?: string;
   readReceivedCalls?: boolean;
+  speechNoise?: boolean;
   speechNoiseLevel?: number;
 };
 
@@ -24,99 +23,115 @@ const MessageOutputBox = ({
   disabled = false,
   message = "",
   currentContext = "Context for your current point in the scenario will appear here",
-  currentTarget = "",
-  currentTargetFrequency = "",
   readReceivedCalls = false,
-  speechNoiseLevel = 0,
+  speechNoise = false,
+  speechNoiseLevel = 0.1,
 }: MessageOutputBoxProps) => {
-  let currentContext: string;
+  const enableAudioMessages = new CustomEvent("enableAudioMessages", {
+    detail: {
+      enabled: true,
+    },
+  });
+
+  const disableAudioMessages = new CustomEvent("disableAudioMessages", {
+    detail: {
+      enabled: false,
+    },
+  });
+
+  const enableAudioMessagesNoise = new CustomEvent("enableAudioMessagesNoise", {
+    detail: {
+      enabled: true,
+    },
+  });
+
+  const disableAudioMessagesNoise = new CustomEvent(
+    "disableAudioMessagesNoise",
+    {
+      detail: {
+        enabled: false,
+      },
+    },
+  );
 
   return (
     <div
-      class={`card flex min-h-72 max-w-lg grow grid-cols-1 flex-col gap-1 rounded-md bg-neutral-600 p-1.5 text-white ${className}`}
+      className={`card flex min-h-72 max-w-lg grow grid-cols-1 flex-col gap-1 rounded-md bg-neutral-600 p-1.5 text-white ${className}`}
     >
-      <div class="card flex grow flex-col gap-2 justify-self-stretch border-0 bg-neutral-700 px-2 py-1.5">
+      <div className="card flex grow flex-col gap-2 justify-self-stretch border-0 bg-neutral-700 px-2 py-1.5">
         <div>{currentContext}</div>
         <div>{message}</div>
       </div>
 
-      <div class="flex flex-row flex-wrap gap-x-1">
-        <div class="toggle shrink-0 px-2">
-          <div class="flex flex-col py-2">
-            <div class="flex flex-row place-content-start gap-2">
-              <div class="flex flex-row place-content-start gap-2">
+      <div className="flex flex-row flex-wrap gap-x-1">
+        <div className="toggle shrink-0 px-2">
+          <div className="flex flex-col py-2">
+            <div className="flex flex-row place-content-start gap-2">
+              <div className="flex flex-row place-content-start gap-2">
                 <Switch
                   id="enabled-audio-messages"
                   name="slider-label"
-                  active="bg-primary-500"
+                  disabled={disabled}
                   role="switch"
                   aria-checked={readReceivedCalls}
                   aria-label="Toggle text-to-speech audio messages"
                   onCheckedChange={() => {
                     readReceivedCalls = !readReceivedCalls;
+                    document.dispatchEvent(
+                      readReceivedCalls
+                        ? enableAudioMessages
+                        : disableAudioMessages,
+                    );
                   }}
                 />
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger>Hover</TooltipTrigger>
+                    <TooltipTrigger>
+                      <div className="pointer-events-none">
+                        Read Aloud Received Calls
+                      </div>
+                    </TooltipTrigger>
                     <TooltipContent>
-                      <p>Add to library</p>
+                      <p>
+                        Audio messages read aloud when you receive a call from
+                        ATC or another aircraft.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <div
-                  class="[&>*]:pointer-events-none"
-                  use:popup={audioMessagesInfoTooltip}
-                >
-                  Read Aloud Received Calls
-                </div>
-                <div
-                  class="card variant-filled-secondary z-[3] p-4"
-                  data-popup="audioMessagesInfoPopupHover"
-                >
-                  <p>
-                    Audio messages read aloud when you receive a call from ATC
-                    or another aircraft.
-                  </p>
-                  <div class="arrow variant-filled-secondary" />
-                </div>
               </div>
-              <div class="flex flex-row place-content-start gap-2">
+              <div className="flex flex-row place-content-start gap-2">
                 <Switch
                   id="enabled-audio-messages-noise"
                   name="slider-label"
-                  active="bg-primary-500"
-                  disabled={!readReceivedCalls}
+                  disabled={disabled}
                   role="switch"
-                  aria-checked={speechNoiseLevel > 0}
+                  aria-checked={speechNoise}
                   aria-label="Toggle interference noise"
                   onCheckedChange={() => {
-                    speechNoiseLevel = speechNoiseLevel === 0 ? 0.1 : 0;
+                    speechNoiseLevel = speechNoise ? speechNoiseLevel : 0;
+                    document.dispatchEvent(
+                      speechNoise
+                        ? enableAudioMessagesNoise
+                        : disableAudioMessagesNoise,
+                    );
                   }}
                 />
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger>Hover</TooltipTrigger>
+                    <TooltipTrigger>
+                      <div className="pointer-events-none">
+                        Interference Noise
+                      </div>
+                    </TooltipTrigger>
                     <TooltipContent>
-                      <p>Add to library</p>
+                      <p>
+                        Adds static noise to read out calls. <br />
+                        Requires Read Aloud Recieved Calls to be enabled.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <div
-                  class="pointer-events-none"
-                >
-                  Interference Noise
-                </div>
-                <div
-                  class="card variant-filled-secondary z-[3] p-4"
-                  data-popup="audioMessagesNoiseInfoPopupHover"
-                >
-                  <p>
-                    Adds static noise to read out calls. <br />
-                    Requires Read Aloud Recieved Calls to be enabled.
-                  </p>
-                  <div class="arrow variant-filled-secondary" />
-                </div>
               </div>
             </div>
           </div>
@@ -125,3 +140,5 @@ const MessageOutputBox = ({
     </div>
   );
 };
+
+export default MessageOutputBox;

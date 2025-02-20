@@ -15,7 +15,6 @@ const DoubleFrequencyDial = ({
   minIntervalDuration = 20,
 }: DoubleFrequencyDialProps) => {
   const id: string = randomString(6);
-  let mounted = false;
   let interval: NodeJS.Timeout;
 
   const [intervalDuration, setIntervalDuration] = useState(
@@ -160,10 +159,6 @@ const DoubleFrequencyDial = ({
     }
   }
 
-  onMount(() => {
-    mounted = true;
-  });
-
   <div id={id} className={`flex items-center justify-center ${className}`}>
     <div id={`dial-container-${id}`} className="relative">
       <div
@@ -172,6 +167,7 @@ const DoubleFrequencyDial = ({
       />
       <button
         id={`double-frequency-dial-outer-${id}`}
+        disabled={disabled}
         className="height-[100px] transition-350 flex w-[100px] justify-center rounded-xl border border-white ease-in-out"
       >
         <div className="pointer-events-none absolute left-4 top-[30%] w-6">
@@ -231,6 +227,7 @@ const DoubleFrequencyDial = ({
         </div>
         <button
           id={`double-frequency-dial-inner-${id}`}
+          disabled={disabled}
           className="double-frequency-dial-inner absolute flex"
         >
           <div className="pointer-events-none absolute left-4 top-[26%] w-6">

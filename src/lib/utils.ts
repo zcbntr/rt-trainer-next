@@ -104,7 +104,7 @@ export function convertToSubCurrency(amount: number, factor = 100): number {
   return Math.round(amount * factor);
 }
 
-export function randomString(length: number, chars: string) {
+export function randomString(length: number, chars = "aA#"): string {
   let mask = "";
   if (chars.includes("a")) mask += "abcdefghijklmnopqrstuvwxyz";
   if (chars.includes("A")) mask += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";

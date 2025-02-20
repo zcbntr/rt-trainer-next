@@ -1,18 +1,26 @@
+import { useState } from "react";
 import { randomString } from "~/lib/utils";
 
 type FrequencyDialProps = {
   className?: string;
   disabled?: boolean;
-  intervalDuration?: number;
+  initialIntervalDuration?: number;
+  minIntervalDuration?: number;
 };
 
-const frequencyDial = ({
+const FrequencyDial = ({
   className = "",
   disabled = false,
-  intervalDuration = 250,
+  initialIntervalDuration = 250,
+  minIntervalDuration = 20,
 }: FrequencyDialProps) => {
   const id = randomString(6);
   let interval: NodeJS.Timeout;
+
+  const [intervalDuration, setIntervalDuration] = useState(
+    initialIntervalDuration,
+  );
+  setIntervalDuration(initialIntervalDuration);
 
   const dialClockwiseTurn = new CustomEvent("dialClockwiseTurn", {
     detail: {
@@ -34,13 +42,20 @@ const frequencyDial = ({
 
   function onAntiClockwiseTick() {
     clearInterval(interval);
-    intervalDuration = intervalDuration * 0.9 + 5;
+
+    const newIntervalDuration = intervalDuration * 0.9 + 5;
+    if (newIntervalDuration < minIntervalDuration) {
+      setIntervalDuration(minIntervalDuration);
+    } else {
+      setIntervalDuration(newIntervalDuration);
+    }
+
     interval = setInterval(onAntiClockwiseTick, intervalDuration);
     document.dispatchEvent(dialAntiClockwiseTurn);
   }
 
   function startIncrementingAntiClockwiseHold() {
-    intervalDuration = 250;
+    setIntervalDuration(initialIntervalDuration);
     interval = setInterval(onAntiClockwiseTick, intervalDuration);
     document.dispatchEvent(dialAntiClockwiseTurn);
   }
@@ -51,13 +66,20 @@ const frequencyDial = ({
 
   function onClockwiseTick() {
     clearInterval(interval);
-    intervalDuration = intervalDuration * 0.9 + 5;
+
+    const newIntervalDuration = intervalDuration * 0.9 + 5;
+    if (newIntervalDuration < minIntervalDuration) {
+      setIntervalDuration(minIntervalDuration);
+    } else {
+      setIntervalDuration(newIntervalDuration);
+    }
+
     interval = setInterval(onClockwiseTick, intervalDuration);
     document.dispatchEvent(dialClockwiseTurn);
   }
 
   function startIncrementingClockwiseHold() {
-    intervalDuration = 250;
+    setIntervalDuration(initialIntervalDuration);
     interval = setInterval(onClockwiseTick, intervalDuration);
     document.dispatchEvent(dialClockwiseTurn);
   }
@@ -142,7 +164,7 @@ const frequencyDial = ({
   );
 };
 
-export default frequencyDial;
+export default FrequencyDial;
 
 {
   /* <style lang="postcss">

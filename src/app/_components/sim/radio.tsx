@@ -5,6 +5,7 @@ import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
 import useRadioStore, { type RadioState } from "~/app/stores/radio-slice";
 import { type RadioMode } from "~/lib/types/simulator";
+import TransmitButton from "./transmit-button";
 
 type RadioProps = {
   className?: string;

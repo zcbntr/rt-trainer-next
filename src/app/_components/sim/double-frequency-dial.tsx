@@ -4,15 +4,25 @@ import { randomString } from "~/lib/utils";
 type DoubleFrequencyDialProps = {
   className?: string;
   disabled?: boolean;
+  turnedOn?: boolean;
   initialIntervalDuration?: number;
   minIntervalDuration?: number;
+  onInnerClockwiseTurn?: () => void;
+  onInnerAntiClockwiseTurn?: () => void;
+  onOuterClockwiseTurn?: () => void;
+  onOuterAntiClockwiseTurn?: () => void;
 };
 
 const DoubleFrequencyDial = ({
   className = "",
   disabled = false,
+  turnedOn = true,
   initialIntervalDuration = 250,
   minIntervalDuration = 20,
+  onInnerClockwiseTurn,
+  onInnerAntiClockwiseTurn,
+  onOuterClockwiseTurn,
+  onOuterAntiClockwiseTurn,
 }: DoubleFrequencyDialProps) => {
   const id: string = randomString(6);
   let interval: NodeJS.Timeout;
@@ -21,44 +31,6 @@ const DoubleFrequencyDial = ({
     initialIntervalDuration,
   );
   setIntervalDuration(initialIntervalDuration);
-
-  const dialOuterClockwiseTurn = new CustomEvent("dialOuterClockwiseTurn", {
-    detail: {
-      direction: "clockwise",
-      region: "outer",
-      dialId: id,
-    },
-  });
-
-  const dialOuterAntiClockwiseTurn = new CustomEvent(
-    "dialOuterAntiClockwiseTurn",
-    {
-      detail: {
-        direction: "anticlockwise",
-        region: "outer",
-        dialId: id,
-      },
-    },
-  );
-
-  const dialInnerClockwiseTurn = new CustomEvent("dialInnerClockwiseTurn", {
-    detail: {
-      direction: "clockwise",
-      region: "inner",
-      dialId: id,
-    },
-  });
-
-  const dialInnerAntiClockwiseTurn = new CustomEvent(
-    "dialInnerAntiClockwiseTurn",
-    {
-      detail: {
-        direction: "anticlockwise",
-        region: "inner",
-        dialId: id,
-      },
-    },
-  );
 
   // Ensures that dial is mounted before modifying its properties
   //   $: if (mounted) {
@@ -77,19 +49,19 @@ const DoubleFrequencyDial = ({
   // }
 
   const onDialOuterAntiClockwiseTurn = () => {
-    document.dispatchEvent(dialOuterAntiClockwiseTurn);
+    if (onOuterAntiClockwiseTurn) onOuterAntiClockwiseTurn();
   };
 
   const onDialOuterClockwiseTurn = () => {
-    document.dispatchEvent(dialOuterClockwiseTurn);
+    if (onOuterClockwiseTurn) onOuterClockwiseTurn();
   };
 
   const onDialInnerAntiClockwiseTurn = () => {
-    document.dispatchEvent(dialInnerAntiClockwiseTurn);
+    if (onInnerAntiClockwiseTurn) onInnerAntiClockwiseTurn();
   };
 
   const onDialInnerClockwiseTurn = () => {
-    document.dispatchEvent(dialInnerClockwiseTurn);
+    if (onInnerClockwiseTurn) onInnerClockwiseTurn();
   };
 
   function startIncrementingInnerAntiClockwiseHold() {
@@ -144,7 +116,7 @@ const DoubleFrequencyDial = ({
     setIntervalDuration(initialIntervalDuration);
   }
 
-  function updateIntervalDuration(incrementMethod: Function) {
+  function updateIntervalDuration(incrementMethod: () => void) {
     if (intervalDuration > minIntervalDuration) {
       clearInterval(interval);
 
@@ -159,133 +131,135 @@ const DoubleFrequencyDial = ({
     }
   }
 
-  <div id={id} className={`flex items-center justify-center ${className}`}>
-    <div id={`dial-container-${id}`} className="relative">
-      <div
-        id={`frequency-center-div-${id}`}
-        className="absolute left-1/2 top-1/2 m-auto"
-      />
-      <button
-        id={`double-frequency-dial-outer-${id}`}
-        disabled={disabled}
-        className="height-[100px] transition-350 flex w-[100px] justify-center rounded-xl border border-white ease-in-out"
-      >
-        <div className="pointer-events-none absolute left-4 top-[30%] w-6">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
-            <g opacity="0.25">
-              <path
-                data-name="rad jog left out line"
-                d="M1.65 8.25A11.22 11.22 0 011.48.17"
-                fill="none"
-                stroke="#fff"
-                stroke-miterlimit="10"
-              />
-              <path
-                data-name="rad jog left out arrow"
-                fill="#fff"
-                d="M2.97 6.45v2.98H0"
-              />
-            </g>
-          </svg>
-        </div>
-        <div className="pointer-events-none absolute right-4 top-[30%] w-6">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
-            <g opacity="0.25">
-              <path
-                data-name="rad jog right out arrow"
-                d="M1.54.17a11.25 11.25 0 01-.17 8.09"
-                fill="none"
-                stroke="#fff"
-                stroke-miterlimit="10"
-              />
-              <path
-                data-name="rad jog right out line"
-                fill="#fff"
-                d="M2.97 9.43H0V6.45"
-              />
-            </g>
-          </svg>
-        </div>
+  return (
+    <div id={id} className={`flex items-center justify-center ${className}`}>
+      <div id={`dial-container-${id}`} className="relative">
         <div
-          id={`click-container-${id}`}
-          className="absolute left-0 top-0 flex h-full w-full flex-row"
-        >
-          <div
-            className="relative w-1/2"
-            aria-label="Outer Dial Anti-Clockwise"
-            onMouseDown={startIncrementingOuterAntiClockwiseHold}
-            onMouseUp={stopIncrementingOuterAntiClockwiseHold}
-            onMouseLeave={stopIncrementingOuterAntiClockwiseHold}
-          />
-          <div
-            className="w-1/2"
-            aria-label="Outer Dial Clockwise"
-            onMouseDown={startIncrementingOuterClockwiseHold}
-            onMouseUp={stopIncrementingOuterClockwiseHold}
-            onMouseLeave={stopIncrementingOuterClockwiseHold}
-          />
-        </div>
+          id={`frequency-center-div-${id}`}
+          className="absolute left-1/2 top-1/2 m-auto"
+        />
         <button
-          id={`double-frequency-dial-inner-${id}`}
-          disabled={disabled}
-          className="double-frequency-dial-inner absolute flex"
+          id={`double-frequency-dial-outer-${id}`}
+          disabled={disabled || !turnedOn}
+          className="height-[100px] transition-350 flex w-[100px] justify-center rounded-xl border border-white ease-in-out"
         >
-          <div className="pointer-events-none absolute left-4 top-[26%] w-6">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+          <div className="pointer-events-none absolute left-4 top-[30%] w-6">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
               <g opacity="0.25">
                 <path
-                  data-name="rad jog left in line"
-                  d="M1.48 4.85a4.12 4.12 0 01-.81-2.46A4.06 4.06 0 011.26.26"
+                  data-name="rad jog left out line"
+                  d="M1.65 8.25A11.22 11.22 0 011.48.17"
                   fill="none"
                   stroke="#fff"
                   stroke-miterlimit="10"
                 />
                 <path
-                  data-name="rad jog left in arrow"
+                  data-name="rad jog left out arrow"
                   fill="#fff"
-                  d="M2.7 3.23v2.69H0"
+                  d="M2.97 6.45v2.98H0"
                 />
               </g>
             </svg>
           </div>
-          <div className="pointer-events-none absolute right-4 top-[26%] w-6">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+          <div className="pointer-events-none absolute right-4 top-[30%] w-6">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
               <g opacity="0.25">
                 <path
-                  data-name="rad jog right in line"
-                  d="M1.57.26a4.07 4.07 0 01.6 2.13 4.13 4.13 0 01-.82 2.46"
+                  data-name="rad jog right out arrow"
+                  d="M1.54.17a11.25 11.25 0 01-.17 8.09"
                   fill="none"
                   stroke="#fff"
                   stroke-miterlimit="10"
                 />
                 <path
-                  data-name="rad jog right in line"
+                  data-name="rad jog right out line"
                   fill="#fff"
-                  d="M2.7 5.92H0V3.23"
+                  d="M2.97 9.43H0V6.45"
                 />
               </g>
             </svg>
           </div>
-          <div className="absolute left-0 top-0 flex h-full w-full flex-row">
+          <div
+            id={`click-container-${id}`}
+            className="absolute left-0 top-0 flex h-full w-full flex-row"
+          >
             <div
               className="relative w-1/2"
-              aria-label="Inner Dial Anti-Clockwise"
-              onMouseDown={startIncrementingInnerAntiClockwiseHold}
-              onMouseUp={stopIncrementingInnerAntiClockwiseHold}
-              onMouseLeave={stopIncrementingInnerAntiClockwiseHold}
+              aria-label="Outer Dial Anti-Clockwise"
+              onMouseDown={startIncrementingOuterAntiClockwiseHold}
+              onMouseUp={stopIncrementingOuterAntiClockwiseHold}
+              onMouseLeave={stopIncrementingOuterAntiClockwiseHold}
             />
             <div
-              className="relative w-1/2"
-              aria-label="Inner Dial Clockwise"
-              onMouseDown={startIncrementingInnerClockwiseHold}
-              onMouseUp={stopIncrementingInnerClockwiseHold}
-              onMouseLeave={stopIncrementingInnerClockwiseHold}
+              className="w-1/2"
+              aria-label="Outer Dial Clockwise"
+              onMouseDown={startIncrementingOuterClockwiseHold}
+              onMouseUp={stopIncrementingOuterClockwiseHold}
+              onMouseLeave={stopIncrementingOuterClockwiseHold}
             />
           </div>
+          <button
+            id={`double-frequency-dial-inner-${id}`}
+            disabled={disabled || !turnedOn}
+            className="double-frequency-dial-inner absolute flex"
+          >
+            <div className="pointer-events-none absolute left-4 top-[26%] w-6">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+                <g opacity="0.25">
+                  <path
+                    data-name="rad jog left in line"
+                    d="M1.48 4.85a4.12 4.12 0 01-.81-2.46A4.06 4.06 0 011.26.26"
+                    fill="none"
+                    stroke="#fff"
+                    stroke-miterlimit="10"
+                  />
+                  <path
+                    data-name="rad jog left in arrow"
+                    fill="#fff"
+                    d="M2.7 3.23v2.69H0"
+                  />
+                </g>
+              </svg>
+            </div>
+            <div className="pointer-events-none absolute right-4 top-[26%] w-6">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+                <g opacity="0.25">
+                  <path
+                    data-name="rad jog right in line"
+                    d="M1.57.26a4.07 4.07 0 01.6 2.13 4.13 4.13 0 01-.82 2.46"
+                    fill="none"
+                    stroke="#fff"
+                    stroke-miterlimit="10"
+                  />
+                  <path
+                    data-name="rad jog right in line"
+                    fill="#fff"
+                    d="M2.7 5.92H0V3.23"
+                  />
+                </g>
+              </svg>
+            </div>
+            <div className="absolute left-0 top-0 flex h-full w-full flex-row">
+              <div
+                className="relative w-1/2"
+                aria-label="Inner Dial Anti-Clockwise"
+                onMouseDown={startIncrementingInnerAntiClockwiseHold}
+                onMouseUp={stopIncrementingInnerAntiClockwiseHold}
+                onMouseLeave={stopIncrementingInnerAntiClockwiseHold}
+              />
+              <div
+                className="relative w-1/2"
+                aria-label="Inner Dial Clockwise"
+                onMouseDown={startIncrementingInnerClockwiseHold}
+                onMouseUp={stopIncrementingInnerClockwiseHold}
+                onMouseLeave={stopIncrementingInnerClockwiseHold}
+              />
+            </div>
+          </button>
         </button>
-      </button>
+      </div>
     </div>
-  </div>;
+  );
 };
 
 export default DoubleFrequencyDial;

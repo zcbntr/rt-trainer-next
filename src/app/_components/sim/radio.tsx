@@ -1,22 +1,18 @@
 "use client";
 
-import { type RadioState } from "~/lib/types/simulator";
 import ModeDial from "./mode-dial";
 import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
+import useRadioStore, { type RadioState } from "~/app/stores/radio-slice";
+import { type RadioMode } from "~/lib/types/simulator";
 
 type RadioProps = {
   className?: string;
   disabled?: boolean;
-  turnedOn?: boolean;
 };
 
-const Radio = ({
-  className = "",
-  disabled = false,
-  turnedOn = true,
-}: RadioProps) => {
-  let RadioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
+const Radio = ({ className = "", disabled = false }: RadioProps) => {
+  const RadioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
   type ArrayMaxLength7MinLength2 = readonly [
     string,
     string,
@@ -27,39 +23,47 @@ const Radio = ({
     string?,
   ];
 
-  // Holds current radio settings
-  let radioState: RadioState = {
-    mode: "OFF",
-    dialMode: "OFF",
-    activeFrequency: "121.800",
-    standbyFrequency: "129.800",
-    tertiaryFrequency: "177.200",
-  };
+  const {
+    mode,
+    dialMode,
+    activeFrequency,
+    standbyFrequency,
+    tertiaryFrequency,
+  }: RadioState = useRadioStore((state) => state);
+  const setMode = useRadioStore((state) => state.setMode);
+  const setDialMode = useRadioStore((state) => state.setDialMode);
+  const setActiveFrequency = useRadioStore((state) => state.setActiveFrequency);
+  const setStandbyFrequency = useRadioStore(
+    (state) => state.setStandbyFrequency,
+  );
+  const setTertiaryFrequency = useRadioStore(
+    (state) => state.setTertiaryFrequency,
+  );
+  const swapActiveStandbyFrequencies = useRadioStore(
+    (state) => state.swapActiveAndStandbyFrequencies,
+  );
 
-  let activeFrequency: number = 121.8;
-  let standbyFrequency: number = 129.8;
-  let tertiaryFrequency: number = 177.2;
-
-  let displayOn: boolean = false;
-  let frequencyDialEnabled: boolean = false;
-  let transmitButtonEnabled: boolean = false;
-  let transmitting: boolean = false;
+  let displayOn = false;
+  let frequencyDialEnabled = false;
+  let transmitButtonEnabled = false;
+  // eslint-disable-next-line prefer-const
+  let transmitting = false;
 
   // Click handlers
   const handleCOMButtonClick = () => {
-    if (radioState.dialMode != "OFF") {
+    if (dialMode != "OFF") {
       const COMModeButton = document.getElementById(
         "button-com",
       ) as HTMLInputElement;
       if (COMModeButton != null) {
-        if (radioState.mode != "COM") {
-          if (radioState.mode === "NAV") {
+        if (mode != "COM") {
+          if (mode === "NAV") {
             const NAVModeButton = document.getElementById(
               "button-nav",
             ) as HTMLInputElement;
             NAVModeButton.classList.remove("active-button");
           }
-          radioState.mode = "COM";
+          setMode("COM");
           COMModeButton.classList.add("active-button");
         }
       }
@@ -67,19 +71,19 @@ const Radio = ({
   };
 
   const handleNAVButtonClick = () => {
-    if (radioState.dialMode != "OFF") {
+    if (dialMode != "OFF") {
       const NAVModeButton = document.getElementById(
         "button-nav",
       ) as HTMLInputElement;
       if (NAVModeButton != null) {
-        if (radioState.mode != "NAV") {
-          if (radioState.mode === "COM") {
+        if (mode != "NAV") {
+          if (mode === "COM") {
             const COMModeButton = document.getElementById(
               "button-com",
             ) as HTMLInputElement;
             COMModeButton.classList.remove("active-button");
           }
-          radioState.mode = "NAV";
+          setMode("NAV");
           NAVModeButton.classList.add("active-button");
         }
       }
@@ -87,31 +91,24 @@ const Radio = ({
   };
 
   const handleSWAPButtonClick = () => {
-    if (radioState.dialMode != "OFF") {
-      let tempFrequency: number = activeFrequency;
-      activeFrequency = standbyFrequency;
-      standbyFrequency = tempFrequency;
-
-      radioState.activeFrequency = activeFrequency.toFixed(3);
-      radioState.standbyFrequency = standbyFrequency.toFixed(3);
+    if (dialMode != "OFF") {
+      swapActiveStandbyFrequencies();
     }
   };
 
-  function onDialModeChange(event: Event) {
-    // Fix this hack
-    var newDialModeIndex = event.detail;
-    if (newDialModeIndex == 0) {
-      if (radioState.mode === "COM") {
+  function handleDialModeChange(modeIndex: number) {
+    if (modeIndex == 0) {
+      if (mode === "COM") {
         const COMModeButton = document.getElementById(
           "button-com",
         ) as HTMLInputElement;
         COMModeButton.classList.remove("active-button");
-      } else if (radioState.mode === "NAV") {
+      } else if (mode === "NAV") {
         const NAVModeButton = document.getElementById(
           "button-nav",
         ) as HTMLInputElement;
         NAVModeButton.classList.remove("active-button");
-        radioState.mode = "COM";
+        setMode("COM");
       }
       displayOn = false;
       frequencyDialEnabled = false;
@@ -126,18 +123,15 @@ const Radio = ({
       transmitButtonEnabled = true;
     }
 
-    if (newDialModeIndex == 0) {
-      radioState.dialMode = "OFF";
+    if (modeIndex == 0) {
+      setDialMode("OFF");
     } else {
-      radioState.dialMode = "SBY";
+      setDialMode("SBY");
     }
-
-    // Shouldnt need to do this here as we have a reactive statement for this, but it seems to be necessary
-    // for the store to update when the dail mode changes
-    RadioStateStore.set(radioState);
   }
 
-  function onRadioFrequencyIncreaseLarge() {
+  // Fix all this stuff with a utility method for going from string frequency to number, modify value, and back to string
+  function handleRadioFrequencyIncreaseLarge() {
     standbyFrequency += 1;
     radioState.standbyFrequency = standbyFrequency.toFixed(3);
   }
@@ -159,16 +153,20 @@ const Radio = ({
   }
 
   return (
-    <div className="card flex max-w-screen-lg grow flex-row flex-wrap place-content-evenly gap-2 bg-neutral-600 p-3 text-white">
+    <div
+      className={`card flex max-w-screen-lg grow flex-row flex-wrap place-content-evenly gap-2 bg-neutral-600 p-3 text-white ${className}`}
+    >
       <ModeDial
+        disabled={disabled}
         modes={RadioDialModes}
         currentModeIndex={0}
-        onModeChanged={onDialModeChange}
+        onModeChanged={handleDialModeChange}
       />
 
       <div className="flex flex-col place-content-end gap-1">
         <div className="flex flex-row place-content-center">
           <TransmitButton
+            disabled={disabled}
             enabled={transmitButtonEnabled}
             transmitting={transmitting}
           />
@@ -182,11 +180,11 @@ const Radio = ({
           <div>STANDBY</div>
         </div>
         <RadioDisplay
-          turnedOn={displayOn}
-          mode={radioState.mode}
-          activeFrequency={radioState.activeFrequency}
-          standbyFrequency={radioState.standbyFrequency}
-          tertiaryFrequency={radioState.tertiaryFrequency}
+          turnedOn={displayOn || disabled}
+          mode={mode as RadioMode}
+          activeFrequency={activeFrequency}
+          standbyFrequency={standbyFrequency}
+          tertiaryFrequency={tertiaryFrequency}
         />
         <div className="display-buttons-container flex grow flex-row place-content-center">
           <button
@@ -214,11 +212,12 @@ const Radio = ({
       </div>
       <div className="order-5 mx-2 flex flex-row">
         <DoubleFrequencyDial
+          disabled={disabled}
           turnedOn={frequencyDialEnabled}
-          on:dialInnerAntiClockwiseTurn={onRadioFrequencyReduceSmall}
-          on:dialInnerClockwiseTurn={onRadioFrequencyIncreaseSmall}
-          on:dialOuterAntiClockwiseTurn={onRadioFrequencyReduceLarge}
-          on:dialOuterClockwiseTurn={onRadioFrequencyIncreaseLarge}
+          onInnerAntiClockwiseTurn={onRadioFrequencyReduceSmall}
+          onInnerClockwiseTurn={onRadioFrequencyIncreaseSmall}
+          onOuterAntiClockwiseTurn={onRadioFrequencyReduceLarge}
+          onOuterClockwiseTurn={handleRadioFrequencyIncreaseLarge}
         />
       </div>
     </div>

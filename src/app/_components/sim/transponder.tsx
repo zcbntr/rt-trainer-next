@@ -9,14 +9,12 @@ import useTransponderStore from "~/app/stores/transponder-slice";
 type TransponderProps = {
   className?: string;
   disabled?: boolean;
-  turnedOn?: boolean;
   initialFrequency?: string;
 };
 
 const Transponder = ({
   className = "",
   disabled = false,
-  turnedOn = true,
   initialFrequency = "7000",
 }: TransponderProps) => {
   if (initialFrequency.length != 4) {
@@ -173,12 +171,11 @@ const Transponder = ({
         currentModeIndex={dialModeIndex}
         onModeChanged={handleTransponderDialModeChange}
         disabled={disabled}
-        turnedOn={turnedOn}
       />
 
       <div className="display-panel order-first flex grow flex-col items-center justify-center sm:order-2">
         <TransponderDisplay
-          turnedOn={displayOn || turnedOn}
+          turnedOn={displayOn}
           mode={transponderDialModes[dialModeIndex]}
           frequency={frequency}
           digitSelected={displayDigitSelected}

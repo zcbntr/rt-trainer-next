@@ -2,9 +2,6 @@ import { type TransponderDialMode } from "~/lib/types/simulator";
 import { create, type ExtractState } from "zustand";
 import { combine } from "zustand/middleware";
 
-// If types play up here turn them into interfaces as shown in https://zustand.docs.pmnd.rs/guides/typescript
-// Then extract the type for use elsewhere
-
 export type TransponderState = ExtractState<typeof useTransponderStore>;
 
 const useTransponderStore = create(

@@ -1,46 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { randomString } from "~/lib/utils";
 
 type FrequencyDialProps = {
   className?: string;
   disabled?: boolean;
+  turnedOn?: boolean;
   initialIntervalDuration?: number;
   minIntervalDuration?: number;
+  onClockwiseTurn?: () => void;
+  onAntiClockwiseTurn?: () => void;
 };
 
 const FrequencyDial = ({
   className = "",
   disabled = false,
+  turnedOn = true,
   initialIntervalDuration = 250,
   minIntervalDuration = 20,
+  onClockwiseTurn,
+  onAntiClockwiseTurn,
 }: FrequencyDialProps) => {
   const id = randomString(6);
   let interval: NodeJS.Timeout;
+  let mounted = false;
+  const dialOnClasses = turnedOn ? "ring" : ""; // Check that this is the correct colour (white)
 
   const [intervalDuration, setIntervalDuration] = useState(
     initialIntervalDuration,
   );
-  setIntervalDuration(initialIntervalDuration);
 
-  const dialClockwiseTurn = new CustomEvent("dialClockwiseTurn", {
-    detail: {
-      direction: "clockwise",
-      dialId: id,
-    },
-  });
+  useEffect(() => {
+    mounted = true;
+    setIntervalDuration(initialIntervalDuration);
 
-  const dialAntiClockwiseTurn = new CustomEvent("dialAntiClockwiseTurn", {
-    detail: {
-      direction: "anticlockwise",
-      dialId: id,
-    },
-  });
-
-  // if (disabled && interval) {
-  //   clearInterval(interval);
-  // }
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [mounted]);
 
   function onAntiClockwiseTick() {
     clearInterval(interval);
@@ -53,13 +52,15 @@ const FrequencyDial = ({
     }
 
     interval = setInterval(onAntiClockwiseTick, intervalDuration);
-    document.dispatchEvent(dialAntiClockwiseTurn);
+
+    if (onAntiClockwiseTurn) onAntiClockwiseTurn();
   }
 
   function startIncrementingAntiClockwiseHold() {
     setIntervalDuration(initialIntervalDuration);
     interval = setInterval(onAntiClockwiseTick, intervalDuration);
-    document.dispatchEvent(dialAntiClockwiseTurn);
+
+    if (onAntiClockwiseTurn) onAntiClockwiseTurn();
   }
 
   function stopIncrementingAntiClockwiseHold() {
@@ -77,13 +78,15 @@ const FrequencyDial = ({
     }
 
     interval = setInterval(onClockwiseTick, intervalDuration);
-    document.dispatchEvent(dialClockwiseTurn);
+
+    if (onClockwiseTurn) onClockwiseTurn();
   }
 
   function startIncrementingClockwiseHold() {
     setIntervalDuration(initialIntervalDuration);
     interval = setInterval(onClockwiseTick, intervalDuration);
-    document.dispatchEvent(dialClockwiseTurn);
+
+    if (onClockwiseTurn) onClockwiseTurn();
   }
 
   function stopIncrementingClockwiseHold() {
@@ -103,7 +106,7 @@ const FrequencyDial = ({
           />
           <button
             id={`frequency-dial-${id}`}
-            className={`frequency-dial flex h-20 w-20 rounded-full border-2 ${disabled ? "disabled" : ""}`}
+            className={`frequency-dial flex h-20 w-20 rounded-full border-2 ${dialOnClasses} ${disabled ? "disabled" : ""}`}
           >
             <div className="pointer-events-none absolute left-4 top-[30%] w-7">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 6.25">

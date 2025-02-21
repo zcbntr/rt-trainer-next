@@ -1,3 +1,5 @@
+"use client";
+
 import { type EmergencyType } from "./scenario";
 
 export type TransponderDialMode =
@@ -41,12 +43,12 @@ export type AircraftDetails = {
 };
 
 export type SimulatorUpdateData = {
-	currentContext: string;
-	callsignModified: boolean;
-	squark: boolean;
-	currentTarget: string | undefined;
-	currentTargetFrequency: string | undefined;
-	currentTransponderFrequency: string;
-	currentPressure: number;
-	emergency: EmergencyType;
+  currentContext: string;
+  callsignModified: boolean;
+  squark: boolean;
+  currentTarget: string | undefined;
+  currentTargetFrequency: string | undefined;
+  currentTransponderFrequency: string;
+  currentPressure: number;
+  emergency: EmergencyType;
 };

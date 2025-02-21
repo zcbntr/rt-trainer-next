@@ -1,21 +1,37 @@
 "use client";
 
-import { type TransponderState } from "~/lib/types/simulator";
+import { type TransponderDialMode } from "~/lib/types/simulator";
 import FrequencyDial from "./frequency-dial";
 import ModeDial from "./mode-dial";
 import TransponderDisplay from "./transponder-display";
+import useTransponderStore from "~/app/stores/transponder-slice";
 
 type TransponderProps = {
   className?: string;
   disabled?: boolean;
   turnedOn?: boolean;
+  initialFrequency?: string;
 };
 
 const Transponder = ({
   className = "",
   disabled = false,
   turnedOn = true,
+  initialFrequency = "7000",
 }: TransponderProps) => {
+  if (initialFrequency.length != 4) {
+    throw new Error("Initial frequency must be a 4 digit string");
+  }
+
+  const { dialMode, frequency, identEnabled, vfrHasExecuted } =
+    useTransponderStore((state) => state);
+  const setFrequency = useTransponderStore((state) => state.setFrequency);
+  const setDialMode = useTransponderStore((state) => state.setDialMode);
+  const setIdentEnabled = useTransponderStore((state) => state.setIdentEnabled);
+  const setVFRHasExecuted = useTransponderStore(
+    (state) => state.setVFRHasExecuted,
+  );
+
   const transponderDialModes: ArrayMaxLength7MinLength2 = [
     "OFF",
     "SBY",
@@ -26,60 +42,47 @@ const Transponder = ({
   ];
 
   type ArrayMaxLength7MinLength2 = readonly [
-    string,
-    string,
-    string?,
-    string?,
-    string?,
-    string?,
-    string?,
+    TransponderDialMode,
+    TransponderDialMode,
+    TransponderDialMode?,
+    TransponderDialMode?,
+    TransponderDialMode?,
+    TransponderDialMode?,
+    TransponderDialMode?,
   ];
 
-  // Holds current transponder state
-  const transponderState: TransponderState = {
-    dialMode: "OFF",
-    frequency: "7000",
-    identEnabled: false,
-    vfrHasExecuted: false,
-  };
   const dialModeIndex = 0;
   let displayOn = false;
-  const digitArr = [7, 0, 0, 0];
-  let frequency = "7000";
+
+  let digitArr = [7, 0, 0, 0];
+  if (initialFrequency.length == 4) {
+    digitArr = initialFrequency.split("").map((x) => parseInt(x));
+    setFrequency(initialFrequency);
+  }
+
   let frequencyDialEnabled = false;
   let displayDigitSelected = 0;
-  const mounted = false;
-
-//   $: TransponderStateStore.set(transponderState);
-
-//   $: if (mounted) {
-//     frequency = digitArr.join("");
-//     transponderState.frequency = frequency;
-//   }
-
-  // Trigger onTransponderDialModeChange when transponderDialMode changes
-//   $: onTransponderDialModeChange(dialModeIndex);
 
   // Click handlers
   const handleIDENTButtonClick = () => {
-    if (transponderState.dialMode != "OFF") {
+    if (dialMode != "OFF") {
       const IDENTModeButton = document.getElementById(
         "button-ident",
       ) as HTMLInputElement;
       // Make flash continuously when clicked, untill clicked again
       IDENTModeButton.classList.toggle("blink-continiously");
-      transponderState.identEnabled = !transponderState.identEnabled;
+      setIdentEnabled(!identEnabled);
     }
   };
 
   const handleVFRButtonClick = () => {
-    if (transponderState.dialMode != "OFF") {
+    if (dialMode != "OFF") {
       const VFRModeButton = document.getElementById(
         "button-vfr",
       ) as HTMLInputElement;
       // Make flash on when pressed then remain off
       VFRModeButton.classList.toggle("blink-once");
-      transponderState.identEnabled = true;
+      setVFRHasExecuted(true);
     }
   };
 
@@ -103,51 +106,48 @@ const Transponder = ({
     }
   };
 
-  function onTransponderDialModeChange(newModeIndex: number) {
+  function handleTransponderDialModeChange(newModeIndex: number) {
     if (newModeIndex == 0) {
-      if (transponderState.identEnabled) {
+      if (identEnabled) {
         const IDENTModeButton = document.getElementById(
           "button-ident",
         ) as HTMLInputElement;
         IDENTModeButton.classList.remove("active-button");
-        transponderState.identEnabled = false;
+        setIdentEnabled(false);
       }
-      transponderState.dialMode = "OFF";
+      setDialMode("OFF");
       displayOn = false;
       frequencyDialEnabled = false;
     } else {
       switch (newModeIndex) {
         case 1:
-          transponderState.dialMode = "SBY";
+          setDialMode("SBY");
           break;
         case 2:
-          transponderState.dialMode = "GND";
+          setDialMode("GND");
           break;
         case 3:
-          transponderState.dialMode = "ON";
+          setDialMode("ON");
           break;
         case 4:
-          transponderState.dialMode = "ALT";
+          setDialMode("ALT");
           break;
         case 5:
-          transponderState.dialMode = "TEST";
+          setDialMode("TEST");
           break;
       }
 
       displayOn = true;
       frequencyDialEnabled = true;
     }
-
-    // Shouldnt need to do this here as we have a reactive statement for this, but it seems to be necessary
-    // for the store to update when the dail mode changes
-    TransponderStateStore.set(transponderState);
   }
 
   function onTransponderFrequencyIncrease() {
     if (digitArr[displayDigitSelected] == 7) {
       digitArr[displayDigitSelected] = 0;
     } else {
-      digitArr[displayDigitSelected] += 1;
+      const val = digitArr[displayDigitSelected] ?? 0;
+      digitArr[displayDigitSelected] = val + 1;
     }
   }
 
@@ -155,20 +155,29 @@ const Transponder = ({
     if (digitArr[displayDigitSelected] == 0) {
       digitArr[displayDigitSelected] = 7;
     } else {
-      digitArr[displayDigitSelected] -= 1;
+      const val = digitArr[displayDigitSelected] ?? 0;
+      digitArr[displayDigitSelected] = val - 1;
     }
   }
 
   return (
-    <div className="card flex max-w-screen-lg grow flex-row flex-wrap place-content-evenly gap-2 bg-neutral-600 p-3 text-white">
-      <ModeDial modes={transponderDialModes} currentModeIndex={dialModeIndex} />
+    <div
+      className={`card flex max-w-screen-lg grow flex-row flex-wrap place-content-evenly gap-2 bg-neutral-600 p-3 text-white ${className}`}
+    >
+      <ModeDial
+        modes={transponderDialModes}
+        currentModeIndex={dialModeIndex}
+        onModeChanged={handleTransponderDialModeChange}
+        disabled={disabled}
+        turnedOn={turnedOn}
+      />
 
       <div className="display-panel order-first flex grow flex-col items-center justify-center sm:order-2">
         <TransponderDisplay
-          DisplayOn={displayOn}
+          turnedOn={displayOn || turnedOn}
           mode={transponderDialModes[dialModeIndex]}
           digitArr={digitArr}
-          DigitSelected={displayDigitSelected}
+          digitSelected={displayDigitSelected}
         />
         <div className="flex flex-row items-center gap-2 pt-1">
           <button
@@ -207,6 +216,7 @@ const Transponder = ({
           turnedOn={frequencyDialEnabled}
           onAntiClockwiseTurn={onTransponderFrequencyReduce}
           onClockwiseTurn={onTransponderFrequencyIncrease}
+          disabled={disabled}
         />
       </div>
     </div>

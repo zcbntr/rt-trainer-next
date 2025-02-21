@@ -14,6 +14,9 @@ import { WaypointURLObject } from "~/lib/types/scenario";
 import { AircraftDetails, AltimeterState, RadioState, TransponderState } from "~/lib/types/simulator";
 import { Waypoint } from "~/lib/types/waypoint";
 import Altimeter from "./altimeter";
+import Transponder from "./transponder";
+import MessageOutputBox from "./message-output-box";
+import MessageInputBox from "./message-input-box";
 
 const Simulator = () => {
 
@@ -724,9 +727,9 @@ return (<div className={`flex justify-center ${className}`}>
 			{/* {/if} */}
 
 			<div className="flex flex-col place-content-evenly sm:grid sm:grid-cols-2 gap-5">
-				<MessageOutput />
+				<MessageOutputBox />
 
-				<MessageInput {speechRecognitionSupported} on:submit={handleSubmit} />
+				<MessageInputBox {speechRecognitionSupported} onSubmit={handleSubmit} />
 			</div>
 
 			<Radio />
@@ -878,3 +881,5 @@ return (<div className={`flex justify-center ${className}`}>
 		</div>
 	</div>
 </div>) }
+
+export default Simulator;

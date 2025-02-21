@@ -6,7 +6,7 @@ type TransponderDisplayProps = {
   turnedOn?: boolean;
   mode: TransponderDialMode;
   digitSelected?: number;
-  digitArr: number[];
+  frequency: string;
 };
 
 const TransponderDisplay = ({
@@ -14,7 +14,7 @@ const TransponderDisplay = ({
   turnedOn = true,
   mode,
   digitSelected = 0,
-  digitArr,
+  frequency,
 }: TransponderDisplayProps) => {
   //   $: showDisplayText = DisplayOn ? "displayon" : "displayoff";
 
@@ -40,16 +40,16 @@ const TransponderDisplay = ({
       </div>
       <div className="sevenSEG mr-5 flex flex-row">
         <div id="tdigit-0" className="tdigit tselected">
-          {digitArr[0]}
+          {frequency[3]}
         </div>
         <div id="tdigit-1" className="tdigit">
-          {digitArr[1]}
+          {frequency[2]}
         </div>
         <div id="tdigit-2" className="tdigit">
-          {digitArr[2]}
+          {frequency[1]}
         </div>
         <div id="tdigit-3" className="tdigit">
-          {digitArr[3]}
+          {frequency[0]}
         </div>
       </div>
     </div>

@@ -54,11 +54,7 @@ const Transponder = ({
   const dialModeIndex = 0;
   let displayOn = false;
 
-  let digitArr = [7, 0, 0, 0];
-  if (initialFrequency.length == 4) {
-    digitArr = initialFrequency.split("").map((x) => parseInt(x));
-    setFrequency(initialFrequency);
-  }
+  setFrequency(initialFrequency);
 
   let frequencyDialEnabled = false;
   let displayDigitSelected = 0;
@@ -143,20 +139,28 @@ const Transponder = ({
   }
 
   function onTransponderFrequencyIncrease() {
-    if (digitArr[displayDigitSelected] == 7) {
-      digitArr[displayDigitSelected] = 0;
+    if (frequency[displayDigitSelected] == "7") {
+      const newFreq = frequency.split("");
+      newFreq[displayDigitSelected] = "0";
+      setFrequency(newFreq.join(""));
     } else {
-      const val = digitArr[displayDigitSelected] ?? 0;
-      digitArr[displayDigitSelected] = val + 1;
+      const val = parseInt(frequency[displayDigitSelected] ?? "0") ?? 0;
+      const newFreq = frequency.split("");
+      newFreq[displayDigitSelected] = (val + 1).toString();
+      setFrequency(newFreq.join(""));
     }
   }
 
   function onTransponderFrequencyReduce() {
-    if (digitArr[displayDigitSelected] == 0) {
-      digitArr[displayDigitSelected] = 7;
+    if (frequency[displayDigitSelected] == "0") {
+      const newFreq = frequency.split("");
+      newFreq[displayDigitSelected] = "7";
+      setFrequency(newFreq.join(""));
     } else {
-      const val = digitArr[displayDigitSelected] ?? 0;
-      digitArr[displayDigitSelected] = val - 1;
+      const val = parseInt(frequency[displayDigitSelected] ?? "0") ?? 0;
+      const newFreq = frequency.split("");
+      newFreq[displayDigitSelected] = (val - 1).toString();
+      setFrequency(newFreq.join(""));
     }
   }
 
@@ -176,7 +180,7 @@ const Transponder = ({
         <TransponderDisplay
           turnedOn={displayOn || turnedOn}
           mode={transponderDialModes[dialModeIndex]}
-          digitArr={digitArr}
+          frequency={frequency}
           digitSelected={displayDigitSelected}
         />
         <div className="flex flex-row items-center gap-2 pt-1">

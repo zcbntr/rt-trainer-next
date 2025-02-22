@@ -1,3 +1,5 @@
+"use client";
+
 import { index } from "drizzle-orm/pg-core";
 import { Radio } from "lucide-react";
 import { Marker, Popup } from "mapbox-gl";
@@ -11,17 +13,21 @@ import { Airport } from "~/lib/types/airport";
 import { Airspace } from "~/lib/types/airspace";
 import { RadioCall } from "~/lib/types/radio-call";
 import { WaypointURLObject } from "~/lib/types/scenario";
-import { AircraftDetails, AltimeterState, RadioState, TransponderState } from "~/lib/types/simulator";
+import { AircraftDetails, AltimeterState } from "~/lib/types/simulator";
 import { Waypoint } from "~/lib/types/waypoint";
 import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
+import { useSearchParams } from "next/navigation";
+import { RadioState } from "~/app/stores/radio-slice";
+import { TransponderState } from "~/app/stores/transponder-slice";
 
-const Simulator = () => {
+type SimulatorProps = {
+	className?: string;
+}
 
-	const modalStore = getModalStore();
-
+const Simulator = ({className} : SimulatorProps) => {
 	// Scenario settings
 	let seed: string = '';
 	let hasEmergencies: boolean = false;
@@ -29,29 +35,41 @@ const Simulator = () => {
 	let prefix: string = '';
 	let aircraftType: string = 'Cessna 172';
 
-	// Flag to check if critical data is missing and the user must be prompted to enter it
-	let criticalDataMissing: boolean = false;
+		// Flag to check if critical data is missing and the user must be prompted to enter it
+		let criticalDataMissing: boolean = false;
 
-	// Scenario objects
-	let waypoints: Waypoint[] = [];
-	let airportIDs: string[] = [];
+		// Scenario objects
+		let waypoints: Waypoint[] = [];
+		let airportIDs: string[] = [];
+
+	const searchParams = useSearchParams();
+	const seedString = searchParams.get("seed");
+	const hasEmergencyString = searchParams.get("hasEmergency");
+	const waypointsString = searchParams.get("waypoints");
+	const airportsString = searchParams.get("airports");
+	const callsignString = searchParams.get("callsign");
+	const prefixString = searchParams.get("prefix");
+	const aircraftTypeString = searchParams.get("aircraftType");
+	const startPointIndexString = searchParams.get("startPoint");
+	const endPointIndexString = searchParams.get("endPoint");
+	const tutorialString = searchParams.get("tutorial");
 
 	// Check whether the seed is specified - if not then warn user
-	const seedString: string | null = $page.url.searchParams.get('seed');
-	if (seedString != null && seedString != '') {
+	if (seedString != null && seedString != '') {			
 		seed = seedString;
 	} else {
 		criticalDataMissing = true;
+		throw new Error('Seed not specified');
 	}
 
+
+
 	// Check whether the hasEmergency is specified
-	const hasEmergencyString: string | null = $page.url.searchParams.get('hasEmergency');
 	if (hasEmergencyString != null) {
 		hasEmergencies = hasEmergencyString === 'true';
 	}
 
 	// Get waypoints from the URL's JSON.stringify form
-	const waypointsString: string | null = $page.url.searchParams.get('waypoints');
 	if (waypointsString != null) {
 		const waypointsDataArray: WaypointURLObject[] = JSON.parse(waypointsString);
 		waypoints = waypointsDataArray.map(
@@ -70,7 +88,6 @@ const Simulator = () => {
 	}
 
 	// Get airports from the URL's JSON.stringify form
-	const airportsString: string | null = $page.url.searchParams.get('airports');
 	if (airportsString != null) {
 		airportIDs = airportsString.split(',');
 	} else {
@@ -78,13 +95,11 @@ const Simulator = () => {
 	}
 
 	// Check whether the callsign is specified
-	const callsignString: string | null = $page.url.searchParams.get('callsign');
 	if (callsignString != null && callsignString != '') {
 		callsign = callsignString;
 	}
 
 	// Check whether the prefix is specified
-	const prefixString: string | null = $page.url.searchParams.get('prefix');
 	if (prefixString != null) {
 		if (
 			prefixString == '' ||
@@ -100,14 +115,12 @@ const Simulator = () => {
 	}
 
 	// Check whether the aircraft type is specified
-	const aircraftTypeString: string | null = $page.url.searchParams.get('aircraftType');
 	if (aircraftTypeString != null && aircraftTypeString != '') {
 		aircraftType = aircraftTypeString;
 	}
 
 	// Check whether start point index has been set
 	let startPointIndex: number = 0;
-	const startPointIndexString: string | null = $page.url.searchParams.get('startPoint');
 	if (startPointIndexString != null) {
 		startPointIndex = parseInt(startPointIndexString);
 		if (startPointIndex < 0) {
@@ -117,7 +130,6 @@ const Simulator = () => {
 
 	// Check whether end point index has been set
 	let endPointIndex: number = -1;
-	const endPointIndexString: string | null = $page.url.searchParams.get('endPoint');
 	if (endPointIndexString != null) {
 		endPointIndex = parseInt(endPointIndexString);
 		if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
@@ -126,7 +138,6 @@ const Simulator = () => {
 	}
 
 	let tutorial: boolean = false;
-	const tutorialString: string | null = $page.url.searchParams.get('tutorial');
 	if (tutorialString != null) {
 		tutorial = tutorialString === 'true';
 	}
@@ -273,65 +284,65 @@ const Simulator = () => {
 	$: tutorialStep3 =
 		radioState?.activeFrequency == scenario?.getCurrentPoint().updateData.currentTargetFrequency;
 
-	ScenarioStore.subscribe((value) => {
-		scenario = value;
-	});
+	// ScenarioStore.subscribe((value) => {
+	// 	scenario = value;
+	// });
 
-	SpeechOutputEnabledStore.subscribe((value) => {
-		readRecievedCalls = value;
-	});
+	// SpeechOutputEnabledStore.subscribe((value) => {
+	// 	readRecievedCalls = value;
+	// });
 
-	SpeechNoiseStore.subscribe((value) => {
-		speechNoiseLevel = value;
-	});
+	// SpeechNoiseStore.subscribe((value) => {
+	// 	speechNoiseLevel = value;
+	// });
 
-	LiveFeedbackStore.subscribe((value) => {
-		liveFeedback = value;
-	});
+	// LiveFeedbackStore.subscribe((value) => {
+	// 	liveFeedback = value;
+	// });
 
-	AircraftDetailsStore.subscribe((value) => {
-		aircraftDetails = value;
-	});
+	// AircraftDetailsStore.subscribe((value) => {
+	// 	aircraftDetails = value;
+	// });
 
-	RadioStateStore.subscribe((value) => {
-		radioState = value;
-	});
+	// RadioStateStore.subscribe((value) => {
+	// 	radioState = value;
+	// });
 
-	TransponderStateStore.subscribe((value) => {
-		transponderState = value;
-	});
+	// TransponderStateStore.subscribe((value) => {
+	// 	transponderState = value;
+	// });
 
-	AltimeterStateStore.subscribe((value) => {
-		altimeterState = value;
-	});
+	// AltimeterStateStore.subscribe((value) => {
+	// 	altimeterState = value;
+	// });
 
-	UserMessageStore.subscribe((value) => {
-		userMessage = value;
-	});
+	// UserMessageStore.subscribe((value) => {
+	// 	userMessage = value;
+	// });
 
-	MostRecentlyReceivedMessageStore.subscribe((value) => {
-		atcMessage = value;
-	});
+	// MostRecentlyReceivedMessageStore.subscribe((value) => {
+	// 	atcMessage = value;
+	// });
 
-	CurrentScenarioContextStore.subscribe((value) => {
-		currentSimConext = value;
-	});
+	// CurrentScenarioContextStore.subscribe((value) => {
+	// 	currentSimConext = value;
+	// });
 
-	CurrentScenarioPointIndexStore.subscribe((value) => {
-		currentRoutePointIndex = value;
-	});
+	// CurrentScenarioPointIndexStore.subscribe((value) => {
+	// 	currentRoutePointIndex = value;
+	// });
 
-	CurrentTargetStore.subscribe((value) => {
-		currentTarget = value;
-	});
+	// CurrentTargetStore.subscribe((value) => {
+	// 	currentTarget = value;
+	// });
 
-	CurrentTargetFrequencyStore.subscribe((value) => {
-		currentTargetFrequency = value;
-	});
+	// CurrentTargetFrequencyStore.subscribe((value) => {
+	// 	currentTargetFrequency = value;
+	// });
 
-	TutorialStore.subscribe((value) => {
-		tutorialEnabled = value;
-	});
+	// TutorialStore.subscribe((value) => {
+	// 	tutorialEnabled = value;
+	// });
 
 	let waypointPoints: number[][] = [];
 	let bounds: L.LatLngBounds;
@@ -736,12 +747,12 @@ return (<div className={`flex justify-center ${className}`}>
 
 			<Transponder />
 
-			<div className="card p-2 rounded-md w-[420px] h-[452px] bg-neutral-600 flex flex-row grow">
+			{/* <div className="card p-2 rounded-md w-[420px] h-[452px] bg-neutral-600 flex flex-row grow">
 				<div className="w-full h-full">
 					<Map view={scenario?.getCurrentPoint().pose.position} zoom={9}>
-						{/* {#if waypointPoints.length > 0}
+						 {#if waypointPoints.length > 0}
 							{#each waypoints as waypoint (waypoint.index)}
-								{#if waypoint.index == waypoints.length - 1 || waypoint.type == WaypointType.Airport} */}
+								{#if waypoint.index == waypoints.length - 1 || waypoint.type == WaypointType.Airport}
 									<Marker
 										latLng={[waypoint.location[1], waypoint.location[0]]}
 										width={50}
@@ -757,11 +768,11 @@ return (<div className={`flex justify-center ${className}`}>
 											e.detail.marker.closePopup();
 										}}
 									>
-										{/* {#if waypoint.index == waypoints.length - 1} */}
+										 {#if waypoint.index == waypoints.length - 1}
 											<div className="text-2xl">🏁</div>
-										{/* {:else if waypoint.type == WaypointType.Airport} */}
+										{:else if waypoint.type == WaypointType.Airport}
 											<div className="text-2xl">🛫</div>
-										{/* {/if} */}
+										{/if}
 
 										<Popup
 											><div className="flex flex-col gap-2">
@@ -769,7 +780,7 @@ return (<div className={`flex justify-center ${className}`}>
 											</div></Popup
 										></Marker
 									>
-								{/* {:else} */}
+								{:else}
 									<Marker
 										latLng={[waypoint.location[1], waypoint.location[0]]}
 										width={50}
@@ -794,26 +805,26 @@ return (<div className={`flex justify-center ${className}`}>
 											</div></Popup
 										></Marker
 									>
-								{/* {/if}
+								 {/if}
 							{/each}
-						{/if} */}
+						{/if} 
 
-						{/* {#each waypointPoints as waypointPoint, index}
+						{#each waypointPoints as waypointPoint, index}
 							{#if index > 0}
 								<!-- Force redraw if either waypoint of the line changes location -->
-								{#key [waypointPoints[index - 1], waypointPoints[index]]} */}
+								{#key [waypointPoints[index - 1], waypointPoints[index]]}
 									<Polyline
 										latLngArray={[waypointPoints[index - 1], waypointPoints[index]]}
 										colour="#FF69B4"
 										fillOpacity={1}
 										weight={7}
 									/>
-								{/* {/key}
+								 {/key}
 							{/if}
 						{/each}
 
 						{#each onRouteAirspaces as airspace}
-							{#if airspace.type == 14} */}
+							{#if airspace.type == 14}
 								<Polygon
 									latLngArray={airspace.coordinates[0].map((point) => [point[1], point[0]])}
 									color={'red'}
@@ -829,7 +840,7 @@ return (<div className={`flex justify-center ${className}`}>
 										e.detail.polygon.closePopup();
 									}}
 								/>
-							{/* {:else} */}
+							{:else}
 								<Polygon
 									latLngArray={airspace.coordinates[0].map((point) => [point[1], point[0]])}
 									color={'blue'}
@@ -845,27 +856,27 @@ return (<div className={`flex justify-center ${className}`}>
 										e.detail.polygon.closePopup();
 									}}
 								/>
-							{/* {/if}
-						{/each} */}
+							{/if}
+						{/each}
 
-						{/* {#key position} */}
+						{#key position}
 							<Marker latLng={position} width={50} height={50} rotation={displayHeading}>
 								<div className="text-2xl">🛩️</div>
 
 								<Popup
 									><div className="flex flex-col gap-2">
 										<div>
-											{/* <!-- Lat, Long format --> */}
+											<!-- Lat, Long format -->
 											<div>{position[1].toFixed(6)}</div>
 											<div>{position[0].toFixed(6)}</div>
 										</div>
 									</div></Popup
 								>
 							</Marker>
-						{/* {/key} */}
+						{/key}
 					</Map>
 				</div>
-			</div>
+			</div>*/}
 
 			<Altimeter />
 

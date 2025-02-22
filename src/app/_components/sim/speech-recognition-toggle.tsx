@@ -5,22 +5,17 @@ import { Switch } from "~/components/ui/switch";
 type SpeechRecognitionToggleProps = {
   speechInput?: boolean;
   speechInputSupported: boolean;
+  onSpeechInputSettingChanged?: (setting: boolean) => void;
 };
 
 const SpeechRecognitionToggle = ({
   speechInput = false,
   speechInputSupported,
+  onSpeechInputSettingChanged,
 }: SpeechRecognitionToggleProps) => {
-  const speechRecognitionEnabled = new CustomEvent("speechRecognitionEnabled");
-  const speechRecognitionDisabled = new CustomEvent(
-    "speechRecognitionDisabled",
-  );
-
   function handleToggleChange() {
-    if (speechInput) {
-      document.dispatchEvent(speechRecognitionDisabled);
-    } else {
-      document.dispatchEvent(speechRecognitionEnabled);
+    if (onSpeechInputSettingChanged) {
+      onSpeechInputSettingChanged(!speechInput);
     }
   }
 

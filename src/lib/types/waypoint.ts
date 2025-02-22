@@ -7,8 +7,8 @@ export type Waypoint = {
   location: [number, number];
   index: number;
   name: string;
-  referenceObjectId: string | undefined;
-  description: string | undefined;
+  referenceObjectId?: string | undefined;
+  description?: string | undefined;
 };
 
 export enum WaypointType {

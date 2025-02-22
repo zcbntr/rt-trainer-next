@@ -7,6 +7,7 @@ export interface WaypointURLObject {
   index: number;
   name: string;
   referenceObjectId?: string;
+  description?: string;
 }
 
 export enum EmergencyType {

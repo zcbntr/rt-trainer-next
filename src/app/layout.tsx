@@ -9,6 +9,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "~/trpc/react";
 
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "~/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: { template: "%s | RT-Trainer", default: "RT-Trainer" },
@@ -51,6 +52,7 @@ export default function RootLayout({
                 {children}
               </div>
 
+              <Toaster />
               <Footer />
             </main>
           </div>

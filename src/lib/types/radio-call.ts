@@ -3,7 +3,7 @@ import { type Waypoint } from "./waypoint";
 
 export type RadioMessageAttempt = {
   message: string;
-  feedback: Feedback;
+  feedback?: Feedback;
 };
 
 export type RadioCall = {

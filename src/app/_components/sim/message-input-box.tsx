@@ -25,6 +25,9 @@ type MessageInputBoxProps = {
   disabled?: boolean;
   speechRecognitionSupported?: boolean;
   message?: string;
+  onLiveFeedbackSettingChanged?: (setting: boolean) => void;
+  onSpeechInputSettingChanged?: (setting: boolean) => void;
+  onMessageSubmitted?: (message: string) => void;
 };
 
 const formSchema = z.object({
@@ -43,6 +46,9 @@ const MessageInputBox = ({
   disabled = false,
   speechRecognitionSupported = false,
   message = "",
+  onLiveFeedbackSettingChanged,
+  onSpeechInputSettingChanged,
+  onMessageSubmitted,
 }: MessageInputBoxProps) => {
   const speechInput = false;
   let liveFeedback = false;
@@ -54,17 +60,6 @@ const MessageInputBox = ({
       "Speech recognition is not supported in this browser. Please use a different browser if you would like to use this feature. Google Chrome, Microsoft Edge and Safari are recommended.";
   }
 
-  const submitMessage = new CustomEvent("submitMessage", {
-    detail: {
-      message,
-    },
-  });
-
-  const liveFeedbackEnabled = new CustomEvent("liveFeedbackEnabled");
-  const liveFeedbackDisabled = new CustomEvent("liveFeedbackDisabled");
-  const speechInputEnabled = new CustomEvent("speechInputEnabled");
-  const speechInputDisabled = new CustomEvent("speechInputDisabled");
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -73,8 +68,9 @@ const MessageInputBox = ({
   });
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    submitMessage.detail.message = data.message;
-    document.dispatchEvent(submitMessage);
+    if (onMessageSubmitted) {
+      onMessageSubmitted(data.message);
+    }
   }
 
   const onReset = () => {
@@ -119,10 +115,8 @@ const MessageInputBox = ({
                   aria-label="Toggle live feedback"
                   onCheckedChange={() => {
                     liveFeedback = !liveFeedback;
-                    if (liveFeedback) {
-                      document.dispatchEvent(liveFeedbackEnabled);
-                    } else {
-                      document.dispatchEvent(liveFeedbackDisabled);
+                    if (onLiveFeedbackSettingChanged) {
+                      onLiveFeedbackSettingChanged(liveFeedback);
                     }
                   }}
                 />
@@ -150,6 +144,11 @@ const MessageInputBox = ({
               <div className="flex flex-row place-content-start gap-2">
                 <SpeechRecognitionToggle
                   speechInputSupported={speechRecognitionSupported}
+                  onSpeechInputSettingChanged={() => {
+                    if (onSpeechInputSettingChanged) {
+                      onSpeechInputSettingChanged(!speechInput);
+                    }
+                  }}
                 />
                 <TooltipProvider>
                   <Tooltip>

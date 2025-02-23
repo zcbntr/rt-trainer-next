@@ -10,6 +10,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "~/components/ui/sonner";
+import 'regenerator-runtime/runtime'
 
 export const metadata: Metadata = {
   title: { template: "%s | RT-Trainer", default: "RT-Trainer" },

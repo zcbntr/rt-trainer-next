@@ -10,9 +10,14 @@ import TransmitButton from "./transmit-button";
 type RadioProps = {
   className?: string;
   disabled?: boolean;
+  onSpeechInput?: (transcript: string) => void;
 };
 
-const Radio = ({ className = "", disabled = false }: RadioProps) => {
+const Radio = ({
+  className = "",
+  disabled = false,
+  onSpeechInput = () => {},
+}: RadioProps) => {
   const RadioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
   type ArrayMaxLength7MinLength2 = readonly [
     string,
@@ -133,24 +138,20 @@ const Radio = ({ className = "", disabled = false }: RadioProps) => {
 
   // Fix all this stuff with a utility method for going from string frequency to number, modify value, and back to string
   function handleRadioFrequencyIncreaseLarge() {
-    standbyFrequency += 1;
-    radioState.standbyFrequency = standbyFrequency.toFixed(3);
+    setStandbyFrequency((parseFloat(standbyFrequency) + 1).toPrecision(6));
   }
 
   function onRadioFrequencyReduceLarge() {
-    standbyFrequency -= 1;
-    radioState.standbyFrequency = standbyFrequency.toFixed(3);
+    setStandbyFrequency((parseFloat(standbyFrequency) - 1).toPrecision(6));
   }
 
   // Precision errors are a problem here
   function onRadioFrequencyIncreaseSmall() {
-    standbyFrequency = parseFloat((standbyFrequency + 0.005).toPrecision(6));
-    radioState.standbyFrequency = standbyFrequency.toFixed(3);
+    setStandbyFrequency((parseFloat(standbyFrequency) + 0.005).toPrecision(6));
   }
 
   function onRadioFrequencyReduceSmall() {
-    standbyFrequency = parseFloat((standbyFrequency - 0.005).toPrecision(6));
-    radioState.standbyFrequency = standbyFrequency.toFixed(3);
+    setStandbyFrequency((parseFloat(standbyFrequency) - 0.005).toPrecision(6));
   }
 
   return (
@@ -168,8 +169,8 @@ const Radio = ({ className = "", disabled = false }: RadioProps) => {
         <div className="flex flex-row place-content-center">
           <TransmitButton
             disabled={disabled}
-            enabled={transmitButtonEnabled}
-            transmitting={transmitting}
+            speechEnabled={true}
+            onSpeechRecieved={onSpeechInput}
           />
         </div>
         <div className="flex flex-row place-content-center">Transmit</div>
@@ -181,6 +182,7 @@ const Radio = ({ className = "", disabled = false }: RadioProps) => {
           <div>STANDBY</div>
         </div>
         <RadioDisplay
+          className="min-w-[200px] max-w-[600px]"
           turnedOn={displayOn || disabled}
           mode={mode as RadioMode}
           activeFrequency={activeFrequency}
@@ -189,21 +191,21 @@ const Radio = ({ className = "", disabled = false }: RadioProps) => {
         />
         <div className="display-buttons-container flex grow flex-row place-content-center">
           <button
-            className="button"
+            className="w-[50px]"
             id="button-com"
             onClick={handleCOMButtonClick}
           >
             COM
           </button>
           <button
-            className="button"
+            className="w-[50px]"
             id="button-swap"
             onClick={handleSWAPButtonClick}
           >
             ⇆
           </button>
           <button
-            className="button"
+            className="w-[50px]"
             id="button-nav"
             onClick={handleNAVButtonClick}
           >
@@ -228,15 +230,6 @@ const Radio = ({ className = "", disabled = false }: RadioProps) => {
 export default Radio;
 
 // {/* <style lang="postcss">
-// 	.display-panel {
-// 		max-width: 600px;
-// 		min-width: 200px;
-// 	}
-
-// 	.button {
-// 		width: 50px;
-// 	}
-
 // 	/* Global flag required otherwise .active-button is unused at page load
 //     and hence removed by the compiler */
 // 	:global(.active-button) {

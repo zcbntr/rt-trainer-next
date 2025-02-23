@@ -1,111 +1,102 @@
 "use client";
 
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 import { swapDigitsWithWords } from "~/lib/sim-utils/string-processors";
 
 type TransmitButtonProps = {
   className?: string;
   disabled?: boolean;
   speechEnabled: boolean;
-  transmitting: boolean;
+  onSpeechRecieved: (transcript: string) => void;
 };
 
 const TransmitButton = ({
   className = "",
   disabled = false,
   speechEnabled,
-  transmitting,
+  onSpeechRecieved,
 }: TransmitButtonProps) => {
-  let SpeechRecognitionType: any;
-  let SpeechGrammarList: any;
-  let SpeechRecognitionEvent: any;
-  let recognition: any;
   let transmitButtonClasses = "disabled";
 
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition,
+    isMicrophoneAvailable,
+  } = useSpeechRecognition();
+
   if (speechEnabled && !disabled) {
-    transmitButtonClasses = "enabled";
+    transmitButtonClasses = "bg-red-300";
   } else {
-    transmitButtonClasses = "disabled";
+    transmitButtonClasses = "bg-red-200/50";
   }
 
-  $: if (speechEnabled) {
-    SpeechRecognitionType =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    SpeechGrammarList =
-      window.SpeechGrammarList || window.webkitSpeechGrammarList;
-    SpeechRecognitionEvent =
-      window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
-    recognition = new SpeechRecognitionType();
-    recognition.lang = "en";
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let speechInput = event.results[0][0].transcript;
-      console.log(
-        `You said: ${speechInput}, Confidence: ${event.results[0][0].confidence}`,
-      );
-
+  const processSpeech = (speechInput: string) => {
+    if (speechEnabled) {
       speechInput = swapDigitsWithWords(speechInput);
-
-      SpeechBufferStore.set(speechInput);
-    };
-  } else {
-    recognition = null;
-  }
+      onSpeechRecieved(speechInput);
+    } else {
+      throw new Error("Speech recognition is not enabled");
+    }
+  };
 
   const handleTransmitMouseDown = () => {
-    if (speechEnabled && !disabled && !transmitting) {
-      transmitButtonClasses = "enabled active";
-      transmitting = true;
-      recognition?.start();
+    if (speechEnabled && !disabled) {
+      transmitButtonClasses = "bg-red-500";
+      SpeechRecognition.startListening();
     }
   };
 
   const handleTransmitMouseUp = () => {
-    if (speechEnabled && !disabled && transmitting) {
-      transmitButtonClasses = "enabled";
-      transmitting = false;
-      recognition?.stop();
+    if (speechEnabled && !disabled) {
+      transmitButtonClasses = "bg-red-300";
+      SpeechRecognition.abortListening();
+      processSpeech(transcript);
+      resetTranscript();
     }
   };
 
   const handleTransmitMouseLeave = () => {
-    if (speechEnabled && !disabled && transmitting) {
-      transmitButtonClasses = "enabled";
-      transmitting = false;
-      recognition?.stop();
+    if (speechEnabled && !disabled) {
+      transmitButtonClasses = "bg-red-300";
+      SpeechRecognition.abortListening();
+      processSpeech(transcript);
+      resetTranscript();
     }
   };
 
-  function onKeyDown(e: { keyCode: any }) {
-    switch (e.keyCode) {
-      case 32:
-        if (speechEnabled) {
-          if (!disabled && !transmitting) {
-            transmitButtonClasses = "enabled active";
-            transmitting = true;
-            recognition?.start();
-          }
-        }
-        break;
-    }
-  }
+  // function onKeyDown(e: { keyCode: any }) {
+  //   switch (e.keyCode) {
+  //     case 32:
+  //       if (speechEnabled && !disabled) {
+  //         transmitButtonClasses = "bg-red-500";
+  //         SpeechRecognition.startListening();
+  //       }
+  //       break;
+  //   }
+  // }
 
-  function onKeyUp(e: { keyCode: any }) {
-    switch (e.keyCode) {
-      case 32:
-        if (speechEnabled) {
-          if (!disabled && transmitting) {
-            transmitButtonClasses = "enabled";
-            transmitting = false;
-            recognition?.stop();
-          }
-          break;
-        }
-    }
-  }
+  // function onKeyUp(e: { keyCode: any }) {
+  //   switch (e.keyCode) {
+  //     case 32:
+  //       if (speechEnabled && !disabled) {
+  //         transmitButtonClasses = "bg-red-300";
+  //         SpeechRecognition.abortListening();
+  //         processSpeech(transcript);
+  //         resetTranscript();
+
+  //         break;
+  //       }
+  //   }
+  // }
 
   return (
     <div
       id="transmit-button"
-      className={`${transmitButtonClasses} transmit-button cursor-pointer rounded-full ${className}`}
+      className={`${transmitButtonClasses} w-50 h-50 cursor-pointer rounded-full ${className}`}
       onMouseDown={handleTransmitMouseDown}
       onKeyDown={handleTransmitMouseDown}
       onMouseUp={handleTransmitMouseUp}
@@ -118,23 +109,3 @@ const TransmitButton = ({
 };
 
 export default TransmitButton;
-
-{
-  /* <svelte:window on:keydown={onKeyDown} on:keyup={onKeyUp} />
-
-<style lang="postcss">
-	.transmit-button {
-		width: 50px;
-		height: 50px;
-		background-color: rgba(80, 40, 40, 1);
-	}
-
-	:global(.transmit-button.enabled) {
-		background-color: rgb(220, 65, 65, 0.5);
-	}
-
-	:global(.transmit-button.enabled.active) {
-		background-color: rgb(220, 0, 0, 0.8);
-	}
-</style> */
-}

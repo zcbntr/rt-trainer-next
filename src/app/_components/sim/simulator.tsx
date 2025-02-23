@@ -1,7 +1,6 @@
 "use client";
 
 import { index } from "drizzle-orm/pg-core";
-import { Radio } from "lucide-react";
 import { Marker, Popup } from "mapbox-gl";
 import { ParseResult } from "zod";
 import Parser from "~/lib/radio-calls/parser";
@@ -22,18 +21,15 @@ import MessageInputBox from "./message-input-box";
 import { useSearchParams } from "next/navigation";
 import { RadioState } from "~/app/stores/radio-slice";
 import { TransponderState } from "~/app/stores/transponder-slice";
-import SpeechRecognition, {
-  useSpeechRecognition,
-} from "react-speech-recognition";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import { toast } from "sonner";
+import Radio from "./radio";
 
 type SimulatorProps = {
   className?: string;
@@ -93,7 +89,7 @@ const Simulator = ({ className }: SimulatorProps) => {
         description: waypoint.description,
       };
     });
-    WaypointsStore.set(waypoints);
+    // WaypointsStore.set(waypoints);
   } else {
     criticalDataMissing = true;
   }
@@ -155,57 +151,52 @@ const Simulator = ({ className }: SimulatorProps) => {
 
   // Load stores if not populated
   let airspaces: Airspace[] = [];
-  AllAirspacesStore.subscribe((value) => {
-    airspaces = value;
-  });
-  if (airspaces.length === 0) fetchAirspaces();
+  //   AllAirspacesStore.subscribe((value) => {
+  //     airspaces = value;
+  //   });
+  //   if (airspaces.length === 0) fetchAirspaces();
 
   let onRouteAirspaces: Airspace[] = [];
-  OnRouteAirspacesStore.subscribe((value) => {
-    onRouteAirspaces = value;
-  });
+  //   OnRouteAirspacesStore.subscribe((value) => {
+  //     onRouteAirspaces = value;
+  //   });
 
   let airports: Airport[] = [];
-  AllAirportsStore.subscribe((value) => {
-    airports = value;
-  });
-  if (airports.length === 0) fetchAirports();
+  //   AllAirportsStore.subscribe((value) => {
+  //     airports = value;
+  //   });
+  //   if (airports.length === 0) fetchAirports();
 
   let onRouteAirports: Airport[] = [];
-  OnRouteAirportsStore.subscribe((value) => {
-    onRouteAirports = value;
-  });
+  //   OnRouteAirportsStore.subscribe((value) => {
+  //     onRouteAirports = value;
+  //   });
 
-  WaypointsStore.subscribe((value) => {
-    waypoints = value;
-  });
+  //   WaypointsStore.subscribe((value) => {
+  //     waypoints = value;
+  //   });
 
   let scenario: Scenario | undefined = undefined;
 
   if (criticalDataMissing) {
     // Set a short timeout then trigger modal to load scenario data
-    setTimeout(() => {
-      const modal: ModalSettings = {
-        type: "component",
-        component: "quickLoadScenarioDataComponent",
-        response: (r: any) => {
-          if (r) {
-            seed = r.scenarioSeed;
-            hasEmergencies = r.hasEmergencies;
-            loadScenario();
-          }
-        },
-      };
-      modalStore.trigger(modal);
-    }, 1000);
-  }
+    // setTimeout(() => {
+    //   const modal: ModalSettings = {
+    //     type: "component",
+    //     component: "quickLoadScenarioDataComponent",
+    //     response: (r: any) => {
+    //       if (r) {
+    //         seed = r.scenarioSeed;
+    //         hasEmergencies = r.hasEmergencies;
+    //         loadScenario();
+    //       }
+    //     },
+    //   };
+    //   modalStore.trigger(modal);
+    // }, 1000);
 
-  const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-  } = useSpeechRecognition();
+    throw new Error("Critical data missing");
+  }
 
   $: if (!criticalDataMissing && airports.length > 0 && airspaces.length > 0) {
     loadScenario();
@@ -227,11 +218,11 @@ const Simulator = ({ className }: SimulatorProps) => {
 
     // ScenarioStore.set(scenario);
 
-    if (endPointIndex == -1) {
-      EndPointIndexStore.set(scenario.scenarioPoints.length - 1);
-    } else {
-      EndPointIndexStore.set(endPointIndex);
-    }
+    // if (endPointIndex == -1) {
+    //   EndPointIndexStore.set(scenario.scenarioPoints.length - 1);
+    // } else {
+    //   EndPointIndexStore.set(endPointIndex);
+    // }
   }
 
   //   ScenarioStore.set(scenario);
@@ -260,11 +251,15 @@ const Simulator = ({ className }: SimulatorProps) => {
   let currentSimConext: string;
 
   // Page settings
-  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox
+  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfil
+  let speechInput: boolean;
   let speechNoiseLevel = 0;
   let readRecievedCalls = false;
   let liveFeedback = false;
   let tutorialStep4 = false;
+  let dialogOpen = false;
+  let dialogTitle = "";
+  let dialogDescription = "";
 
   // Tutorial state
   let tutorialEnabled = false;
@@ -276,20 +271,17 @@ const Simulator = ({ className }: SimulatorProps) => {
   let serverNotResponding = false;
   let nullRoute = false;
 
-  $: if (serverNotResponding) {
-    modalStore.trigger({
-      type: "alert",
-      title: "Server did not respond",
-      body: "This may be due to a bad request or the feature you are trying to use not being implemented yet. This software is still early in development, expect errors like this one.",
-    });
+  if (serverNotResponding) {
+    dialogOpen = true;
+    dialogTitle = "Server did not respond";
+    dialogDescription =
+      "This may be due to a bad request or the feature you are trying to use not being implemented yet. This software is still early in development, expect errors like this one.";
   }
 
-  $: if (nullRoute) {
-    modalStore.trigger({
-      type: "alert",
-      title: "No Route Generated",
-      body: "After 1000 iterations no feasible route was generated for this seed. Please try another one. The route generation is not finalised and will frequently encounter issues like this one. ",
-    });
+  if (nullRoute) {
+    dialogTitle = "No Route Generated";
+    dialogDescription =
+      "After 1000 iterations no feasible route was generated for this seed. Please try another one. The route generation is not finalised and will frequently encounter issues like this one. ";
   }
 
   $: if (readRecievedCalls && atcMessage) {
@@ -508,9 +500,6 @@ const Simulator = ({ className }: SimulatorProps) => {
     });
 
     if (liveFeedback) {
-      // Clear previous toasts so only one feedback shown at a time
-      toastStore.clear();
-
       // Do nothing if the call was flawless
       if (!feedback.isFlawless()) {
         // Show current mistakes
@@ -688,6 +677,14 @@ const Simulator = ({ className }: SimulatorProps) => {
   return (
     <div className={`flex justify-center ${className}`}>
       <div className="w-full max-w-screen-lg p-5">
+        <Dialog open={dialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              <DialogDescription>{dialogDescription}</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
         <div className="flex flex-row flex-wrap place-content-center gap-5">
           {/* {#if tutorialEnabled && !tutorialComplete} */}
           {/* <div className="card bg-primary-900 rounded-lg p-3 text-white sm:mx-10 sm:w-7/12">
@@ -758,8 +755,8 @@ const Simulator = ({ className }: SimulatorProps) => {
             <MessageInputBox
               speechRecognitionSupported={speechRecognitionSupported}
               onMessageSubmitted={handleSubmit}
-              onLiveFeedbackSettingChanged={}
-              onSpeechInputSettingChanged={}
+              onLiveFeedbackSettingChanged={(liveFeedback) => !liveFeedback}
+              onSpeechInputSettingChanged={(speechInput) => !speechInput}
             />
           </div>
 

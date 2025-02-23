@@ -46,11 +46,8 @@ export default function RootLayout({
 
         <TRPCReactProvider>
           <div className="grid grid-rows-[auto,1fr] bg-[#f5f5f5] text-[#333]">
-            <main className="overflow-y-scroll">
-              <div className="h-min min-h-dvh">
-                <TopNav />
-                {children}
-              </div>
+            <main className="h-min min-h-dvh overflow-y-scroll">
+              {children}
 
               <Toaster />
               <Footer />

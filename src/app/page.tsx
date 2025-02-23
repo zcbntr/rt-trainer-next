@@ -3,6 +3,7 @@ import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 import Home from "~/app/_components/homepage";
 import Dashboard from "./_components/dashboard";
+import TopNav from "./_components/topnav";
 
 export default async function Page() {
   const session = await auth();
@@ -10,6 +11,7 @@ export default async function Page() {
   if (!session?.user.email) {
     return (
       <HydrateClient>
+        <TopNav />
         <Home />
       </HydrateClient>
     );
@@ -17,6 +19,7 @@ export default async function Page() {
 
   return (
     <HydrateClient>
+      <TopNav />
       <Dashboard />
     </HydrateClient>
   );

@@ -2,7 +2,7 @@ import * as turf from "@turf/turf";
 import { type Airport } from "../types/airport";
 import { type Airspace } from "../types/airspace";
 import { seedStringToNumber } from "../utils";
-import { Waypoint } from "../types/waypoint";
+import { type Waypoint } from "~/lib/types/waypoint";
 
 export function generateFRTOLRouteFromSeed(
   seedString: string,

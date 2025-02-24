@@ -8,6 +8,7 @@ import {
   MdOutlineRefresh,
   MdRoute,
   MdSettingsInputComposite,
+  MdOutlineKeyboardDoubleArrowLeft,
 } from "react-icons/md";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
@@ -45,11 +46,12 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Command } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const sidebarSections = [
   {
@@ -85,8 +87,27 @@ export function ScenarioPlannerSidebar({
 }: React.ComponentProps<typeof Sidebar>) {
   // Note: I'm using state to show active item.
   // IRL you should use the url/router.
-  const [activeItem, setActiveItem] = useState(sidebarSections[0]);
+
   const { setOpen } = useSidebar();
+  const router = useRouter();
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const sidebarSection = searchParams.get("sidebar");
+
+  useEffect(() => {
+    if (sidebarSection) {
+      const section = sidebarSections.find(
+        (item) => item.title === sidebarSection,
+      );
+      if (section) {
+        setActiveSection(section.title);
+      } else {
+        setOpen(false);
+      }
+    } else {
+      setOpen(false);
+    }
+  });
 
   let scenarioSeed: string = randomString(6);
   //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
@@ -102,7 +123,7 @@ export function ScenarioPlannerSidebar({
   let airspaces: Airspace[] = [];
 
   // Route preferences
-  let distanceUnit: string = "Nautical Miles";
+  let distanceUnit: string = "nm";
   let maxFL: number = 30;
 
   // Blocking new inputs during route generation
@@ -124,7 +145,7 @@ export function ScenarioPlannerSidebar({
   //   $: RouteDistanceDisplayUnitStore.set(distanceUnit);
 
   $: {
-    maxFL = Math.max(15, maxFL);
+    maxFL = Math.min(Math.max(15, maxFL), 250);
     // maxFlightLevelStore.set(maxFL);
   }
 
@@ -212,10 +233,13 @@ export function ScenarioPlannerSidebar({
                         hidden: false,
                       }}
                       onClick={() => {
-                        setActiveItem(item);
+                        setActiveSection(item.title);
+                        // Naive solution to update the url - need a function to update the url
+                        // So that if sidebar is already defined it doesnt do something funny
+                        router.push(`?sidebar=${item.title}`);
                         setOpen(true);
                       }}
-                      isActive={activeItem.title === item.title}
+                      isActive={activeSection === item.title}
                       className="px-2.5 md:px-2"
                     >
                       <item.icon />
@@ -236,15 +260,25 @@ export function ScenarioPlannerSidebar({
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
             <div className="text-base font-medium text-foreground">
-              {activeItem.title}
+              {sidebarSections.find((x) => x.title == activeSection)?.title}
             </div>
+            <Button
+              variant={"link"}
+              onClick={() => {
+                setOpen(false);
+                // Naive solution - make a helper function please!
+                router.replace("/plan");
+              }}
+            >
+              <MdOutlineKeyboardDoubleArrowLeft />
+            </Button>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent>
               <div className="flex flex-col gap-2 px-2">
-                {activeItem.title == "Route Waypoints" &&
+                {activeSection == "Route Waypoints" &&
                   waypoints.length == 0 && (
                     <div className="px-1">
                       <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -254,7 +288,7 @@ export function ScenarioPlannerSidebar({
                     </div>
                   )}
 
-                {activeItem.title == "Route Waypoints" &&
+                {activeSection == "Route Waypoints" &&
                   waypoints.map((waypoint) => {
                     return (
                       <div
@@ -275,8 +309,14 @@ export function ScenarioPlannerSidebar({
                         //   }}
                       >
                         <div className="flex flex-col place-content-center">
-                          {/* {#if waypoint.index == 0}
-							🛩️{:else if waypoint.index == waypoints.length - 1}🏁{:else}🚩{/if} */}
+                          {waypoint.index == 0 && <span>🛩️</span>}
+                          {waypoint.index == waypoints.length - 1 && (
+                            <span>🏁</span>
+                          )}
+                          {waypoint.index != 0 &&
+                            waypoint.index != waypoints.length - 1 && (
+                              <span>🚩</span>
+                            )}
                         </div>
                         <div className="flex flex-col place-content-center">
                           <Textarea placeholder={waypoint.name} />
@@ -319,7 +359,7 @@ export function ScenarioPlannerSidebar({
                     );
                   })}
 
-                {activeItem.title == "Scenario Settings" && (
+                {activeSection == "Scenario Settings" && (
                   <div className="flex flex-col gap-2 p-2">
                     <div className="flex flex-col gap-1">
                       <div className="label text-sm">Scenario Seed</div>
@@ -366,15 +406,13 @@ export function ScenarioPlannerSidebar({
                   </div>
                 )}
 
-                {activeItem.title == "Preferences" && (
+                {activeSection == "Preferences" && (
                   <div className="flex flex-col gap-3 p-2">
                     <div className="flex flex-col gap-2">
                       <div>
                         <Label>Distance Unit</Label>
                       </div>
-                      <Select
-                        onValueChange={(value) => (distanceUnit = value)}
-                      >
+                      <Select onValueChange={(value) => (distanceUnit = value)}>
                         <SelectTrigger className="w-[180px]">
                           <SelectValue
                             defaultValue={"nm"}
@@ -402,7 +440,7 @@ export function ScenarioPlannerSidebar({
                   </div>
                 )}
 
-                {activeItem.title == "Generate" && (
+                {activeSection == "Generate" && (
                   <div className="flex flex-col gap-2 p-2">
                     <Accordion type="single" collapsible>
                       <AccordionItem value="item-1">

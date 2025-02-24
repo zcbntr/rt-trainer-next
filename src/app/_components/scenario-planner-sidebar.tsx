@@ -1,13 +1,13 @@
 "use client";
 
 import {
+  MdAirplanemodeActive,
   MdAutoAwesome,
   MdLocationPin,
-  MdOutlineChangeHistory,
   MdOutlineMoreHoriz,
   MdOutlineRefresh,
-  MdOutlineSettings,
-  MdOutlineSettingsApplications,
+  MdRoute,
+  MdSettingsInputComposite,
 } from "react-icons/md";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
@@ -46,8 +46,10 @@ import {
 } from "~/components/ui/sidebar";
 import { Command } from "lucide-react";
 import { useState } from "react";
-import { api } from "~/trpc/server";
-import { signOut } from "~/server/auth";
+import Link from "next/link";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 
 const sidebarSections = [
   {
@@ -59,17 +61,22 @@ const sidebarSections = [
   {
     title: "Scenario Settings",
     description: "Set the seed for the scenario and enable emergency events",
-    icon: MdOutlineSettings,
+    icon: MdRoute,
+  },
+  {
+    title: "Aircraft Details",
+    description: "Set Callsign, Aircraft Type, and other details",
+    icon: MdAirplanemodeActive,
   },
   {
     title: "Preferences",
     description: "Set the units and maximum flight level",
-    icon: MdOutlineSettingsApplications,
+    icon: MdSettingsInputComposite,
   },
   {
-    title: "Tools",
+    title: "Generate",
     description: "Auto-generate a route",
-    icon: MdOutlineChangeHistory,
+    icon: MdAutoAwesome,
   },
 ];
 
@@ -184,11 +191,11 @@ export function ScenarioPlannerSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
-                <a href="#">
+                <Link href="/">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <Command className="size-4" />
                   </div>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -220,9 +227,7 @@ export function ScenarioPlannerSidebar({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          {/* <NavUser user={data.user} /> */}
-        </SidebarFooter>
+        <SidebarFooter>{/* <NavUser user={data.user} /> */}</SidebarFooter>
       </Sidebar>
 
       {/* This is the second sidebar */}
@@ -231,166 +236,174 @@ export function ScenarioPlannerSidebar({
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
             <div className="text-base font-medium text-foreground">
-              Scenario Settings
+              {activeItem.title}
             </div>
           </div>
-          <SidebarInput placeholder="Type to search..." />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent>
               <div className="flex flex-col gap-2 px-2">
-                <div>
-                  <strong>Route Waypoints</strong>
-                </div>
+                {activeItem.title == "Route Waypoints" &&
+                  waypoints.length == 0 && (
+                    <div className="px-1">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Add a waypoint by clicking on an airport or any other
+                        spot on the map. Or use the <b>Auto-generate</b> tool.
+                      </p>
+                    </div>
+                  )}
 
-                {waypoints.length == 0 && (
-                  <div className="px-1">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Add a waypoint by clicking on an airport or any other spot
-                      on the map. Or use the <b>Auto-generate</b> Tool below.
-                    </p>
+                {activeItem.title == "Route Waypoints" &&
+                  waypoints.map((waypoint) => {
+                    return (
+                      <div
+                        className="card flex flex-row place-content-center gap-2 p-2"
+                        draggable="true"
+                        //   animate:flip={{ duration: dragDuration }}
+                        //   on:dragstart={() => {
+                        //     draggingWaypoint = waypoint;
+                        //   }}
+                        //   on:dragend={() => {
+                        //     draggingWaypoint = undefined;
+                        //   }}
+                        //   on:dragenter={() => {
+                        //     swapWith(waypoint);
+                        //   }}
+                        //   on:dragover={(e) => {
+                        //     e.preventDefault();
+                        //   }}
+                      >
+                        <div className="flex flex-col place-content-center">
+                          {/* {#if waypoint.index == 0}
+							🛩️{:else if waypoint.index == waypoints.length - 1}🏁{:else}🚩{/if} */}
+                        </div>
+                        <div className="flex flex-col place-content-center">
+                          <Textarea placeholder={waypoint.name} />
+                        </div>
+                        <button
+                          className="flex flex-col place-content-center"
+                          //   use:popup={{
+                          //     event: "click",
+                          //     target: waypoint.name + "-waypoint-details-popup",
+                          //     placement: "bottom",
+                          //   }}
+                        >
+                          <MdOutlineMoreHoriz />
+                        </button>
+
+                        <div
+                          id={`${waypoint.name}-waypoint-details-popup`}
+                          className="card z-50 w-auto p-4 shadow-xl"
+                          data-popup={`${waypoint.name}-waypoint-details-popup`}
+                        >
+                          <div>
+                            <button
+                              onClick={() => {
+                                WaypointsStore.update((waypoints) => {
+                                  waypoints = waypoints.filter(
+                                    (w) => w.id !== waypoint.id,
+                                  );
+                                  waypoints.forEach((waypoint, index) => {
+                                    waypoint.index = index;
+                                  });
+                                  return waypoints;
+                                });
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {activeItem.title == "Scenario Settings" && (
+                  <div className="flex flex-col gap-2 p-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="label text-sm">Scenario Seed</div>
+                      <div className="flex flex-row gap-2">
+                        <Input
+                          id="scenario-seed-input"
+                          placeholder="Enter a seed"
+                          defaultValue={scenarioSeed}
+                          onChange={(e) => {
+                            scenarioSeed = e.target.value;
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          className="btn variant-filled w-10"
+                          onClick={() => {
+                            if (awaitingServerResponse) return;
+
+                            scenarioSeed = randomString(6);
+
+                            const element = document.getElementById(
+                              "scenario-seed-input",
+                            );
+                            if (element) {
+                              element.value = scenarioSeed;
+                            }
+                          }}
+                        >
+                          <MdOutlineRefresh />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center space-x-2">
+                      <Checkbox
+                        id="emergency-events-checkbox"
+                        checked
+                        onCheckedChange={() =>
+                          (hasEmergencyEvents = !hasEmergencyEvents)
+                        }
+                      />
+                      <p>Emergency Events</p>
+                    </label>
                   </div>
                 )}
 
-                {waypoints.map((waypoint) => {
-                  return (
-                    <div
-                      className="card flex flex-row place-content-center gap-2 p-2"
-                      draggable="true"
-                      //   animate:flip={{ duration: dragDuration }}
-                      //   on:dragstart={() => {
-                      //     draggingWaypoint = waypoint;
-                      //   }}
-                      //   on:dragend={() => {
-                      //     draggingWaypoint = undefined;
-                      //   }}
-                      //   on:dragenter={() => {
-                      //     swapWith(waypoint);
-                      //   }}
-                      //   on:dragover={(e) => {
-                      //     e.preventDefault();
-                      //   }}
-                    >
-                      <div className="flex flex-col place-content-center">
-                        {/* {#if waypoint.index == 0}
-							🛩️{:else if waypoint.index == waypoints.length - 1}🏁{:else}🚩{/if} */}
+                {activeItem.title == "Preferences" && (
+                  <div className="flex flex-col gap-3 p-2">
+                    <div className="flex flex-col gap-2">
+                      <div>
+                        <Label>Distance Unit</Label>
                       </div>
-                      <div className="flex flex-col place-content-center">
-                        <Textarea placeholder={waypoint.name} />
-                      </div>
-                      <button
-                        className="flex flex-col place-content-center"
-                        //   use:popup={{
-                        //     event: "click",
-                        //     target: waypoint.name + "-waypoint-details-popup",
-                        //     placement: "bottom",
-                        //   }}
+                      <Select
+                        onValueChange={(value) => (distanceUnit = value)}
                       >
-                        <MdOutlineMoreHoriz />
-                      </button>
-
-                      <div
-                        id={`${waypoint.name}-waypoint-details-popup`}
-                        className="card z-50 w-auto p-4 shadow-xl"
-                        data-popup={`${waypoint.name}-waypoint-details-popup`}
-                      >
-                        <div>
-                          <button
-                            onClick={() => {
-                              WaypointsStore.update((waypoints) => {
-                                waypoints = waypoints.filter(
-                                  (w) => w.id !== waypoint.id,
-                                );
-                                waypoints.forEach((waypoint, index) => {
-                                  waypoint.index = index;
-                                });
-                                return waypoints;
-                              });
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue
+                            defaultValue={"nm"}
+                            placeholder={"Nautical Miles"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nm">Nautical Miles</SelectItem>
+                          <SelectItem value="mi">Miles</SelectItem>
+                          <SelectItem value="km">Kilometers</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  );
-                })}
 
-                <div className="flex flex-col gap-2 p-2">
-                  <div>
-                    <strong>Scenario Settings</strong>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="label text-sm">Scenario Seed</div>
-                    <div className="flex flex-row gap-2">
-                      <Textarea
-                        id="scenario-seed-input"
-                        placeholder="Enter a seed"
-                        value={scenarioSeed}
-                      />
-                      <button
-                        type="button"
-                        className="btn variant-filled w-10"
-                        onClick={() => {
-                          if (awaitingServerResponse) return;
-
-                          scenarioSeed = randomString(6);
-
-                          const element = document.getElementById(
-                            "scenario-seed-input",
-                          );
-                          if (element) {
-                            element.value = routeSeed;
-                          }
+                    <div className="flex flex-col gap-2">
+                      <Label>Maximum Flight Level</Label>
+                      <Input
+                        id="fl-input"
+                        defaultValue={maxFL}
+                        onChange={(e) => {
+                          maxFL = parseInt(e.target.value);
                         }}
-                      >
-                        <MdOutlineRefresh />
-                      </button>
+                      />
                     </div>
                   </div>
+                )}
 
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      id="emergency-events-checkbox"
-                      checked
-                      onCheckedChange={() =>
-                        (hasEmergencyEvents = !hasEmergencyEvents)
-                      }
-                    />
-                    <p>Emergency Events</p>
-                  </label>
-                </div>
-
-                <div className="flex flex-col gap-2 p-2">
-                  <div>
-                    <strong>Preferences</strong>
-                  </div>
-                  <div>
-                    <Select onValueChange={(value) => (distanceUnit = value)}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue defaultValue={"nm"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nm">Nautical Miles</SelectItem>
-                        <SelectItem value="mi">Miles</SelectItem>
-                        <SelectItem value="km">Kilometers</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <div className="flex flex-col gap-1">
-                      <div className="label text-sm">
-                        Maximum Flight Level (100 ft)
-                      </div>
-                      <Textarea id="fl-input" value={maxFL} />
-                    </div>
-                  </div>
-
+                {activeItem.title == "Generate" && (
                   <div className="flex flex-col gap-2 p-2">
-                    <div>
-                      <strong>Tools</strong>
-                    </div>
-
                     <Accordion type="single" collapsible>
                       <AccordionItem value="item-1">
                         <AccordionTrigger>
@@ -400,10 +413,13 @@ export function ScenarioPlannerSidebar({
                           <div className="flex flex-col gap-2">
                             <div className="label">Route Seed</div>
                             <div className="flex flex-row gap-2">
-                              <Textarea
+                              <Input
                                 id="route-seed-input"
                                 placeholder="Enter a seed"
-                                value={routeSeed}
+                                defaultValue={routeSeed}
+                                onChange={(e) => {
+                                  routeSeed = e.target.value;
+                                }}
                               />
                               <button
                                 type="button"
@@ -428,7 +444,7 @@ export function ScenarioPlannerSidebar({
                       </AccordionItem>
                     </Accordion>
                   </div>
-                </div>
+                )}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>

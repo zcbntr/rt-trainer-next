@@ -4,6 +4,7 @@ import { HydrateClient } from "~/trpc/server";
 import Home from "~/app/_components/homepage";
 import Dashboard from "./_components/dashboard";
 import TopNav from "./_components/topnav";
+import Footer from "./_components/footer";
 
 export default async function Page() {
   const session = await auth();
@@ -13,6 +14,7 @@ export default async function Page() {
       <HydrateClient>
         <TopNav />
         <Home />
+        <Footer />
       </HydrateClient>
     );
   }
@@ -21,6 +23,7 @@ export default async function Page() {
     <HydrateClient>
       <TopNav />
       <Dashboard />
+      <Footer />
     </HydrateClient>
   );
 }

@@ -8,6 +8,9 @@ import * as turf from "@turf/turf";
 import useRouteStore from "~/app/stores/route-slice";
 import { useMemo } from "react";
 import { Waypoint, WaypointType } from "~/lib/types/waypoint";
+import { randomString } from "~/lib/utils";
+import { getNthPhoneticAlphabetLetter } from "~/lib/sim-utils/phonetics";
+import { MdPinDrop } from "react-icons/md";
 
 const layerStyle: CircleLayerSpecification = {
   id: "point",
@@ -39,13 +42,15 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   const addWaypoint = useRouteStore((state) => state.addWaypoint);
 
   const markers = useMemo(() => {
-    waypoints.map((waypoint) => {
+    return waypoints.map((waypoint) => {
       <Marker
         key={waypoint.id}
         longitude={waypoint.location[0]}
         latitude={waypoint.location[1]}
         color="red"
-      ></Marker>;
+      >
+        <MdPinDrop />
+      </Marker>;
     });
   }, [waypoints]);
 
@@ -72,12 +77,17 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const onDoubleClick = React.useCallback(
     (e: MapMouseEvent) => {
+      // e.g. Waypoint Golf X-Ray
+      const waypointName = `Waypoint ${getNthPhoneticAlphabetLetter(
+        Math.max(1, Math.random() * 26),
+      )} ${getNthPhoneticAlphabetLetter(Math.max(1, Math.random() * 26))}`;
+
       addWaypoint({
-        id: `waypoint-${waypoints.length}`,
+        id: `waypoint-${randomString(6)}`,
         location: [e.lngLat.lng, e.lngLat.lat],
         type: WaypointType.GPS,
         index: waypoints.length,
-        name: `Waypoint ${waypoints.length}`,
+        name: waypointName,
       });
       console.log(waypoints);
     },

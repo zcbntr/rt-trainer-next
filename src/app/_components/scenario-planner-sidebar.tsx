@@ -48,7 +48,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Command } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -113,7 +113,9 @@ export function ScenarioPlannerSidebar({
   });
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
   const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
+  const setWaypoints = useRouteStore((state) => state.setWaypoints);
 
   let scenarioSeed: string = randomString(6);
   //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
@@ -182,23 +184,86 @@ export function ScenarioPlannerSidebar({
   let draggingWaypoint: Waypoint | undefined = undefined;
   let animatingWaypoints = new Set();
 
-  function swapWith(waypoint: Waypoint): void {
-    if (draggingWaypoint === waypoint || animatingWaypoints.has(waypoint))
+  function swapWaypointDetails(
+    _draggingWaypoint: Waypoint,
+    _waypointToSwap: Waypoint,
+  ): void {
+    if (
+      draggingWaypoint === _waypointToSwap ||
+      animatingWaypoints.has(_waypointToSwap)
+    )
       return;
-    animatingWaypoints.add(waypoint);
+    animatingWaypoints.add(_waypointToSwap);
     setTimeout(
-      (): boolean => animatingWaypoints.delete(waypoint),
+      (): boolean => animatingWaypoints.delete(_waypointToSwap),
       dragDuration,
     );
-    const cardAIndex = waypoints.indexOf(draggingWaypoint);
-    const cardBIndex = waypoints.indexOf(waypoint);
-    waypoints[cardAIndex] = waypoint;
-    waypoints[cardBIndex] = draggingWaypoint;
-    waypoints.forEach((waypoint, index) => {
-      waypoint.index = index;
-    });
-    // WaypointsStore.set(waypoints);
+
+    swapWaypoints(_draggingWaypoint, _waypointToSwap);
   }
+
+  const waypointDetails = useMemo(() => {
+    return waypoints.map((waypoint) => {
+      return (
+        <div
+          className="card flex flex-row place-content-center gap-3 rounded-xl p-2"
+          key={waypoint.id}
+          draggable="true"
+          //   animate:flip={{ duration: dragDuration }}
+          //   on:dragstart={() => {
+          //     draggingWaypoint = waypoint;
+          //   }}
+          //   on:dragend={() => {
+          //     draggingWaypoint = undefined;
+          //   }}
+          //   on:dragenter={() => {
+          //     swapWith(waypoint);
+          //   }}
+          //   on:dragover={(e) => {
+          //     e.preventDefault();
+          //   }}
+        >
+          <div className="flex flex-col place-content-center">
+            {waypoint.index == 0 && <span>🛩️</span>}
+            {waypoint.index != 0 && waypoint.index == waypoints.length - 1 && (
+              <span>🏁</span>
+            )}
+            {waypoint.index != 0 && waypoint.index != waypoints.length - 1 && (
+              <span>🚩</span>
+            )}
+          </div>
+          <div className="flex flex-col place-content-center">
+            <Input placeholder={waypoint.name} />
+          </div>
+          <div className="flex flex-col place-content-center">
+            <button
+              className="flex flex-col place-content-center"
+              //   use:popup={{
+              //     event: "click",
+              //     target: waypoint.name + "-waypoint-details-popup",
+              //     placement: "bottom",
+              //   }}
+            >
+              <MdOutlineMoreHoriz />
+            </button>
+          </div>
+
+          <div
+            id={`${waypoint.name}-waypoint-details-popup`}
+            className="flex flex-col place-content-center"
+          >
+            <button
+              onClick={() => {
+                removeWaypoint(waypoint.id);
+              }}
+            >
+              <MdDelete />
+            </button>
+          </div>
+        </div>
+      );
+    });
+  }, [waypoints]);
 
   return (
     <Sidebar
@@ -293,68 +358,9 @@ export function ScenarioPlannerSidebar({
                     </div>
                   )}
 
-                {activeSection == "Route Waypoints" &&
-                  waypoints.map((waypoint) => {
-                    return (
-                      <div
-                        className="card flex flex-row place-content-center gap-3 rounded-xl p-2 py-3"
-                        draggable="true"
-                        //   animate:flip={{ duration: dragDuration }}
-                        //   on:dragstart={() => {
-                        //     draggingWaypoint = waypoint;
-                        //   }}
-                        //   on:dragend={() => {
-                        //     draggingWaypoint = undefined;
-                        //   }}
-                        //   on:dragenter={() => {
-                        //     swapWith(waypoint);
-                        //   }}
-                        //   on:dragover={(e) => {
-                        //     e.preventDefault();
-                        //   }}
-                      >
-                        <div className="flex flex-col place-content-center">
-                          {waypoint.index == 0 && <span>🛩️</span>}
-                          {waypoint.index != 0 &&
-                            waypoint.index == waypoints.length - 1 && (
-                              <span>🏁</span>
-                            )}
-                          {waypoint.index != 0 &&
-                            waypoint.index != waypoints.length - 1 && (
-                              <span>🚩</span>
-                            )}
-                        </div>
-                        <div className="flex flex-col place-content-center">
-                          <Input placeholder={waypoint.name} />
-                        </div>
-                        <div className="flex flex-col place-content-center">
-                          <button
-                            className="flex flex-col place-content-center"
-                            //   use:popup={{
-                            //     event: "click",
-                            //     target: waypoint.name + "-waypoint-details-popup",
-                            //     placement: "bottom",
-                            //   }}
-                          >
-                            <MdOutlineMoreHoriz />
-                          </button>
-                        </div>
-
-                        <div
-                          id={`${waypoint.name}-waypoint-details-popup`}
-                          className="flex flex-col place-content-center"
-                        >
-                          <button
-                            onClick={() => {
-                              removeWaypoint(waypoint.id);
-                            }}
-                          >
-                            <MdDelete />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {activeSection == "Route Waypoints" && waypoints.length > 0 && (
+                  <>{waypointDetails}</>
+                )}
 
                 {activeSection == "Scenario Settings" && (
                   <div className="flex flex-col gap-2 p-2">

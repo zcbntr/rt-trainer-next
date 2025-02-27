@@ -9,7 +9,10 @@ import useRouteStore from "~/app/stores/route-slice";
 import { useMemo } from "react";
 import { Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
-import { getNthPhoneticAlphabetLetter } from "~/lib/sim-utils/phonetics";
+import {
+  getNRandomPhoneticAlphabetLetters,
+  getNthPhoneticAlphabetLetter,
+} from "~/lib/sim-utils/phonetics";
 import { MdPinDrop } from "react-icons/md";
 
 const layerStyle: CircleLayerSpecification = {
@@ -43,14 +46,14 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const markers = useMemo(() => {
     return waypoints.map((waypoint) => {
-      <Marker
-        key={waypoint.id}
-        longitude={waypoint.location[0]}
-        latitude={waypoint.location[1]}
-        color="red"
-      >
-        <MdPinDrop />
-      </Marker>;
+      return (
+        <Marker
+          key={waypoint.id}
+          longitude={waypoint.location[0]}
+          latitude={waypoint.location[1]}
+          color="red"
+        ></Marker>
+      );
     });
   }, [waypoints]);
 
@@ -78,9 +81,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   const onDoubleClick = React.useCallback(
     (e: MapMouseEvent) => {
       // e.g. Waypoint Golf X-Ray
-      const waypointName = `Waypoint ${getNthPhoneticAlphabetLetter(
-        Math.max(1, Math.random() * 26),
-      )} ${getNthPhoneticAlphabetLetter(Math.max(1, Math.random() * 26))}`;
+      const waypointName = `Waypoint ${getNRandomPhoneticAlphabetLetters(2)}`;
 
       addWaypoint({
         id: `waypoint-${randomString(6)}`,
@@ -89,13 +90,12 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         index: waypoints.length,
         name: waypointName,
       });
-      console.log(waypoints);
     },
     [addWaypoint, waypoints],
   );
 
   return (
-    <div className={`h-full min-h-96 w-full min-w-96${className}`}>
+    <div className={`h-full min-h-96 w-full min-w-96 ${className}`}>
       <Map
         {...viewState}
         reuseMaps

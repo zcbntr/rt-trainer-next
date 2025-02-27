@@ -92,6 +92,27 @@ export function getNthPhoneticAlphabetLetter(n: number): string {
 	return replaceWithPhoneticAlphabet(String.fromCharCode(65 + index));
 }
 
+export function getNRandomPhoneticAlphabetLetters(n: number): string {
+	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	let result = '';
+
+	for (let i = 0; i < n; i++) {
+		if (i > 0) {
+			result += ' ';
+		}
+		const randomIndex = Math.floor(Math.random() * alphabet.length);
+		// No duplicates
+		if (result.includes(alphabet[randomIndex])) {
+			i--;
+			continue;
+		}
+		
+		result += replaceWithPhoneticAlphabet(alphabet[randomIndex]);
+	}
+
+	return result;
+}
+
 export function replaceWithPhoneticAlphabet(text: string) {
 	const phoneticAlphabet = {
 		A: 'Alpha',

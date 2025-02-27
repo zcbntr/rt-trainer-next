@@ -4,7 +4,7 @@ import { index } from "drizzle-orm/pg-core";
 import { Marker, Popup } from "mapbox-gl";
 import { ParseResult } from "zod";
 import Parser from "~/lib/radio-calls/parser";
-import Scenario from "~/lib/scenario/scenario";
+import Scenario from "~/lib/scenario";
 import { generateScenario } from "~/lib/scenario/scenario-generator";
 import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";

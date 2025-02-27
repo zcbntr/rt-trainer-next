@@ -1,8 +1,14 @@
 import * as turf from "@turf/turf";
-import { type Airport } from "../types/airport";
-import { type Airspace } from "../types/airspace";
-import { seedStringToNumber } from "../utils";
-import { type Waypoint } from "~/lib/types/waypoint";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
+import { seedStringToNumber } from "~/lib/utils";
+import { WaypointType, type Waypoint } from "~/lib/types/waypoint";
+import { RouteData } from "~/lib/scenario";
+import {
+  getAirspaceDisplayName,
+  isAirspaceIncludedInRoute,
+  isInAirspace,
+} from "~/lib/sim-utils/route";
 
 export function generateFRTOLRouteFromSeed(
   seedString: string,
@@ -18,7 +24,7 @@ export function generateFRTOLRouteFromSeed(
     !airspaces ||
     airspaces.length === 0
   ) {
-    return undefined;
+    throw new Error("Invalid arguments passed to generateFRTOLRouteFromSeed");
   }
 
   const seed: number = seedStringToNumber(seedString);
@@ -56,7 +62,7 @@ export function generateFRTOLRouteFromSeed(
         turf.distance(startAirport?.coordinates, x.coordinates[0][0], {
           units: "kilometers",
         }) < 40 &&
-        !x.pointInsideATZ((startAirport as Airport).coordinates),
+        !isInAirspace((startAirport as Airport).coordinates, x),
     );
     if (nearbyMATZs.length == 0) {
       validRoute = false;
@@ -70,7 +76,9 @@ export function generateFRTOLRouteFromSeed(
           nearbyMATZs.length
       ];
 
-    if (chosenMATZ.pointInsideATZ(startAirport.coordinates)) {
+    if (!chosenMATZ) throw new Error("Chosen MATZ undefined in route gen");
+
+    if (isInAirspace(startAirport.coordinates, chosenMATZ)) {
       validRoute = false;
       continue;
     }
@@ -81,6 +89,8 @@ export function generateFRTOLRouteFromSeed(
     // Could be turned into a filter
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i];
+      if (!airport) throw new Error("Airport undefined in route gen");
+
       const distance = turf.distance(
         chosenMATZ.coordinates[0][0],
         airport.coordinates,
@@ -121,7 +131,7 @@ export function generateFRTOLRouteFromSeed(
       if (!destinationAirport)
         throw new Error("Destination airport undefined in route gen");
 
-      if (!chosenMATZ.pointInsideATZ(destinationAirport.coordinates)) {
+      if (!isInAirspace(destinationAirport.coordinates, chosenMATZ)) {
         if (
           startAirportIsControlled &&
           destinationAirport.type != 3 &&
@@ -172,9 +182,9 @@ export function generateFRTOLRouteFromSeed(
       destinationAirport.coordinates,
     ];
     onRouteAirspace = [];
-    for (let i = 0; i < airspaces.length; i++) {
-      const airspace: Airspace = airspaces[i];
-      if (airspace.isIncludedInRoute(route, maxFL)) {
+
+    for (const airspace of airspaces) {
+      if (isAirspaceIncludedInRoute(route, airspace, maxFL)) {
         if (
           airspace.type == 1 ||
           (airspace.type == 14 && airspace != chosenMATZ)
@@ -195,44 +205,46 @@ export function generateFRTOLRouteFromSeed(
 
   if (iterations >= maxIterations || !chosenMATZ || !startAirport) {
     console.log(`Could not find a valid route after ${iterations} iterations`);
-    return;
+    throw new Error("Could not find a valid route after multiple iterations");
   }
 
   console.log("Iterations: ", iterations);
 
-  const startWaypoint: Waypoint = new Waypoint(
-    startAirport.name,
-    startAirport.coordinates,
-    WaypointType.Airport,
-    0,
-    startAirport.id,
-  );
+  const startWaypoint: Waypoint = {
+    name: startAirport.name,
+    location: startAirport.coordinates,
+    type: WaypointType.Airport,
+    index: 0,
+    id: startAirport.id,
+  };
 
   if (!matzEntryPoint) throw new Error("MATZ entry point is undefined");
-  const matzEntryWaypoint: Waypoint = new Waypoint(
-    chosenMATZ.getDisplayName() + " Entry",
-    matzEntryPoint,
-    WaypointType.NewAirspace,
-    1,
-  );
+  const matzEntryWaypoint: Waypoint = {
+    name: getAirspaceDisplayName(chosenMATZ) + " Entry",
+    location: matzEntryPoint,
+    type: WaypointType.NewAirspace,
+    index: 1,
+    id: chosenMATZ.id + 1000,
+  };
 
   if (!matzExitPoint) throw new Error("MATZ exit point is undefined");
-  const matzExitWaypoint: Waypoint = new Waypoint(
-    chosenMATZ.getDisplayName() + " Exit",
-    matzExitPoint,
-    WaypointType.NewAirspace,
-    2,
-  );
+  const matzExitWaypoint: Waypoint = {
+    name: getAirspaceDisplayName(chosenMATZ) + " Exit",
+    location: matzExitPoint,
+    type: WaypointType.NewAirspace,
+    index: 2,
+    id: chosenMATZ.id + 2000,
+  };
 
   if (destinationAirport == undefined)
     throw new Error("Destination airport is undefined");
-  const endWaypoint: Waypoint = new Waypoint(
-    destinationAirport.name,
-    destinationAirport.coordinates,
-    WaypointType.Airport,
-    3,
-    destinationAirport.id,
-  );
+  const endWaypoint: Waypoint = {
+    name: destinationAirport.name,
+    location: destinationAirport.coordinates,
+    type: WaypointType.Airport,
+    index: 3,
+    id: destinationAirport.id,
+  };
 
   return {
     waypoints: [

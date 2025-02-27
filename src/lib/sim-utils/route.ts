@@ -2,6 +2,14 @@ import type { Position } from "geojson";
 import * as turf from "@turf/turf";
 import { type Airspace } from "../types/airspace";
 
+export function getAirspaceDisplayName(airspace: Airspace): string {
+  if (airspace.type == 14) {
+    return airspace.name + " MATZ";
+  } else {
+    return airspace.name + " ATZ";
+  }
+}
+
 /**
  * Calculates the distance along a route a given target point in meters
  * @param route - route defined as array of Positions

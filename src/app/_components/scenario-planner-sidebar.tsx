@@ -20,7 +20,7 @@ import {
 } from "~/components/ui/accordion";
 import { randomString } from "~/lib/utils";
 import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
-import { loadRouteData } from "~/lib/scenario/scenario";
+import { loadRouteData } from "~/lib/scenario";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { type Waypoint } from "~/lib/types/waypoint";

@@ -1,5 +1,5 @@
 import { MdPlayArrow } from "react-icons/md";
-import RoutePlanner from "../_components/maps/route-planner";
+import RoutePlannerMap from "../_components/maps/route-planner";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { ScenarioPlannerSidebar } from "../_components/scenario-planner-sidebar";
 
@@ -17,7 +17,7 @@ export default function Page() {
         <div className="flex h-full w-full flex-col place-content-center">
           <div className="flex h-full w-full flex-col place-content-center sm:place-content-start">
             <div className="xs:pr-3 flex h-full min-h-96 w-full min-w-96 flex-col">
-              <RoutePlanner className="h-full w-full" />
+              <RoutePlannerMap className="h-full w-full" />
             </div>
             <div className="flex h-20 w-full flex-row">
               <div className="flex flex-row place-content-center p-4">

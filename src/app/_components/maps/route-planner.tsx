@@ -3,24 +3,25 @@
 import * as React from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { CircleLayerSpecification, MapMouseEvent } from "mapbox-gl";
+import { LayerSpecification, MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
 import useRouteStore from "~/app/stores/route-slice";
 import { useMemo } from "react";
 import { Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
-import {
-  getNRandomPhoneticAlphabetLetters,
-  getNthPhoneticAlphabetLetter,
-} from "~/lib/sim-utils/phonetics";
-import { MdPinDrop } from "react-icons/md";
+import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
 
-const layerStyle: CircleLayerSpecification = {
-  id: "point",
-  type: "circle",
+const layerStyle: LayerSpecification = {
+  id: "route",
+  type: "line",
+  source: "route",
+  layout: {
+    "line-join": "round",
+    "line-cap": "round",
+  },
   paint: {
-    "circle-radius": 10,
-    "circle-color": "#007cbf",
+    "line-color": "#888",
+    "line-width": 8,
   },
 };
 
@@ -55,6 +56,14 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         ></Marker>
       );
     });
+  }, [waypoints]);
+
+  const routeLine = useMemo(() => {
+    if (waypoints.length < 2) {
+      return turf.featureCollection([]);
+    }
+
+    return turf.lineString(waypoints.map((waypoint) => waypoint.location));
   }, [waypoints]);
 
   const GEOFENCE = turf.circle([-122.4, 37.8], 200, {
@@ -106,9 +115,9 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
       >
-        {/* <Source id="airspace-data" type="geojson" data={null}>
+        <Source id="airspace-data" type="geojson" data={routeLine}>
           <Layer {...layerStyle} />
-        </Source> */}
+        </Source>
         {markers}
       </Map>
     </div>

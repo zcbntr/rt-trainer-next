@@ -3,7 +3,7 @@
 import ModeDial from "./mode-dial";
 import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
-import useRadioStore, { type RadioState } from "~/app/stores/radio-slice";
+import useRadioStore, { type RadioState } from "~/app/stores/radio-store";
 import { type RadioMode } from "~/lib/types/simulator";
 import TransmitButton from "./transmit-button";
 

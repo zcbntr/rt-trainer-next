@@ -19,8 +19,8 @@ import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
 import { useSearchParams } from "next/navigation";
-import { RadioState } from "~/app/stores/radio-slice";
-import { TransponderState } from "~/app/stores/transponder-slice";
+import { RadioState } from "~/app/stores/radio-store";
+import { TransponderState } from "~/app/stores/transponder";
 import {
   Dialog,
   DialogContent,

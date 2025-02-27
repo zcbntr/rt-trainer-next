@@ -4,7 +4,7 @@ import { type TransponderDialMode } from "~/lib/types/simulator";
 import FrequencyDial from "./frequency-dial";
 import ModeDial from "./mode-dial";
 import TransponderDisplay from "./transponder-display";
-import useTransponderStore from "~/app/stores/transponder-slice";
+import useTransponderStore from "~/app/stores/transponder";
 
 type TransponderProps = {
   className?: string;

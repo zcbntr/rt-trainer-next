@@ -5,11 +5,12 @@ import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { LayerSpecification, MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
-import useRouteStore from "~/app/stores/route-slice";
+import useRouteStore from "~/app/stores/route-store";
 import { useMemo } from "react";
 import { Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
+import { MdLocationPin } from "react-icons/md";
 
 const layerStyle: LayerSpecification = {
   id: "route",
@@ -44,6 +45,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
   const addWaypoint = useRouteStore((state) => state.addWaypoint);
+  const moveWaypoint = useRouteStore((state) => state.moveWaypoint);
 
   const markers = useMemo(() => {
     return waypoints.map((waypoint) => {
@@ -53,7 +55,20 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
           longitude={waypoint.location[0]}
           latitude={waypoint.location[1]}
           color="red"
-        ></Marker>
+          draggable
+          offset={[0, -16]}
+          
+          // Could do on drag but this would not be performant
+          // Instead visuals could update on drag but not route date
+          // Otherwise we would do a lot of unnecessary calculations
+          onDragEnd={(e) => {
+            moveWaypoint(waypoint.id, [e.lngLat.lng, e.lngLat.lat]);
+          }}
+        >
+          <div className="flex rounded-full p-4">
+            <MdLocationPin size="3em" color="red"/>
+          </div>
+        </Marker>
       );
     });
   }, [waypoints]);

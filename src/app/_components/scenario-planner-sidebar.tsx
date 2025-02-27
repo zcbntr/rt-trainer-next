@@ -54,7 +54,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import useRouteStore from "../stores/route-slice";
+import useRouteStore from "../stores/route-store";
 
 const sidebarSections = [
   {
@@ -113,9 +113,12 @@ export function ScenarioPlannerSidebar({
   });
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
+  const maxFL = useRouteStore((state) => state.maxFL);
   const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
   const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
-  const setWaypoints = useRouteStore((state) => state.setWaypoints);
+  const setDistanceUnit = useRouteStore((state) => state.setDistanceUnit);
+  const setMaxFL = useRouteStore((state) => state.setMaxFL);
 
   let scenarioSeed: string = randomString(6);
   //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
@@ -128,10 +131,6 @@ export function ScenarioPlannerSidebar({
   // Aeronautical data
   let airports: Airport[] = [];
   let airspaces: Airspace[] = [];
-
-  // Route preferences
-  let distanceUnit: string = "nm";
-  let maxFL: number = 30;
 
   // Blocking new inputs during route generation
   let awaitingServerResponse: boolean = false;
@@ -151,10 +150,10 @@ export function ScenarioPlannerSidebar({
 
   //   $: RouteDistanceDisplayUnitStore.set(distanceUnit);
 
-  $: {
-    maxFL = Math.min(Math.max(15, maxFL), 250);
-    // maxFlightLevelStore.set(maxFL);
-  }
+  //   $: {
+  //     maxFL = Math.min(Math.max(15, maxFL), 250);
+  //     // maxFlightLevelStore.set(maxFL);
+  //   }
 
   //   WaypointsStore.subscribe((value) => {
   //     waypoints = value;
@@ -208,7 +207,7 @@ export function ScenarioPlannerSidebar({
         <div
           className="card flex flex-row place-content-center gap-3 rounded-xl p-2"
           key={waypoint.id}
-          draggable="true"
+          draggable
           //   animate:flip={{ duration: dragDuration }}
           //   on:dragstart={() => {
           //     draggingWaypoint = waypoint;
@@ -415,7 +414,7 @@ export function ScenarioPlannerSidebar({
                       <div>
                         <Label>Distance Unit</Label>
                       </div>
-                      <Select onValueChange={(value) => (distanceUnit = value)}>
+                      <Select onValueChange={(value) => setDistanceUnit(value)}>
                         <SelectTrigger className="w-[180px]">
                           <SelectValue
                             defaultValue={"nm"}
@@ -436,7 +435,10 @@ export function ScenarioPlannerSidebar({
                         id="fl-input"
                         defaultValue={maxFL}
                         onChange={(e) => {
-                          maxFL = parseInt(e.target.value);
+                          const value = parseInt(e.target.value);
+                          if (value >= 15 && value <= 250) {
+                            setMaxFL(value);
+                          }
                         }}
                       />
                     </div>

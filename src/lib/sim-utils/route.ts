@@ -2,6 +2,19 @@ import type { Position } from "geojson";
 import * as turf from "@turf/turf";
 import { type Airspace } from "../types/airspace";
 
+export function kmToUnit(km: number, unit: string): number {
+  switch (unit) {
+    case "km":
+      return km;
+    case "nm":
+      return km * 0.539957;
+    case "mi":
+      return km * 0.621371;
+    default:
+      return km;
+  }
+}
+
 export function getAirspaceDisplayName(airspace: Airspace): string {
   if (airspace.type == 14) {
     return airspace.name + " MATZ";

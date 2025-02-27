@@ -9,6 +9,8 @@ import {
   MdRoute,
   MdSettingsInputComposite,
   MdOutlineKeyboardDoubleArrowLeft,
+  MdDeleteOutline,
+  MdDelete,
 } from "react-icons/md";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
@@ -52,6 +54,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
+import useRouteStore from "../stores/route-slice";
 
 const sidebarSections = [
   {
@@ -109,6 +112,9 @@ export function ScenarioPlannerSidebar({
     }
   });
 
+  const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
+
   let scenarioSeed: string = randomString(6);
   //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
   let hasEmergencyEvents: boolean = true;
@@ -116,7 +122,6 @@ export function ScenarioPlannerSidebar({
 
   // Route data
   let routeSeed: string = ""; // Only used for seeding the route generator
-  let waypoints: Waypoint[] = []; // Stores all the waypoints in the route
 
   // Aeronautical data
   let airports: Airport[] = [];
@@ -292,7 +297,7 @@ export function ScenarioPlannerSidebar({
                   waypoints.map((waypoint) => {
                     return (
                       <div
-                        className="card flex flex-row place-content-center gap-2 p-2"
+                        className="card flex flex-row place-content-center gap-3 rounded-xl p-2 py-3"
                         draggable="true"
                         //   animate:flip={{ duration: dragDuration }}
                         //   on:dragstart={() => {
@@ -310,50 +315,42 @@ export function ScenarioPlannerSidebar({
                       >
                         <div className="flex flex-col place-content-center">
                           {waypoint.index == 0 && <span>🛩️</span>}
-                          {waypoint.index == waypoints.length - 1 && (
-                            <span>🏁</span>
-                          )}
+                          {waypoint.index != 0 &&
+                            waypoint.index == waypoints.length - 1 && (
+                              <span>🏁</span>
+                            )}
                           {waypoint.index != 0 &&
                             waypoint.index != waypoints.length - 1 && (
                               <span>🚩</span>
                             )}
                         </div>
                         <div className="flex flex-col place-content-center">
-                          <Textarea placeholder={waypoint.name} />
+                          <Input placeholder={waypoint.name} />
                         </div>
-                        <button
-                          className="flex flex-col place-content-center"
-                          //   use:popup={{
-                          //     event: "click",
-                          //     target: waypoint.name + "-waypoint-details-popup",
-                          //     placement: "bottom",
-                          //   }}
-                        >
-                          <MdOutlineMoreHoriz />
-                        </button>
+                        <div className="flex flex-col place-content-center">
+                          <button
+                            className="flex flex-col place-content-center"
+                            //   use:popup={{
+                            //     event: "click",
+                            //     target: waypoint.name + "-waypoint-details-popup",
+                            //     placement: "bottom",
+                            //   }}
+                          >
+                            <MdOutlineMoreHoriz />
+                          </button>
+                        </div>
 
                         <div
                           id={`${waypoint.name}-waypoint-details-popup`}
-                          className="card z-50 w-auto p-4 shadow-xl"
-                          data-popup={`${waypoint.name}-waypoint-details-popup`}
+                          className="flex flex-col place-content-center"
                         >
-                          <div>
-                            <button
-                              onClick={() => {
-                                WaypointsStore.update((waypoints) => {
-                                  waypoints = waypoints.filter(
-                                    (w) => w.id !== waypoint.id,
-                                  );
-                                  waypoints.forEach((waypoint, index) => {
-                                    waypoint.index = index;
-                                  });
-                                  return waypoints;
-                                });
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              removeWaypoint(waypoint.id);
+                            }}
+                          >
+                            <MdDelete />
+                          </button>
                         </div>
                       </div>
                     );

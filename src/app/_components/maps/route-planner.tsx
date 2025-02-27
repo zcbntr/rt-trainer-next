@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
-import Map, { Source, Layer } from "react-map-gl/mapbox";
+import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { CircleLayer } from "mapbox-gl";
+import { CircleLayerSpecification, MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
+import useRouteStore from "~/app/stores/route-slice";
+import { useMemo } from "react";
+import { Waypoint, WaypointType } from "~/lib/types/waypoint";
 
-const layerStyle: CircleLayer = {
+const layerStyle: CircleLayerSpecification = {
   id: "point",
   type: "circle",
   paint: {
@@ -32,26 +35,53 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     );
   }
 
-  // A circle of 5 mile radius of the Empire State Building
-  const GEOFENCE = turf.circle([-122.4, 37.8], 5, {
+  const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const addWaypoint = useRouteStore((state) => state.addWaypoint);
+
+  const markers = useMemo(() => {
+    waypoints.map((waypoint) => {
+      <Marker
+        key={waypoint.id}
+        longitude={waypoint.location[0]}
+        latitude={waypoint.location[1]}
+        color="red"
+      ></Marker>;
+    });
+  }, [waypoints]);
+
+  const GEOFENCE = turf.circle([-122.4, 37.8], 200, {
     units: "miles",
   });
 
   const [viewState, setViewState] = React.useState<ViewStateType>({
     longitude: -122.4,
     latitude: 37.8,
-    zoom: 14,
+    zoom: 1,
   });
 
   const onMove = React.useCallback(
     ({ viewState }: { viewState: ViewStateType }) => {
       const newCenter = [viewState.longitude, viewState.latitude];
       // Only update the view state if the center is inside the geofence
-      if (turf.booleanPointInPolygon(newCenter, GEOFENCE)) {
-        setViewState(viewState);
-      }
+      // if (turf.booleanPointInPolygon(newCenter, GEOFENCE)) {
+      setViewState(viewState);
+      // }
     },
     [],
+  );
+
+  const onDoubleClick = React.useCallback(
+    (e: MapMouseEvent) => {
+      addWaypoint({
+        id: `waypoint-${waypoints.length}`,
+        location: [e.lngLat.lng, e.lngLat.lat],
+        type: WaypointType.GPS,
+        index: waypoints.length,
+        name: `Waypoint ${waypoints.length}`,
+      });
+      console.log(waypoints);
+    },
+    [addWaypoint, waypoints],
   );
 
   return (
@@ -59,14 +89,17 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
       <Map
         {...viewState}
         reuseMaps
+        doubleClickZoom={false}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
         onMove={onMove}
+        onDblClick={onDoubleClick}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
       >
-        <Source id="route-data" type="geojson" data={null}>
+        {/* <Source id="airspace-data" type="geojson" data={null}>
           <Layer {...layerStyle} />
-        </Source>
+        </Source> */}
+        {markers}
       </Map>
     </div>
   );

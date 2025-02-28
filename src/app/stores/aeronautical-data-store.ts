@@ -36,6 +36,8 @@ const storageOptions = {
 interface AeronauticalDataStore {
   airspaces: Airspace[];
   airports: Airport[];
+  setAirspaces: (airspaces: Airspace[]) => void;
+  setAirports: (airports: Airport[]) => void;
 }
 
 const useAeronauticalDataStore = create(

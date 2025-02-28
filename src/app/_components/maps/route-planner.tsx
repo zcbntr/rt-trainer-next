@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
 import useRouteStore from "~/app/stores/route-store";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
@@ -14,6 +14,7 @@ import { MdLocationPin } from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
+import { AirspaceData } from "~/lib/types/open-aip";
 
 const routeLayerStyle: LayerSpecification = {
   id: "route",
@@ -55,12 +56,29 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   );
   const addWaypoint = useRouteStore((state) => state.addWaypoint);
   const moveWaypoint = useRouteStore((state) => state.moveWaypoint);
+  const setAirspaces = useAeronauticalDataStore((state) => state.setAirspaces);
 
-  if (airspaces.length === 0 || airports.length === 0) {
-    // Lazy load airspaces/airports into stores
-  }
+  useEffect(() => {
+    async function fetchAirspaces() {
+      if (airspaces.length === 0 || airports.length === 0) {
+        // Lazy load airspaces/airports into stores
+        const freshAirspaces: Airspace[] = (
+          await fetch("/api/aeronautical-data/airspaces").then((res) =>
+            res.json(),
+          )
+        ).data as Airspace[];
+
+        setAirspaces(freshAirspaces);
+      }
+    }
+    void fetchAirspaces();
+  }, [airports.length, airspaces.length, setAirspaces]);
 
   const airspacesGeoJSONData = useMemo(() => {
+    if (airspaces.length === 0) {
+      return turf.featureCollection([]);
+    }
+
     return turf.featureCollection(
       airspaces.map((airspace) => {
         return turf.polygon(airspace.coordinates);
@@ -69,6 +87,10 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   }, [airspaces]);
 
   const airportsGeoJSONData = useMemo(() => {
+    if (airports.length === 0) {
+      return turf.featureCollection([]);
+    }
+    
     return turf.featureCollection(
       airports.map((airport) => {
         return turf.point(airport.coordinates);

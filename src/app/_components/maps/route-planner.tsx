@@ -14,7 +14,6 @@ import { MdLocationPin } from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
-import { AirspaceData } from "~/lib/types/open-aip";
 
 const routeLayerStyle: LayerSpecification = {
   id: "route",
@@ -27,6 +26,35 @@ const routeLayerStyle: LayerSpecification = {
   paint: {
     "line-color": "#888",
     "line-width": 8,
+  },
+};
+
+const airspaceLayerStyle: LayerSpecification = {
+  id: "airspaces",
+  type: "fill",
+  source: "airspaces",
+  paint: {
+    "fill-color": "#088",
+    "fill-opacity": 0.5,
+  },
+};
+
+const matzLayerStyle: LayerSpecification = {
+  id: "matzs",
+  type: "fill",
+  source: "matzs",
+  paint: {
+    "fill-color": "#f00",
+    "fill-opacity": 0.5,
+  },
+};
+
+const airportLayerStyle: LayerSpecification = {
+  id: "airports",
+  type: "symbol",
+  source: "airports",
+  layout: {
+    "icon-image": "airport-15",
   },
 };
 
@@ -80,9 +108,25 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     }
 
     return turf.featureCollection(
-      airspaces.map((airspace) => {
-        return turf.polygon(airspace.coordinates);
-      }),
+      airspaces
+        .map((airspace) => {
+          if (airspace.type != 14) return turf.polygon(airspace.coordinates);
+        })
+        .filter((x) => x != undefined),
+    );
+  }, [airspaces]);
+
+  const matzsGeoJSONData = useMemo(() => {
+    if (airspaces.length === 0) {
+      return turf.featureCollection([]);
+    }
+
+    return turf.featureCollection(
+      airspaces
+        .map((airspace) => {
+          if (airspace.type == 14) return turf.polygon(airspace.coordinates);
+        })
+        .filter((x) => x != undefined),
     );
   }, [airspaces]);
 
@@ -90,7 +134,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     if (airports.length === 0) {
       return turf.featureCollection([]);
     }
-    
+
     return turf.featureCollection(
       airports.map((airport) => {
         return turf.point(airport.coordinates);
@@ -176,21 +220,13 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
           <Layer {...routeLayerStyle} />
         </Source>
         <Source id="airports" type="geojson" data={airportsGeoJSONData}>
-          <Layer
-            id="airports"
-            type="symbol"
-            layout={{ "icon-image": "airport-15" }}
-          />
+          <Layer {...airportLayerStyle} />
         </Source>
         <Source id="airspaces" type="geojson" data={airspacesGeoJSONData}>
-          <Layer
-            id="airspaces"
-            type="fill"
-            paint={{
-              "fill-color": "#088",
-              "fill-opacity": 0.5,
-            }}
-          />
+          <Layer {...airspaceLayerStyle} />
+        </Source>
+        <Source id="matzs" type="geojson" data={matzsGeoJSONData}>
+          <Layer {...matzLayerStyle} />
         </Source>
         {markers}
       </Map>

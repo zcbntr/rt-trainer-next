@@ -154,6 +154,10 @@ export function ScenarioPlannerSidebar({
     }
   }
 
+  function onClearClick() {
+    setWaypoints([]);
+  }
+
   // const dragDuration = 200;
   // const animatingWaypoints = new Set();
 
@@ -317,10 +321,10 @@ export function ScenarioPlannerSidebar({
             </Button>
           </div>
         </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup className="px-0">
-            <SidebarGroupContent>
-              <div className="flex flex-col gap-2 px-2">
+        <SidebarContent className="h-full">
+          <SidebarGroup className="h-full px-0">
+            <SidebarGroupContent className="h-full">
+              <div className="flex h-full flex-col gap-2 px-2">
                 {activeSection == "Route Waypoints" &&
                   waypoints.length == 0 && (
                     <div className="px-1">
@@ -332,7 +336,10 @@ export function ScenarioPlannerSidebar({
                   )}
 
                 {activeSection == "Route Waypoints" && waypoints.length > 0 && (
-                  <>{waypointDetails}</>
+                  <div className="flex h-full flex-col place-content-between">
+                    <div>{waypointDetails}</div>{" "}
+                    <Button onClick={onClearClick}>Clear All</Button>
+                  </div>
                 )}
 
                 {activeSection == "Scenario Settings" && (

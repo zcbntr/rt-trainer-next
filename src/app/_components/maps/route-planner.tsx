@@ -11,8 +11,11 @@ import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
 import { MdLocationPin } from "react-icons/md";
+import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
 
-const layerStyle: LayerSpecification = {
+const routeLayerStyle: LayerSpecification = {
   id: "route",
   type: "line",
   source: "route",
@@ -44,8 +47,34 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   }
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const airspaces: Airspace[] = useAeronauticalDataStore(
+    (state) => state.airspaces,
+  );
+  const airports: Airport[] = useAeronauticalDataStore(
+    (state) => state.airports,
+  );
   const addWaypoint = useRouteStore((state) => state.addWaypoint);
   const moveWaypoint = useRouteStore((state) => state.moveWaypoint);
+
+  if (airspaces.length === 0 || airports.length === 0) {
+    // Lazy load airspaces/airports into stores
+  }
+
+  const airspacesGeoJSONData = useMemo(() => {
+    return turf.featureCollection(
+      airspaces.map((airspace) => {
+        return turf.polygon(airspace.coordinates);
+      }),
+    );
+  }, [airspaces]);
+
+  const airportsGeoJSONData = useMemo(() => {
+    return turf.featureCollection(
+      airports.map((airport) => {
+        return turf.point(airport.coordinates);
+      }),
+    );
+  }, [airports]);
 
   const markers = useMemo(() => {
     return waypoints.map((waypoint) => {
@@ -122,7 +151,24 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         mapStyle="mapbox://styles/mapbox/streets-v9"
       >
         <Source id="airspace-data" type="geojson" data={routeLine}>
-          <Layer {...layerStyle} />
+          <Layer {...routeLayerStyle} />
+        </Source>
+        <Source id="airports" type="geojson" data={airportsGeoJSONData}>
+          <Layer
+            id="airports"
+            type="symbol"
+            layout={{ "icon-image": "airport-15" }}
+          />
+        </Source>
+        <Source id="airspaces" type="geojson" data={airspacesGeoJSONData}>
+          <Layer
+            id="airspaces"
+            type="fill"
+            paint={{
+              "fill-color": "#088",
+              "fill-opacity": 0.5,
+            }}
+          />
         </Source>
         {markers}
       </Map>

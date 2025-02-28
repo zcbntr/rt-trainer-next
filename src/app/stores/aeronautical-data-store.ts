@@ -18,7 +18,6 @@ import { type Airspace } from "~/lib/types/airspace";
 
 const persistentStorage: StateStorage = {
   getItem: (key): string => {
-    // Load from localstorage
     return JSON.parse(localStorage.getItem(key)!) as string;
   },
   setItem: (key, newValue): void => {

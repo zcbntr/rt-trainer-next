@@ -1,8 +1,9 @@
 "use client";
 
-import { MdPlayArrow } from "react-icons/md";
+import { MdOutlinePlayCircleFilled } from "react-icons/md";
 import useRouteStore from "../stores/route-store";
 import { kmToUnit } from "~/lib/sim-utils/route";
+import { Button } from "~/components/ui/button";
 
 const ScenarioPlannerFooter = () => {
   const distance: number = useRouteStore((state) => state.distanceKM);
@@ -11,6 +12,13 @@ const ScenarioPlannerFooter = () => {
   );
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
+
+  const onPlayButtonClick = () => {
+    // Check if the route doesn't have any glaring issues e.g. <2 waypoints, no airports, etc.
+    // If it does, show a toast and return
+    // Otherwise, start the scenario by navigating to the scenario page with the route data in the URL
+    console.log("Play button clicked");
+  };
 
   return (
     <div className="flex h-20 w-full flex-row">
@@ -39,12 +47,13 @@ const ScenarioPlannerFooter = () => {
 
       <div className="flex grow flex-row place-content-end gap-3 p-2">
         <div className="flex flex-col place-content-center">
-          <button className="btn variant-filled h-10 text-sm">
-            <span>
-              <MdPlayArrow />
-            </span>
+          <Button
+            className="btn variant-filled h-10 text-sm"
+            onClick={onPlayButtonClick}
+          >
+            <MdOutlinePlayCircleFilled size="2em" />
             <span>Start</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -15,6 +15,8 @@ import {
 } from "zustand/middleware";
 import { type Waypoint } from "~/lib/types/waypoint";
 import * as turf from "@turf/turf";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
 
 const getUrlSearch = () => {
   return window.location.search.slice(1);
@@ -33,12 +35,9 @@ const persistentStorage: StateStorage = {
     }
   },
   setItem: (key, newValue): void => {
-    // Check if query params exist at all, can remove check if always want to set URL
-    if (getUrlSearch()) {
-      const searchParams = new URLSearchParams(getUrlSearch());
-      searchParams.set(key, JSON.stringify(newValue));
-      window.history.replaceState(null, "", `?${searchParams.toString()}`);
-    }
+    const searchParams = new URLSearchParams(getUrlSearch());
+    searchParams.set(key, JSON.stringify(newValue));
+    window.history.replaceState(null, "", `?${searchParams.toString()}`);
 
     localStorage.setItem(key, JSON.stringify(newValue));
   },
@@ -46,6 +45,8 @@ const persistentStorage: StateStorage = {
     const searchParams = new URLSearchParams(getUrlSearch());
     searchParams.delete(key);
     window.location.search = searchParams.toString();
+
+    localStorage.removeItem(key);
   },
 };
 
@@ -56,6 +57,8 @@ const storageOptions = {
 
 interface RouteStore {
   waypoints: Waypoint[];
+  airspacesOnRoute: Airspace[];
+  airportsOnRoute: Airport[];
   distanceKM: number;
   distanceDisplayUnit: string;
   maxFL: number;
@@ -64,6 +67,8 @@ interface RouteStore {
   addWaypoint: (waypoint: Waypoint) => void;
   removeWaypoint: (waypointId: string) => void;
   swapWaypoints: (waypointA: Waypoint, waypointB: Waypoint) => void;
+  setAirspacesOnRoute: (airspaces: Airspace[]) => void;
+  setAirportsOnRoute: (airports: Airport[]) => void;
   setDistanceUnit: (unit: string) => void;
   setMaxFL: (maxFL: number) => void;
 }
@@ -72,6 +77,8 @@ const useRouteStore = create(
   persist<RouteStore>(
     (set) => ({
       waypoints: [],
+      airspacesOnRoute: [],
+      airportsOnRoute: [],
       distanceKM: 0,
       distanceDisplayUnit: "nm",
       maxFL: 30,
@@ -105,6 +112,10 @@ const useRouteStore = create(
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
       },
+      setAirspacesOnRoute: (airspaces: Airspace[]) =>
+        set(() => ({ airspacesOnRoute: airspaces })),
+      setAirportsOnRoute: (airports: Airport[]) =>
+        set(() => ({ airportsOnRoute: airports })),
       setDistanceUnit: (unit: string) =>
         set(() => ({ distanceDisplayUnit: unit })),
       setMaxFL: (maxFL: number) => set(() => ({ maxFL })),

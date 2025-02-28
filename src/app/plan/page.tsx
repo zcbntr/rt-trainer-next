@@ -1,4 +1,3 @@
-import { MdPlayArrow } from "react-icons/md";
 import RoutePlannerMap from "../_components/maps/route-planner";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { ScenarioPlannerSidebar } from "../_components/scenario-planner-sidebar";

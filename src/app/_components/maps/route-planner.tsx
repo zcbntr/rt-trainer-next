@@ -3,11 +3,11 @@
 import * as React from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { LayerSpecification, MapMouseEvent } from "mapbox-gl";
+import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
 import useRouteStore from "~/app/stores/route-store";
 import { useMemo } from "react";
-import { Waypoint, WaypointType } from "~/lib/types/waypoint";
+import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
 import { MdLocationPin } from "react-icons/md";
@@ -57,7 +57,6 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
           color="red"
           draggable
           offset={[0, -16]}
-          
           // Could do on drag but this would not be performant
           // Instead visuals could update on drag but not route date
           // Otherwise we would do a lot of unnecessary calculations
@@ -66,12 +65,12 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
           }}
         >
           <div className="flex rounded-full p-4">
-            <MdLocationPin size="3em" color="red"/>
+            <MdLocationPin size="3em" color="red" />
           </div>
         </Marker>
       );
     });
-  }, [waypoints]);
+  }, [moveWaypoint, waypoints]);
 
   const routeLine = useMemo(() => {
     if (waypoints.length < 2) {
@@ -81,10 +80,6 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.lineString(waypoints.map((waypoint) => waypoint.location));
   }, [waypoints]);
 
-  const GEOFENCE = turf.circle([-122.4, 37.8], 200, {
-    units: "miles",
-  });
-
   const [viewState, setViewState] = React.useState<ViewStateType>({
     longitude: -122.4,
     latitude: 37.8,
@@ -93,11 +88,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const onMove = React.useCallback(
     ({ viewState }: { viewState: ViewStateType }) => {
-      const newCenter = [viewState.longitude, viewState.latitude];
-      // Only update the view state if the center is inside the geofence
-      // if (turf.booleanPointInPolygon(newCenter, GEOFENCE)) {
       setViewState(viewState);
-      // }
     },
     [],
   );

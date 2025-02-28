@@ -14,7 +14,6 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { randomString } from "~/lib/utils";
 import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
-import { loadRouteData } from "~/lib/scenario";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { type Waypoint } from "~/lib/types/waypoint";
@@ -45,6 +44,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
 import useRouteStore from "../stores/route-store";
+import useAeronauticalDataStore from "../stores/aeronautical-data-store";
 
 const sidebarSections = [
   {
@@ -102,11 +102,19 @@ export function ScenarioPlannerSidebar({
     }
   }, [sidebarSection, setOpen, activeSection]);
 
+  const airspaces = useAeronauticalDataStore((state) => state.airspaces);
+  const airports = useAeronauticalDataStore((state) => state.airports);
+
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
   const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
   const maxFL = useRouteStore((state) => state.maxFL);
+  const setWaypoints = useRouteStore((state) => state.setWaypoints);
   const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
   const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
+  const setAirspacesOnRoute = useRouteStore(
+    (state) => state.setAirspacesOnRoute,
+  );
+  const setAirportsOnRoute = useRouteStore((state) => state.setAirportsOnRoute);
   const setDistanceUnit = useRouteStore((state) => state.setDistanceUnit);
   const setMaxFL = useRouteStore((state) => state.setMaxFL);
 
@@ -118,12 +126,6 @@ export function ScenarioPlannerSidebar({
   // Route data
   let routeSeed = ""; // Only used for seeding the route generator
 
-  // Blocking new inputs during route generation
-  let awaitingServerResponse = false;
-  //   AwaitingServerResponseStore.subscribe((value) => {
-  //     awaitingServerResponse = value;
-  //   });
-
   $: {
     if (routeSeed !== "") {
       //   loadSeededRoute();
@@ -134,36 +136,25 @@ export function ScenarioPlannerSidebar({
 
   //   $: HasEmergencyEventsStore.set(hasEmergencyEvents);
 
-  //   $: RouteDistanceDisplayUnitStore.set(distanceUnit);
-
   //   $: {
   //     maxFL = Math.min(Math.max(15, maxFL), 250);
   //     // maxFlightLevelStore.set(maxFL);
   //   }
 
-  //   WaypointsStore.subscribe((value) => {
-  //     waypoints = value;
-  //   });
+  async function loadSeededRoute() {
+    const routeData = generateFRTOLRouteFromSeed(
+      routeSeed,
+      airports,
+      airspaces,
+      maxFL,
+    );
 
-  //   AllAirportsStore.subscribe((value) => {
-  //     airports = value;
-  //   });
-
-  //   AllAirspacesStore.subscribe((value) => {
-  //     airspaces = value;
-  //   });
-
-  //   async function loadSeededRoute() {
-  //     // AwaitingServerResponseStore.set(true);
-  //     const routeData = await generateFRTOLRouteFromSeed(
-  //       routeSeed,
-  //       airports,
-  //       airspaces,
-  //       maxFL,
-  //     );
-  //     if (routeData) loadRouteData(routeData);
-  //     // AwaitingServerResponseStore.set(false);
-  //   }
+    if (routeData) {
+      setWaypoints(routeData.waypoints);
+      setAirportsOnRoute(routeData.airports);
+      setAirspacesOnRoute(routeData.airspaces);
+    }
+  }
 
   const dragDuration = 200;
   let draggingWaypoint: Waypoint | undefined = undefined;
@@ -364,8 +355,6 @@ export function ScenarioPlannerSidebar({
                           type="button"
                           className="btn variant-filled w-10"
                           onClick={() => {
-                            if (awaitingServerResponse) return;
-
                             scenarioSeed = randomString(6);
 
                             const element = document.getElementById(
@@ -452,8 +441,6 @@ export function ScenarioPlannerSidebar({
                           type="button"
                           className="btn variant-filled w-10"
                           onClick={() => {
-                            if (awaitingServerResponse) return;
-
                             routeSeed = randomString(6);
 
                             const element =
@@ -467,7 +454,9 @@ export function ScenarioPlannerSidebar({
                         </button>
                       </div>
                       <div>
-                        <Button>Generate Route</Button>
+                        <Button onClick={loadSeededRoute}>
+                          Generate Route
+                        </Button>
                       </div>
                     </div>
                   </div>

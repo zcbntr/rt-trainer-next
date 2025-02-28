@@ -3,13 +3,18 @@ import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { seedStringToNumber } from "~/lib/utils";
 import { WaypointType, type Waypoint } from "~/lib/types/waypoint";
-import { type RouteData } from "~/lib/scenario";
 import {
   getAirspaceDisplayName,
   isAirspaceIncludedInRoute,
   isInAirspace,
 } from "~/lib/sim-utils/route";
 import { type Feature, type Point } from "geojson";
+
+export type RouteData = {
+  waypoints: Waypoint[];
+  airspaces: Airspace[];
+  airports: Airport[];
+};
 
 export function generateFRTOLRouteFromSeed(
   seedString: string,

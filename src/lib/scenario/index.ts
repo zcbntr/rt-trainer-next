@@ -72,41 +72,15 @@ export default class Scenario {
   }
 }
 
-let startPointIndex = 0;
-StartPointIndexStore.subscribe((value) => {
-  startPointIndex = value;
-});
-let endPointIndex = 0;
-EndPointIndexStore.subscribe((value) => {
-  endPointIndex = value;
-});
+// let startPointIndex = 0;
+// StartPointIndexStore.subscribe((value) => {
+//   startPointIndex = value;
+// });
+// let endPointIndex = 0;
+// EndPointIndexStore.subscribe((value) => {
+//   endPointIndex = value;
+// });
 
-export function ResetCurrentRoutePointIndex(): void {
-  CurrentScenarioPointIndexStore.set(startPointIndex);
-}
-
-export type RouteData = {
-  waypoints: Waypoint[];
-  airports: Airport[];
-  airspaces: Airspace[];
-};
-
-/**
- * Loads the given route data into the stores.
- *
- * @param routeData - The route data to load
- * @returns void
- */
-export function loadRouteData(routeData: RouteData): void {
-  // Check the scenario was returned correctly
-  if (routeData == null || routeData == undefined) {
-    console.log("Bad route data attempted to be loaded into stores");
-    NullRouteStore.set(true);
-    return;
-  }
-
-  // Reset all existing simulation stores and load the route data into the stores
-  ClearSimulationStores();
-  NullRouteStore.set(false);
-  WaypointsStore.set(routeData.waypoints.sort((a, b) => a.index - b.index));
-}
+// export function ResetCurrentRoutePointIndex(): void {
+//   CurrentScenarioPointIndexStore.set(startPointIndex);
+// }

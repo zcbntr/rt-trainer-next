@@ -9,17 +9,9 @@ import {
   MdRoute,
   MdSettingsInputComposite,
   MdOutlineKeyboardDoubleArrowLeft,
-  MdDeleteOutline,
   MdDelete,
 } from "react-icons/md";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Textarea } from "~/components/ui/textarea";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
 import { randomString } from "~/lib/utils";
 import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
 import { loadRouteData } from "~/lib/scenario";
@@ -33,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { NavUser } from "~/app/_components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -41,7 +32,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
-  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -98,7 +88,7 @@ export function ScenarioPlannerSidebar({
   const sidebarSection = searchParams.get("sidebar");
 
   useEffect(() => {
-    if (sidebarSection) {
+    if (sidebarSection || activeSection) {
       const section = sidebarSections.find(
         (item) => item.title === sidebarSection,
       );
@@ -110,7 +100,7 @@ export function ScenarioPlannerSidebar({
     } else {
       setOpen(false);
     }
-  });
+  }, [sidebarSection, setOpen, activeSection]);
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
   const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
@@ -122,18 +112,14 @@ export function ScenarioPlannerSidebar({
 
   let scenarioSeed: string = randomString(6);
   //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
-  let hasEmergencyEvents: boolean = true;
+  let hasEmergencyEvents = true;
   //   HasEmergencyEventsStore.set(hasEmergencyEvents); // Set initial value
 
   // Route data
-  let routeSeed: string = ""; // Only used for seeding the route generator
-
-  // Aeronautical data
-  let airports: Airport[] = [];
-  let airspaces: Airspace[] = [];
+  let routeSeed = ""; // Only used for seeding the route generator
 
   // Blocking new inputs during route generation
-  let awaitingServerResponse: boolean = false;
+  let awaitingServerResponse = false;
   //   AwaitingServerResponseStore.subscribe((value) => {
   //     awaitingServerResponse = value;
   //   });
@@ -179,9 +165,9 @@ export function ScenarioPlannerSidebar({
   //     // AwaitingServerResponseStore.set(false);
   //   }
 
-  const dragDuration: number = 200;
+  const dragDuration = 200;
   let draggingWaypoint: Waypoint | undefined = undefined;
-  let animatingWaypoints = new Set();
+  const animatingWaypoints = new Set();
 
   function swapWaypointDetails(
     _draggingWaypoint: Waypoint,
@@ -262,7 +248,7 @@ export function ScenarioPlannerSidebar({
         </div>
       );
     });
-  }, [waypoints]);
+  }, [removeWaypoint, waypoints]);
 
   return (
     <Sidebar
@@ -282,7 +268,7 @@ export function ScenarioPlannerSidebar({
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
                 <Link href="/">
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                     <Command className="size-4" />
                   </div>
                 </Link>
@@ -386,7 +372,8 @@ export function ScenarioPlannerSidebar({
                               "scenario-seed-input",
                             );
                             if (element) {
-                              element.value = scenarioSeed;
+                              (element as HTMLInputElement).value =
+                                scenarioSeed;
                             }
                           }}
                         >
@@ -414,7 +401,10 @@ export function ScenarioPlannerSidebar({
                       <div>
                         <Label>Distance Unit</Label>
                       </div>
-                      <Select onValueChange={(value) => setDistanceUnit(value)}>
+                      <Select
+                        defaultValue={distanceUnit}
+                        onValueChange={(value) => setDistanceUnit(value)}
+                      >
                         <SelectTrigger className="w-[180px]">
                           <SelectValue
                             defaultValue={"nm"}
@@ -447,45 +437,39 @@ export function ScenarioPlannerSidebar({
 
                 {activeSection == "Generate" && (
                   <div className="flex flex-col gap-2 p-2">
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="item-1">
-                        <AccordionTrigger>
-                          <MdAutoAwesome /> Auto-generate Route
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="flex flex-col gap-2">
-                            <div className="label">Route Seed</div>
-                            <div className="flex flex-row gap-2">
-                              <Input
-                                id="route-seed-input"
-                                placeholder="Enter a seed"
-                                defaultValue={routeSeed}
-                                onChange={(e) => {
-                                  routeSeed = e.target.value;
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className="btn variant-filled w-10"
-                                onClick={() => {
-                                  if (awaitingServerResponse) return;
+                    <div className="flex flex-col gap-2">
+                      <div className="label">Route Seed</div>
+                      <div className="flex flex-row gap-2">
+                        <Input
+                          id="route-seed-input"
+                          placeholder="Enter a seed"
+                          defaultValue={routeSeed}
+                          onChange={(e) => {
+                            routeSeed = e.target.value;
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn variant-filled w-10"
+                          onClick={() => {
+                            if (awaitingServerResponse) return;
 
-                                  routeSeed = randomString(6);
+                            routeSeed = randomString(6);
 
-                                  const element =
-                                    document.getElementById("route-seed-input");
-                                  if (element) {
-                                    element.value = routeSeed;
-                                  }
-                                }}
-                              >
-                                <MdOutlineRefresh />
-                              </button>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                            const element =
+                              document.getElementById("route-seed-input");
+                            if (element) {
+                              (element as HTMLInputElement).value = routeSeed;
+                            }
+                          }}
+                        >
+                          <MdOutlineRefresh />
+                        </button>
+                      </div>
+                      <div>
+                        <Button>Generate Route</Button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

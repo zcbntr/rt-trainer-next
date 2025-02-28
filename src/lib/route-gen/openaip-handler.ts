@@ -1,179 +1,219 @@
-import { OPENAIPKEY } from '$env/static/private';
-import { Airport } from '../types/airport';
-import { Airspace } from '../types/airspace';
+import { type Airport } from "../types/airport";
+import { type Airspace } from "../types/airspace";
+import {
+  type AirportReportingPointData,
+  type AirportData,
+  type AirspaceData,
+} from "../types/open-aip";
 
 export async function getAllValidAirspaceData(): Promise<Airspace[]> {
-	const airspaceData = await getAllUKAirspaceFromOpenAIP();
-	const airspaces = airspaceData.map((airspaceData) => airspaceDataToAirspace(airspaceData));
-	return airspaces;
+  const airspaceData = await getAllUKAirspaceFromOpenAIP();
+  const airspaces = airspaceData.map((airspaceData) =>
+    airspaceDataToAirspace(airspaceData),
+  );
+  return airspaces;
 }
 
 export async function getAllValidAirportData(): Promise<Airport[]> {
-	const airportData = await getAllUKAirportsFromOpenAIP();
-	const airports = airportData.map((airportData) => airportDataToAirport(airportData));
-	airports.filter((airport) => airport.runways && airport.runways.length > 0);
-	return airports;
+  const airportData = await getAllUKAirportsFromOpenAIP();
+  const airports = airportData.map((airportData) =>
+    airportDataToAirport(airportData),
+  );
+  airports.filter((airport) => airport.runways && airport.runways.length > 0);
+  return airports;
 }
 
 export function airportDataToAirport(airportData: AirportData): Airport {
-	return new Airport(
-		airportData._id,
-		airportData.name,
-		airportData.icaoCode,
-		airportData.iataCode,
-		airportData.altIdentifier,
-		airportData.type,
-		airportData.country,
-		airportData.geometry.coordinates,
-		airportData.reportingPoints,
-		airportData.elevation.value,
-		airportData.trafficType,
-		airportData.ppr,
-		airportData.private,
-		airportData.skydiveActivity,
-		airportData.winchOnly,
-		airportData.runways?.map((runway) => {
-			return new Runway(
-				runway.designator,
-				runway.trueHeading,
-				runway.alignedTrueNorth,
-				runway.operations,
-				runway.mainRunway,
-				runway.turnDirection,
-				runway.landingOnly,
-				runway.takeOffOnly,
-				runway.dimension.length.value,
-				runway.dimension.length.unit,
-				runway.dimension.width.value,
-				runway.dimension.width.unit,
-				runway.declaredDistance.tora?.value,
-				runway.declaredDistance.tora?.unit,
-				runway.declaredDistance.toda?.value,
-				runway.declaredDistance.toda?.unit,
-				runway.declaredDistance.asda?.value,
-				runway.declaredDistance.asda?.unit,
-				runway.declaredDistance.lda?.value,
-				runway.declaredDistance.lda?.unit,
-				runway.thresholdLocation?.geometry.coordinates,
-				runway.thresholdLocation?.elevation.value,
-				runway.thresholdLocation?.elevation.unit,
-				runway.exclusiveAircraftType,
-				runway.pilotCtrlLighting,
-				runway.lightingSystem,
-				runway.visualApproachAids
-			);
-		}),
-		airportData.frequencies?.map((frequency) => {
-			return new Frequency(
-				frequency.value,
-				frequency.unit,
-				frequency.name,
-				frequency.type,
-				frequency.primary
-			);
-		})
-	);
+  return {
+    id: airportData._id,
+    name: airportData.name,
+    icaoCode: airportData.icaoCode,
+    iataCode: airportData.iataCode,
+    altIdentifier: airportData.altIdentifier,
+    type: airportData.type,
+    country: airportData.country,
+    coordinates: airportData.geometry.coordinates,
+    reportingPoints: airportData.reportingPoints,
+    elevation: airportData.elevation.value,
+    trafficType: airportData.trafficType,
+    ppr: airportData.ppr,
+    private: airportData.private,
+    skydiveActivity: airportData.skydiveActivity,
+    winchOnly: airportData.winchOnly,
+    runways: airportData.runways?.map((runway) => {
+      return {
+        designator: runway.designator,
+        trueHeading: runway.trueHeading,
+        alignedTrueNorth: runway.alignedTrueNorth,
+        operations: runway.operations,
+        mainRunway: runway.mainRunway,
+        turnDirection: runway.turnDirection,
+        landingOnly: runway.landingOnly,
+        takeOffOnly: runway.takeOffOnly,
+        length: runway.dimension.length.value,
+        lengthUnit: runway.dimension.length.unit,
+        width: runway.dimension.width.value,
+        widthUnit: runway.dimension.width.unit,
+        tora: runway.declaredDistance.tora?.value,
+        toraUnit: runway.declaredDistance.tora?.unit,
+        toda: unway.declaredDistance.toda?.value,
+        todaUnit: runway.declaredDistance.toda?.unit,
+        asda: runway.declaredDistance.asda?.value,
+        asdaUnit: runway.declaredDistance.asda?.unit,
+        lda: runway.declaredDistance.lda?.value,
+        ldaUnit: runway.declaredDistance.lda?.unit,
+        thresholdCoordinates: runway.thresholdLocation?.geometry.coordinates,
+        thresholdElevation: runway.thresholdLocation?.elevation.value,
+        thresholdElevationUnit: runway.thresholdLocation?.elevation.unit,
+        exclusiveAircraftType: runway.exclusiveAircraftType,
+        pilotCtrlLighting: runway.pilotCtrlLighting,
+        lightingSystem: runway.lightingSystem,
+        visualApproachAids: runway.visualApproachAids,
+      };
+    }),
+    frequencies: airportData.frequencies?.map((frequency) => {
+      return {
+        value: frequency.value,
+        unit: frequency.unit,
+        name: frequency.name,
+        type: frequency.type,
+        primary: frequency.primary,
+      };
+    }),
+  };
 }
 
 export function airspaceDataToAirspace(airspaceData: AirspaceData): Airspace {
-	return new Airspace(
-		airspaceData._id,
-		airspaceData.name,
-		airspaceData.type,
-		airspaceData.icaoClass,
-		airspaceData.activity,
-		airspaceData.onDemand,
-		airspaceData.onRequest,
-		airspaceData.byNotam,
-		airspaceData.specialAgreement,
-		airspaceData.requestCompliance,
-		airspaceData.geometry.coordinates,
-		airspaceData.country,
-		airspaceData.upperLimit.value,
-		airspaceData.lowerLimit.value,
-		airspaceData.upperLimitMax?.value,
-		airspaceData.lowerLimitMin?.value,
-		airspaceData.frequencies?.map((frequency) => {
-			return new Frequency(frequency.value, frequency.unit, frequency.name, 0, frequency.primary);
-		})
-	);
+  return {
+    id: airspaceData._id,
+    name: airspaceData.name,
+    type: airspaceData.type,
+    icaoClass: airspaceData.icaoClass,
+    activity: airspaceData.activity,
+    onDemand: airspaceData.onDemand,
+    onRequest: airspaceData.onRequest,
+    byNotam: airspaceData.byNotam,
+    specialAgreement: airspaceData.specialAgreement,
+    requestCompliance: airspaceData.requestCompliance,
+    coordinates: airspaceData.geometry.coordinates,
+    country: airspaceData.country,
+    upperLimit: airspaceData.upperLimit.value,
+    lowerLimit: airspaceData.lowerLimit.value,
+    upperLimitMax: airspaceData.upperLimitMax?.value,
+    lowerLimitMin: airspaceData.lowerLimitMin?.value,
+    frequencies: airspaceData.frequencies?.map((frequency) => {
+      return {
+        value: frequency.value,
+        unit: frequency.unit,
+        name: frequency.name,
+        type: 0,
+        primary: frequency.primary,
+      };
+    }),
+  };
 }
 
 export async function getAllUKAirportsFromOpenAIP(): Promise<AirportData[]> {
-	try {
-		const response = await axios.get(`https://api.core.openaip.net/api/airports`, {
-			headers: {
-				'Content-Type': 'application/json',
-				'x-openaip-api-key': OPENAIPKEY
-			},
-			params: {
-				country: 'GB',
-				type: [0, 2, 3, 9],
-				sortBy: 'geometry.coordinates[0]'
-			}
-		});
+  try {
+    if (!process.env.OPENAIPKEY) {
+      throw new Error("OPENAIPKEY is not defined in the environment");
+    }
 
-		console.log('Fetched all airports from OpenAIP');
+    const response = await fetch(`https://api.core.openaip.net/api/airports`, {
+      headers: new Headers({
+        "Content-Type": "application/json",
+        "x-openaip-api-key": process.env.OPENAIPKEY,
+      }),
+      body: new URLSearchParams({
+        country: "GB",
+        type: "[0, 2, 3, 9]",
+        sortBy: "geometry.coordinates[0]",
+      }),
+    });
 
-		return response.data.items as AirportData[];
-	} catch (error: unknown) {
-		console.error('Error: ', error);
-	}
-	return [];
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to fetch airports from OpenAIP: ${response.statusText}`,
+      );
+    }
+
+    return response.data.items as AirportData[];
+  } catch (error: unknown) {
+    console.error("Error: ", error);
+  }
+  return [];
 }
 
 export async function getAllUKAirspaceFromOpenAIP(): Promise<AirspaceData[]> {
-	try {
-		const response1 = await axios.get(`https://api.core.openaip.net/api/airspaces`, {
-			headers: {
-				'Content-Type': 'application/json',
-				'x-openaip-api-key': OPENAIPKEY
-			},
-			params: {
-				page: 1,
-				country: 'GB',
-				icaoClass: [1, 2, 3, 4, 5, 6, 8],
-				onDemand: false,
-				onRequest: false,
-				byNotam: false,
-				sortBy: 'geometry.coordinates[0][0][0]'
-			}
-		});
+  try {
+    if (!process.env.OPENAIPKEY) {
+      throw new Error("OPENAIPKEY is not defined in the environment");
+    }
 
-		if (response1.data.items.length === 0) {
-			console.log('No airspaces found on page 1');
-			return [];
-		}
+    const response1 = await fetch(
+      `https://api.core.openaip.net/api/airspaces`,
+      {
+        method: "GET",
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "x-openaip-api-key": process.env.OPENAIPKEY,
+        }),
+        body: new URLSearchParams({
+          page: "1",
+          country: "GB",
+          icaoClass: "[1, 2, 3, 4, 5, 6, 8]",
+          onDemand: "false",
+          onRequest: "false",
+          byNotam: "false",
+          sortBy: "geometry.coordinates[0][0][0]",
+        }),
+      },
+    );
 
-		console.log('Fetched all airspace from OpenAIP');
+    if (response1.status !== 200) {
+      throw new Error(
+        `Failed to fetch airspace from OpenAIP: ${response1.statusText}`,
+      );
+    }
 
-		return [...response1.data.items] as AirspaceData[];
-	} catch (error: unknown) {
-		console.error('Error: ', error);
-	}
-	return [];
+    return [...response1.data.items] as AirspaceData[];
+  } catch (error: unknown) {
+    console.error("Error: ", error);
+  }
+  return [];
 }
 
 export async function getAllUKAirportReportingPointsFromOpenAIP(): Promise<
-	AirportReportingPointData[]
+  AirportReportingPointData[]
 > {
-	try {
-		const response = await axios.get(`https://api.core.openaip.net/api/reporting-points`, {
-			headers: {
-				'Content-Type': 'application/json',
-				'x-openaip-api-key': OPENAIPKEY
-			},
-			params: {
-				country: 'GB',
-				sortBy: 'geometry.coordinates[0]'
-			}
-		});
+  try {
+    if (!process.env.OPENAIPKEY) {
+      throw new Error("OPENAIPKEY is not defined in the environment");
+    }
 
-		console.log('Fetched all airport reporting points from OpenAIP');
+    const response = await fetch(
+      `https://api.core.openaip.net/api/reporting-points`,
+      {
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "x-openaip-api-key": process.env.OPENAIPKEY,
+        }),
+        body: new URLSearchParams({
+          country: "GB",
+          sortBy: "geometry.coordinates[0]",
+        }),
+      },
+    );
 
-		return response.data.items as AirportReportingPointData[];
-	} catch (error: unknown) {
-		console.error('Error: ', error);
-	}
-	return [];
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to fetch reporting points from OpenAIP: ${response.statusText}`,
+      );
+    }
+
+    return response.data.items as AirportReportingPointData[];
+  } catch (error: unknown) {
+    console.error("Error: ", error);
+  }
+  return [];
 }

@@ -14,8 +14,6 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { randomString } from "~/lib/utils";
 import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
-import { type Airport } from "~/lib/types/airport";
-import { type Airspace } from "~/lib/types/airspace";
 import { type Waypoint } from "~/lib/types/waypoint";
 import {
   Select,
@@ -109,7 +107,7 @@ export function ScenarioPlannerSidebar({
   const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
   const maxFL = useRouteStore((state) => state.maxFL);
   const setWaypoints = useRouteStore((state) => state.setWaypoints);
-  const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
+  // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
   const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
   const setAirspacesOnRoute = useRouteStore(
     (state) => state.setAirspacesOnRoute,
@@ -156,27 +154,26 @@ export function ScenarioPlannerSidebar({
     }
   }
 
-  const dragDuration = 200;
-  let draggingWaypoint: Waypoint | undefined = undefined;
-  const animatingWaypoints = new Set();
+  // const dragDuration = 200;
+  // const animatingWaypoints = new Set();
 
-  function swapWaypointDetails(
-    _draggingWaypoint: Waypoint,
-    _waypointToSwap: Waypoint,
-  ): void {
-    if (
-      draggingWaypoint === _waypointToSwap ||
-      animatingWaypoints.has(_waypointToSwap)
-    )
-      return;
-    animatingWaypoints.add(_waypointToSwap);
-    setTimeout(
-      (): boolean => animatingWaypoints.delete(_waypointToSwap),
-      dragDuration,
-    );
+  // function swapWaypointDetails(
+  //   _draggingWaypoint: Waypoint,
+  //   _waypointToSwap: Waypoint,
+  // ): void {
+  //   if (
+  //     _draggingWaypoint === _waypointToSwap ||
+  //     animatingWaypoints.has(_waypointToSwap)
+  //   )
+  //     return;
+  //   animatingWaypoints.add(_waypointToSwap);
+  //   setTimeout(
+  //     (): boolean => animatingWaypoints.delete(_waypointToSwap),
+  //     dragDuration,
+  //   );
 
-    swapWaypoints(_draggingWaypoint, _waypointToSwap);
-  }
+  //   swapWaypoints(_draggingWaypoint, _waypointToSwap);
+  // }
 
   const waypointDetails = useMemo(() => {
     return waypoints.map((waypoint) => {

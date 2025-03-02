@@ -32,8 +32,9 @@ export async function getAllUKAirportsFromOpenAIP(): Promise<AirportData[]> {
     }
 
     const response = await fetch(
-      `https://api.core.openaip.net/api/airports?country="GB"&type=[0,2,3,9]&sortBy="geometry.coordinates[0]`,
+      `https://api.core.openaip.net/api/airports?page=1&sortBy=geometry.coordinates%5B0%5D&sortDesc=false&country=GB&searchOptLwc=false&type=0&type=2&type=3&type=9`,
       {
+        method: "GET",
         headers: new Headers({
           "Content-Type": "application/json",
           "x-openaip-api-key": process.env.OPENAIPKEY,
@@ -47,7 +48,9 @@ export async function getAllUKAirportsFromOpenAIP(): Promise<AirportData[]> {
       );
     }
 
-    return response.data.items as AirportData[];
+	const data = await response.json();
+
+    return [...data.items] as AirportData[];
   } catch (error: unknown) {
     console.error("Error: ", error);
   }
@@ -77,7 +80,7 @@ export async function getAllUKAirspaceFromOpenAIP(): Promise<AirspaceData[]> {
       );
     }
 
-	const data = await response1.json();
+    const data = await response1.json();
 
     return [...data.items] as AirspaceData[];
   } catch (error: unknown) {
@@ -97,6 +100,7 @@ export async function getAllUKAirportReportingPointsFromOpenAIP(): Promise<
     const response = await fetch(
       `https://api.core.openaip.net/api/reporting-points`,
       {
+		method: "GET",
         headers: new Headers({
           "Content-Type": "application/json",
           "x-openaip-api-key": process.env.OPENAIPKEY,

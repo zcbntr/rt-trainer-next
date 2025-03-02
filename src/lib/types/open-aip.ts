@@ -182,7 +182,7 @@ export function airportDataToAirport(airportData: AirportData): Airport {
         widthUnit: runway.dimension.width.unit,
         tora: runway.declaredDistance.tora?.value,
         toraUnit: runway.declaredDistance.tora?.unit,
-        toda: unway.declaredDistance.toda?.value,
+        toda: runway.declaredDistance.toda?.value,
         todaUnit: runway.declaredDistance.toda?.unit,
         asda: runway.declaredDistance.asda?.value,
         asdaUnit: runway.declaredDistance.asda?.unit,

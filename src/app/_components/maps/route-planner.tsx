@@ -88,18 +88,31 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   useEffect(() => {
     async function fetchAirspaces() {
-      if (airspaces.length === 0 || airports.length === 0) {
-        // Lazy load airspaces/airports into stores
-        const freshAirspaces: Airspace[] = (
-          await fetch("/api/aeronautical-data/airspaces").then((res) =>
-            res.json(),
-          )
-        ).data as Airspace[];
+      // Lazy load airspaces/airports into stores
+      const freshAirspaces: Airspace[] = (
+        await fetch("/api/aeronautical-data/airspaces").then((res) =>
+          res.json(),
+        )
+      ).data as Airspace[];
 
-        setAirspaces(freshAirspaces);
-      }
+      setAirspaces(freshAirspaces);
     }
-    void fetchAirspaces();
+
+    async function fetchAirports() {
+      const freshAirports: Airport[] = (
+        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
+      ).data as Airport[];
+
+      useAeronauticalDataStore.setState({ airports: freshAirports });
+    }
+
+    if (airports.length === 0) {
+      void fetchAirports();
+    }
+
+    if (airspaces.length === 0) {
+      void fetchAirspaces();
+    }
   }, [airports.length, airspaces.length, setAirspaces]);
 
   const airspacesGeoJSONData = useMemo(() => {

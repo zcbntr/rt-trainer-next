@@ -140,6 +140,16 @@ export function ScenarioPlannerSidebar({
   //   }
 
   async function loadSeededRoute() {
+    if (
+      !airports.length ||
+      !airspaces.length ||
+      !routeSeed ||
+      routeSeed.length == 0 ||
+      maxFL == 0
+    ) {
+      return;
+    }
+
     const routeData = generateFRTOLRouteFromSeed(
       routeSeed,
       airports,

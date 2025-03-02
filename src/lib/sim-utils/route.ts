@@ -1,6 +1,7 @@
 import type { Position } from "geojson";
 import * as turf from "@turf/turf";
 import { type Airspace } from "../types/airspace";
+import { getAirspaceLowerLimitFL } from "./airspaces";
 
 export function kmToUnit(km: number, unit: string): number {
   switch (unit) {
@@ -91,9 +92,9 @@ export function findIntersections(
   const intersections: Intersection[] = [];
 
   airspaces.forEach((airspace) => {
-    if (airspace.lowerLimit > 30) return;
+    if (getAirspaceLowerLimitFL(airspace) > 30) return;
 
-    const airspacePolygon = turf.polygon(airspace.coordinates);
+    const airspacePolygon = turf.polygon(airspace.geometry.coordinates);
     if (turf.booleanIntersects(routeLine, airspacePolygon)) {
       route.forEach((point, pointIndex) => {
         if (pointIndex < route.length - 1) {
@@ -133,7 +134,7 @@ export function findIntersections(
 
               intersections.push({
                 position: intersectionPoint,
-                airspaceId: airspace.id,
+                airspaceId: airspace._id,
                 enteringAirspace,
                 distanceAlongRoute,
               });
@@ -161,9 +162,12 @@ export function isInAirspace(
   airspace: Airspace,
   maxFlightLevel = 30,
 ): boolean {
-  if (airspace.lowerLimit > maxFlightLevel) return false;
+  if (getAirspaceLowerLimitFL(airspace) > maxFlightLevel) return false;
 
-  return turf.booleanPointInPolygon(point, turf.polygon(airspace.coordinates));
+  return turf.booleanPointInPolygon(
+    point,
+    turf.polygon(airspace.geometry.coordinates),
+  );
 }
 
 /**
@@ -182,16 +186,22 @@ export function isAirspaceIncludedInRoute(
 ): boolean {
   if (route.length > 1) {
     const routeLine = turf.lineString(route);
-    if (turf.booleanIntersects(routeLine, turf.polygon(airspace.coordinates)))
+    if (
+      turf.booleanIntersects(
+        routeLine,
+        turf.polygon(airspace.geometry.coordinates),
+      )
+    )
       return true;
   }
 
-  if (airspace.lowerLimit > maxFlightLevel) return false;
+  // If the airspace's lower limit is greater than the max flight level, return false
+  if (getAirspaceLowerLimitFL(airspace) > maxFlightLevel) return false;
 
   for (const point of route) {
     if (
       turf.booleanContains(
-        turf.polygon(airspace.coordinates),
+        turf.polygon(airspace.geometry.coordinates),
         turf.point(point),
       )
     )

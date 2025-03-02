@@ -218,7 +218,7 @@ export function generateFRTOLRouteFromSeed(
     throw new Error("Could not find a valid route after multiple iterations");
   }
 
-  console.log("Iterations: ", iterations);
+  console.log("Routegen Iterations: ", iterations);
 
   const startWaypoint: Waypoint = {
     name: startAirport.name,

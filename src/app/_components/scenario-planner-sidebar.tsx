@@ -122,7 +122,7 @@ export function ScenarioPlannerSidebar({
   //   HasEmergencyEventsStore.set(hasEmergencyEvents); // Set initial value
 
   // Route data
-  let routeSeed = ""; // Only used for seeding the route generator
+  let routeSeed: string = randomString(6); // Only used for seeding the route generator
 
   $: {
     if (routeSeed !== "") {

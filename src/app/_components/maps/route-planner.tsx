@@ -123,7 +123,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.featureCollection(
       airspaces
         .map((airspace) => {
-          if (airspace.type != 14) return turf.polygon(airspace.coordinates);
+          if (airspace.type != 14) return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
@@ -137,7 +137,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.featureCollection(
       airspaces
         .map((airspace) => {
-          if (airspace.type == 14) return turf.polygon(airspace.coordinates);
+          if (airspace.type == 14) return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
@@ -150,7 +150,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
     return turf.featureCollection(
       airports.map((airport) => {
-        return turf.point(airport.coordinates);
+        return turf.point(airport.geometry.coordinates);
       }),
     );
   }, [airports]);

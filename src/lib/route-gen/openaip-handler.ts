@@ -21,6 +21,7 @@ export async function getAllValidAirportData(): Promise<Airport[]> {
   const airports = airportData.map((airportData) =>
     airportDataToAirport(airportData),
   );
+  console.log(airports[0])
   airports.filter((airport) => airport.runways && airport.runways.length > 0);
   return airports;
 }

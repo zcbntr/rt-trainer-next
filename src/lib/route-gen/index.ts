@@ -55,7 +55,7 @@ export function generateFRTOLRouteFromSeed(
         Math.floor(Math.abs(seed * 987654321 + iterations * 123456789)) %
           airports.length
       ];
-    if (!startAirport?.coordinates)
+    if (!startAirport?.geometry.coordinates)
       throw new Error("Start airport undefined in route gen");
 
     if (startAirport.type == 3 || startAirport.type == 9) {
@@ -67,13 +67,13 @@ export function generateFRTOLRouteFromSeed(
       (x) =>
         x.type == 14 &&
         turf.distance(
-          turf.point(startAirport!.coordinates),
-          turf.point(x.coordinates[0]![0]!),
+          turf.point(startAirport!.geometry.coordinates),
+          turf.point(x.geometry.coordinates[0]![0]!),
           {
             units: "kilometers",
           },
         ) < 40 &&
-        !isInAirspace(startAirport!.coordinates, x),
+        !isInAirspace(startAirport!.geometry.coordinates, x),
     );
     if (nearbyMATZs.length == 0) {
       validRoute = false;
@@ -89,7 +89,7 @@ export function generateFRTOLRouteFromSeed(
 
     if (!chosenMATZ) throw new Error("Chosen MATZ undefined in route gen");
 
-    if (isInAirspace(startAirport.coordinates, chosenMATZ)) {
+    if (isInAirspace(startAirport.geometry.coordinates, chosenMATZ)) {
       validRoute = false;
       continue;
     }
@@ -102,8 +102,8 @@ export function generateFRTOLRouteFromSeed(
       if (!airport) throw new Error("Airport undefined in route gen");
 
       const distance = turf.distance(
-        chosenMATZ.coordinates[0]![0]!,
-        airport.coordinates,
+        chosenMATZ.geometry.coordinates[0]![0]!,
+        airport.geometry.coordinates,
         {
           units: "kilometers",
         },
@@ -141,7 +141,7 @@ export function generateFRTOLRouteFromSeed(
       if (!destinationAirport)
         throw new Error("Destination airport undefined in route gen");
 
-      if (!isInAirspace(destinationAirport.coordinates, chosenMATZ)) {
+      if (!isInAirspace(destinationAirport.geometry.coordinates, chosenMATZ)) {
         if (
           startAirportIsControlled &&
           destinationAirport.type != 3 &&
@@ -166,16 +166,17 @@ export function generateFRTOLRouteFromSeed(
       continue;
     }
 
-    const matzCoords: Feature<Point>[] = chosenMATZ.coordinates[0]!.map(
-      (point) => turf.point([point[0], point[1]]),
-    );
+    const matzCoords: Feature<Point>[] =
+      chosenMATZ.geometry.coordinates[0]!.map((point) =>
+        turf.point([point[0], point[1]]),
+      );
 
     matzEntryPoint = turf.nearestPoint(
-      turf.point(startAirport.coordinates),
+      turf.point(startAirport.geometry.coordinates),
       turf.featureCollection(matzCoords),
     ).geometry.coordinates as [number, number];
     matzExitPoint = turf.nearestPoint(
-      turf.point(destinationAirport.coordinates),
+      turf.point(destinationAirport.geometry.coordinates),
       turf.featureCollection(matzCoords),
     ).geometry.coordinates as [number, number];
 
@@ -186,10 +187,10 @@ export function generateFRTOLRouteFromSeed(
 
     // Get all airspace along the route
     const route: [number, number][] = [
-      startAirport.coordinates,
+      startAirport.geometry.coordinates,
       matzEntryPoint,
       matzExitPoint,
-      destinationAirport.coordinates,
+      destinationAirport.geometry.coordinates,
     ];
     onRouteAirspace = [];
 
@@ -222,10 +223,10 @@ export function generateFRTOLRouteFromSeed(
 
   const startWaypoint: Waypoint = {
     name: startAirport.name,
-    location: startAirport.coordinates,
+    location: startAirport.geometry.coordinates,
     type: WaypointType.Airport,
     index: 0,
-    id: startAirport.id,
+    id: startAirport._id,
   };
 
   if (!matzEntryPoint) throw new Error("MATZ entry point is undefined");
@@ -234,7 +235,7 @@ export function generateFRTOLRouteFromSeed(
     location: matzEntryPoint,
     type: WaypointType.NewAirspace,
     index: 1,
-    id: chosenMATZ.id + 1000,
+    id: chosenMATZ._id + 1000,
   };
 
   if (!matzExitPoint) throw new Error("MATZ exit point is undefined");
@@ -243,17 +244,17 @@ export function generateFRTOLRouteFromSeed(
     location: matzExitPoint,
     type: WaypointType.NewAirspace,
     index: 2,
-    id: chosenMATZ.id + 2000,
+    id: chosenMATZ._id + 2000,
   };
 
   if (destinationAirport == undefined)
     throw new Error("Destination airport is undefined");
   const endWaypoint: Waypoint = {
     name: destinationAirport.name,
-    location: destinationAirport.coordinates,
+    location: destinationAirport.geometry.coordinates,
     type: WaypointType.Airport,
     index: 3,
-    id: destinationAirport.id,
+    id: destinationAirport._id,
   };
 
   return {

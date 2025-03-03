@@ -1,32 +1,18 @@
 import { type Airport } from "../types/airport";
 import { type Airspace } from "../types/airspace";
-import {
-  type AirportReportingPointData,
-  type AirportData,
-  type AirspaceData,
-  airspaceDataToAirspace,
-  airportDataToAirport,
-} from "../types/open-aip";
 
 export async function getAllValidAirspaceData(): Promise<Airspace[]> {
-  const airspaceData = await getAllUKAirspaceFromOpenAIP();
-  const airspaces = airspaceData.map((airspaceData) =>
-    airspaceDataToAirspace(airspaceData),
-  );
+  const airspaces = await getAllUKAirspaceFromOpenAIP();
   return airspaces;
 }
 
 export async function getAllValidAirportData(): Promise<Airport[]> {
-  const airportData = await getAllUKAirportsFromOpenAIP();
-  const airports = airportData.map((airportData) =>
-    airportDataToAirport(airportData),
-  );
-  console.log(airports[0])
+  const airports = await getAllUKAirportsFromOpenAIP();
   airports.filter((airport) => airport.runways && airport.runways.length > 0);
   return airports;
 }
 
-export async function getAllUKAirportsFromOpenAIP(): Promise<AirportData[]> {
+export async function getAllUKAirportsFromOpenAIP(): Promise<Airport[]> {
   try {
     if (!process.env.OPENAIPKEY) {
       throw new Error("OPENAIPKEY is not defined in the environment");
@@ -49,16 +35,16 @@ export async function getAllUKAirportsFromOpenAIP(): Promise<AirportData[]> {
       );
     }
 
-	const data = await response.json();
+    const data: unknown = await response.json();
 
-    return [...data.items] as AirportData[];
+    return [...data.items] as Airport[];
   } catch (error: unknown) {
     console.error("Error: ", error);
   }
   return [];
 }
 
-export async function getAllUKAirspaceFromOpenAIP(): Promise<AirspaceData[]> {
+export async function getAllUKAirspaceFromOpenAIP(): Promise<Airspace[]> {
   try {
     if (!process.env.OPENAIPKEY) {
       throw new Error("OPENAIPKEY is not defined in the environment");
@@ -81,47 +67,47 @@ export async function getAllUKAirspaceFromOpenAIP(): Promise<AirspaceData[]> {
       );
     }
 
-    const data = await response1.json();
+    const data: unknown = await response1.json();
 
-    return [...data.items] as AirspaceData[];
+    return [...data.items] as Airspace[];
   } catch (error: unknown) {
     console.error("Error: ", error);
   }
   return [];
 }
 
-export async function getAllUKAirportReportingPointsFromOpenAIP(): Promise<
-  AirportReportingPointData[]
-> {
-  try {
-    if (!process.env.OPENAIPKEY) {
-      throw new Error("OPENAIPKEY is not defined in the environment");
-    }
+// export async function getAllUKAirportReportingPointsFromOpenAIP(): Promise<
+//   AirportReportingPointData[]
+// > {
+//   try {
+//     if (!process.env.OPENAIPKEY) {
+//       throw new Error("OPENAIPKEY is not defined in the environment");
+//     }
 
-    const response = await fetch(
-      `https://api.core.openaip.net/api/reporting-points`,
-      {
-		method: "GET",
-        headers: new Headers({
-          "Content-Type": "application/json",
-          "x-openaip-api-key": process.env.OPENAIPKEY,
-        }),
-        body: new URLSearchParams({
-          country: "GB",
-          sortBy: "geometry.coordinates[0]",
-        }),
-      },
-    );
+//     const response = await fetch(
+//       `https://api.core.openaip.net/api/reporting-points`,
+//       {
+//         method: "GET",
+//         headers: new Headers({
+//           "Content-Type": "application/json",
+//           "x-openaip-api-key": process.env.OPENAIPKEY,
+//         }),
+//         body: new URLSearchParams({
+//           country: "GB",
+//           sortBy: "geometry.coordinates[0]",
+//         }),
+//       },
+//     );
 
-    if (response.status !== 200) {
-      throw new Error(
-        `Failed to fetch reporting points from OpenAIP: ${response.statusText}`,
-      );
-    }
+//     if (response.status !== 200) {
+//       throw new Error(
+//         `Failed to fetch reporting points from OpenAIP: ${response.statusText}`,
+//       );
+//     }
 
-    return response.data.items as AirportReportingPointData[];
-  } catch (error: unknown) {
-    console.error("Error: ", error);
-  }
-  return [];
-}
+//     return response.data.items as AirportReportingPointData[];
+//   } catch (error: unknown) {
+//     console.error("Error: ", error);
+//   }
+//   return [];
+// }

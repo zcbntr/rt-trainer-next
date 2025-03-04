@@ -309,6 +309,17 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const onMapDoubleClick = useCallback(
     (e: MapMouseEvent) => {
+      // Check no other waypoint has the exact same location
+      if (waypoints.length > 0) {
+        const waypointAlreadyExists = waypoints.some(
+          (waypoint) =>
+            waypoint.location[0] == e.lngLat.lng &&
+            waypoint.location[1] == e.lngLat.lat,
+        );
+
+        if (waypointAlreadyExists) return;
+      }
+
       // e.g. Waypoint Golf X-Ray
       const waypointName = `Waypoint ${getNRandomPhoneticAlphabetLetters(2)}`;
 

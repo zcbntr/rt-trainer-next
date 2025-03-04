@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { MdOutlineMoreHoriz, MdDelete, MdRefresh } from "react-icons/md";
+import { MdOutlineMoreHoriz, MdDelete, MdRefresh, MdLocationPin } from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
-import useRouteStore from "~/app/stores/route-store";
+import useRoutePlannerStore from "~/app/stores/route-store";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -14,21 +14,21 @@ import { randomString } from "~/lib/utils";
 const RouteSection = () => {
   let routeSeed = randomString(6);
 
-  const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
-  const setWaypoints = useRouteStore((state) => state.setWaypoints);
+  const waypoints: Waypoint[] = useRoutePlannerStore((state) => state.waypoints);
+  const setWaypoints = useRoutePlannerStore((state) => state.setWaypoints);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
+  const removeWaypoint = useRoutePlannerStore((state) => state.removeWaypoint);
 
   //   For route gen
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
-  const maxFL = useRouteStore((state) => state.maxFL);
+  const maxFL = useRoutePlannerStore((state) => state.maxFL);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const setAirspacesOnRoute = useRouteStore(
+  const setAirspacesOnRoute = useRoutePlannerStore(
     (state) => state.setAirspacesOnRoute,
   );
-  const setAirportsOnRoute = useRouteStore((state) => state.setAirportsOnRoute);
+  const setAirportsOnRoute = useRoutePlannerStore((state) => state.setAirportsOnRoute);
 
   async function loadSeededRoute() {
     if (
@@ -59,7 +59,7 @@ const RouteSection = () => {
     return waypoints.map((waypoint) => {
       return (
         <div
-          className="card flex flex-row place-content-center gap-3 rounded-sm border p-2"
+          className="card flex flex-row place-content-center gap-2 rounded-sm border p-2"
           key={waypoint.id}
           draggable
           //   animate:flip={{ duration: dragDuration }}
@@ -77,16 +77,10 @@ const RouteSection = () => {
           //   }}
         >
           <div className="flex flex-col place-content-center">
-            {waypoint.index == 0 && <span>🛩️</span>}
-            {waypoint.index != 0 && waypoint.index == waypoints.length - 1 && (
-              <span>🏁</span>
-            )}
-            {waypoint.index != 0 && waypoint.index != waypoints.length - 1 && (
-              <span>🚩</span>
-            )}
+            <MdLocationPin size="1.5em" />
           </div>
           <div className="flex flex-col place-content-center">
-            <Input placeholder={waypoint.name} />
+            <Input defaultValue={waypoint.name} />
           </div>
           <div className="flex flex-col place-content-center">
             <button

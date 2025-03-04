@@ -30,7 +30,7 @@ const persistentStorage: StateStorage = {
       const storedValue = searchParams.get(key);
       return JSON.parse(storedValue!) as string;
     } else {
-      return null
+      return null;
     }
   },
   setItem: (key, newValue): void => {
@@ -47,10 +47,10 @@ const persistentStorage: StateStorage = {
 
 const storageOptions = {
   name: "routeData",
-  storage: createJSONStorage<RouteStore>(() => persistentStorage),
+  storage: createJSONStorage<RoutePlannerStore>(() => persistentStorage),
 };
 
-interface RouteStore {
+interface RoutePlannerStore {
   waypoints: Waypoint[];
   airspacesOnRoute: Airspace[];
   airportsOnRoute: Airport[];
@@ -59,6 +59,8 @@ interface RouteStore {
   maxFL: number;
   scenarioSeed: string;
   hasEmergencyEvents: boolean;
+  showOnlyOnRouteAirspaces: boolean;
+  showAirspacesAboveMaxFL: boolean;
   setWaypoints: (waypoints: Waypoint[]) => void;
   moveWaypoint: (waypointId: string, newLocation: [number, number]) => void;
   addWaypoint: (waypoint: Waypoint) => void;
@@ -70,10 +72,12 @@ interface RouteStore {
   setMaxFL: (maxFL: number) => void;
   setScenarioSeed: (seed: string) => void;
   setHasEmergencyEvents: (hasEmergencyEvents: boolean) => void;
+  setShowOnlyOnRouteAirspaces: (showOnlyOnRouteAirspaces: boolean) => void;
+  setShowAirspacesAboveMaxFL: (showAirspacesAboveMaxFL: boolean) => void;
 }
 
-const useRouteStore = create(
-  persist<RouteStore>(
+const useRoutePlannerStore = create(
+  persist<RoutePlannerStore>(
     (set) => ({
       waypoints: [],
       airspacesOnRoute: [],
@@ -83,6 +87,8 @@ const useRouteStore = create(
       maxFL: 30,
       scenarioSeed: "",
       hasEmergencyEvents: false,
+      showOnlyOnRouteAirspaces: false,
+      showAirspacesAboveMaxFL: false,
       setWaypoints: (_waypoints: Waypoint[]) =>
         set(() => ({ waypoints: _waypoints })),
       moveWaypoint: (waypointId: string, newLocation: [number, number]) => {
@@ -123,12 +129,16 @@ const useRouteStore = create(
       setScenarioSeed: (seed: string) => set(() => ({ scenarioSeed: seed })),
       setHasEmergencyEvents: (hasEmergencyEvents: boolean) =>
         set(() => ({ hasEmergencyEvents })),
+      setShowOnlyOnRouteAirspaces: (showOnlyOnRouteAirspaces: boolean) =>
+        set(() => ({ showOnlyOnRouteAirspaces })),
+      setShowAirspacesAboveMaxFL: (showAirspacesAboveMaxFL: boolean) =>
+        set(() => ({ showAirspacesAboveMaxFL })),
     }),
     storageOptions,
   ),
 );
 
-export default useRouteStore;
+export default useRoutePlannerStore;
 
 function updateDistance(waypoints: Waypoint[]): number {
   let distance = 0;

@@ -1,26 +1,20 @@
 "use client";
 
 import * as React from "react";
-import Map, {
-  Source,
-  Layer,
-  Marker,
-  type MapRef,
-  MarkerEvent,
-} from "react-map-gl/mapbox";
+import Map, { Source, Layer, Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
-import useRouteStore from "~/app/stores/route-store";
+import useRoutePlannerStore from "~/app/stores/route-store";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
 import { MdLocationPin } from "react-icons/md";
-import { TbPlaystationCircle } from "react-icons/tb";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
+import { getAirspaceLowerLimitFL } from "~/lib/sim-utils/airspaces";
 
 const routeLayerStyle: LayerSpecification = {
   id: "route",
@@ -86,15 +80,28 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
   const mapRef = useRef<MapRef>(null);
 
-  const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
+  const waypoints: Waypoint[] = useRoutePlannerStore(
+    (state) => state.waypoints,
+  );
   const airspaces: Airspace[] = useAeronauticalDataStore(
     (state) => state.airspaces,
   );
   const airports: Airport[] = useAeronauticalDataStore(
     (state) => state.airports,
   );
-  const addWaypoint = useRouteStore((state) => state.addWaypoint);
-  const moveWaypoint = useRouteStore((state) => state.moveWaypoint);
+  const airspacesOnRoute: Airspace[] = useRoutePlannerStore(
+    (state) => state.airspacesOnRoute,
+  );
+  const maxFL: number = useRoutePlannerStore((state) => state.maxFL);
+  const showAirspacesAboveMaxFL: boolean = useRoutePlannerStore(
+    (state) => state.showAirspacesAboveMaxFL,
+  );
+  const showOnlyOnRouteAirspaces: boolean = useRoutePlannerStore(
+    (state) => state.showOnlyOnRouteAirspaces,
+  );
+
+  const addWaypoint = useRoutePlannerStore((state) => state.addWaypoint);
+  const moveWaypoint = useRoutePlannerStore((state) => state.moveWaypoint);
   const setAirspaces = useAeronauticalDataStore((state) => state.setAirspaces);
 
   useEffect(() => {
@@ -127,34 +134,64 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   }, [airports.length, airspaces.length, setAirspaces]);
 
   const airspacesGeoJSONData = useMemo(() => {
-    if (airspaces.length === 0) {
+    const airspacesToUse = showOnlyOnRouteAirspaces
+      ? airspacesOnRoute
+      : airspaces;
+
+    if (airspacesToUse.length === 0) {
       return turf.featureCollection([]);
     }
 
     return turf.featureCollection(
-      airspaces
+      airspacesToUse
         .map((airspace) => {
-          if (airspace.type != 14)
+          const lowerLimitFL = getAirspaceLowerLimitFL(airspace);
+
+          if (
+            airspace.type != 14 &&
+            (showAirspacesAboveMaxFL || lowerLimitFL < maxFL)
+          )
             return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
-  }, [airspaces]);
+  }, [
+    airspaces,
+    airspacesOnRoute,
+    maxFL,
+    showAirspacesAboveMaxFL,
+    showOnlyOnRouteAirspaces,
+  ]);
 
   const matzsGeoJSONData = useMemo(() => {
-    if (airspaces.length === 0) {
+    const airspacesToUse = showOnlyOnRouteAirspaces
+      ? airspacesOnRoute
+      : airspaces;
+
+    if (airspacesToUse.length === 0) {
       return turf.featureCollection([]);
     }
 
     return turf.featureCollection(
-      airspaces
+      airspacesToUse
         .map((airspace) => {
-          if (airspace.type == 14)
+          const lowerLimitFL = getAirspaceLowerLimitFL(airspace);
+
+          if (
+            airspace.type == 14 &&
+            (showAirspacesAboveMaxFL || lowerLimitFL < maxFL)
+          )
             return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
-  }, [airspaces]);
+  }, [
+    airspaces,
+    airspacesOnRoute,
+    maxFL,
+    showAirspacesAboveMaxFL,
+    showOnlyOnRouteAirspaces,
+  ]);
 
   const airportsGeoJSONData = useMemo(() => {
     if (airports.length === 0) {
@@ -247,6 +284,15 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
         if (!airport) return;
 
+        // Check no other waypoint has the exact same location
+        if (waypoints.length > 0) {
+          const waypointAlreadyExists = waypoints.some(
+            (waypoint) => waypoint.location == airport.geometry.coordinates,
+          );
+
+          if (waypointAlreadyExists) return;
+        }
+
         const waypointName = `Waypoint ${airport.name}`;
 
         addWaypoint({
@@ -258,7 +304,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         });
       }
     },
-    [addWaypoint, airports, viewState.zoom, waypoints.length],
+    [addWaypoint, airports, viewState.zoom, waypoints],
   );
 
   const onMapDoubleClick = useCallback(

@@ -1,5 +1,5 @@
 import { MdOutlineRefresh } from "react-icons/md";
-import useRouteStore from "~/app/stores/route-store";
+import useRoutePlannerStore from "~/app/stores/route-store";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -14,14 +14,14 @@ import { Switch } from "~/components/ui/switch";
 import { randomString } from "~/lib/utils";
 
 const ScenarioSettingsSection = () => {
-  const maxFL = useRouteStore((state) => state.maxFL);
-  const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
-  const scenarioSeed = useRouteStore((state) => state.scenarioSeed);
-  const hasEmergencyEvents = useRouteStore((state) => state.hasEmergencyEvents);
-  const setDistanceUnit = useRouteStore((state) => state.setDistanceUnit);
-  const setMaxFL = useRouteStore((state) => state.setMaxFL);
-  const setScenarioSeed = useRouteStore((state) => state.setScenarioSeed);
-  const setHasEmergencyEvents = useRouteStore(
+  const maxFL = useRoutePlannerStore((state) => state.maxFL);
+  const distanceUnit = useRoutePlannerStore((state) => state.distanceDisplayUnit);
+  const scenarioSeed = useRoutePlannerStore((state) => state.scenarioSeed);
+  const hasEmergencyEvents = useRoutePlannerStore((state) => state.hasEmergencyEvents);
+  const setDistanceUnit = useRoutePlannerStore((state) => state.setDistanceUnit);
+  const setMaxFL = useRoutePlannerStore((state) => state.setMaxFL);
+  const setScenarioSeed = useRoutePlannerStore((state) => state.setScenarioSeed);
+  const setHasEmergencyEvents = useRoutePlannerStore(
     (state) => state.setHasEmergencyEvents,
   );
 

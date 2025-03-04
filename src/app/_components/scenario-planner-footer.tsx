@@ -1,14 +1,17 @@
 "use client";
 
 import { MdOutlinePlayCircleFilled } from "react-icons/md";
-import useRouteStore from "../stores/route-store";
+import useRoutePlannerStore from "../stores/route-store";
 import { kmToUnit } from "~/lib/sim-utils/route";
 import { Button } from "~/components/ui/button";
 
 const ScenarioPlannerFooter = () => {
-  const distance: number = useRouteStore((state) => state.distanceKM);
-  const distanceUnit: string = useRouteStore(
+  const distance: number = useRoutePlannerStore((state) => state.distanceKM);
+  const distanceUnit: string = useRoutePlannerStore(
     (state) => state.distanceDisplayUnit,
+  );
+  const airspacesOnRoute = useRoutePlannerStore(
+    (state) => state.airspacesOnRoute,
   );
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
@@ -34,7 +37,7 @@ const ScenarioPlannerFooter = () => {
       <div className="flex flex-row place-content-center p-4">
         <div className="flex flex-col place-content-center">
           <div className="text-sm">Unique Airspaces</div>
-          <div className="text-xl">0</div>
+          <div className="text-xl">{airspacesOnRoute.length}</div>
         </div>
       </div>
       <div className="vr border-surface-200 dark:border-surface-700 h-full border" />

@@ -2,25 +2,11 @@
 
 import {
   MdAirplanemodeActive,
-  MdAutoAwesome,
   MdLocationPin,
-  MdOutlineMoreHoriz,
-  MdOutlineRefresh,
   MdOutlineKeyboardDoubleArrowLeft,
-  MdDelete,
 } from "react-icons/md";
 import { IoOptions } from "react-icons/io5";
 import { PiPolygonBold } from "react-icons/pi";
-import { randomString } from "~/lib/utils";
-import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
-import { type Waypoint } from "~/lib/types/waypoint";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import {
   Sidebar,
   SidebarContent,
@@ -34,17 +20,14 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Command } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import useRouteStore from "../../stores/route-store";
-import useAeronauticalDataStore from "../../stores/aeronautical-data-store";
-import { Switch } from "~/components/ui/switch";
-import useAircraftDataStore from "../../stores/aircraft-data-store";
-import AircraftDetailsSection from "./aircraft-details-section";
+import AircraftSection from "./aircraft-section";
+import RouteSection from "./route-section";
+import ScenarioSettingsSection from "./scenario-settings-section";
+import AirspacesSection from "./airspaces-section";
 
 const sidebarSections = [
   {
@@ -68,11 +51,6 @@ const sidebarSections = [
     description: "Show and hide airspaces based on parameters",
     icon: PiPolygonBold,
   },
-  {
-    title: "Generate",
-    description: "Auto-generate a route",
-    icon: MdAutoAwesome,
-  },
 ];
 
 export function ScenarioPlannerSidebar({
@@ -86,8 +64,6 @@ export function ScenarioPlannerSidebar({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const sidebarSection = searchParams.get("sidebar");
-  const randomScenarioParam = searchParams.get("randomScenario");
-  const randomRouteParam = searchParams.get("randomRoute");
 
   useEffect(() => {
     if (sidebarSection || activeSection) {
@@ -103,141 +79,6 @@ export function ScenarioPlannerSidebar({
       setOpen(false);
     }
   }, [sidebarSection, setOpen, activeSection]);
-
-  const airspaces = useAeronauticalDataStore((state) => state.airspaces);
-  const airports = useAeronauticalDataStore((state) => state.airports);
-
-  const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
-  const distanceUnit = useRouteStore((state) => state.distanceDisplayUnit);
-  const maxFL = useRouteStore((state) => state.maxFL);
-  const setWaypoints = useRouteStore((state) => state.setWaypoints);
-  // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const removeWaypoint = useRouteStore((state) => state.removeWaypoint);
-  const setAirspacesOnRoute = useRouteStore(
-    (state) => state.setAirspacesOnRoute,
-  );
-  const setAirportsOnRoute = useRouteStore((state) => state.setAirportsOnRoute);
-  const setDistanceUnit = useRouteStore((state) => state.setDistanceUnit);
-  const setMaxFL = useRouteStore((state) => state.setMaxFL);
-
-  let scenarioSeed: string = randomScenarioParam ? randomString(6) : "";
-
-  let hasEmergencyEvents = true;
-
-  let routeSeed: string = randomRouteParam ? randomString(6) : ""; // Only used for seeding the route generator
-
-  async function loadSeededRoute() {
-    if (
-      !airports.length ||
-      !airspaces.length ||
-      !routeSeed ||
-      routeSeed.length == 0 ||
-      maxFL == 0
-    ) {
-      return;
-    }
-
-    const routeData = generateFRTOLRouteFromSeed(
-      routeSeed,
-      airports,
-      airspaces,
-      maxFL,
-    );
-
-    if (routeData) {
-      setWaypoints(routeData.waypoints);
-      setAirportsOnRoute(routeData.airports);
-      setAirspacesOnRoute(routeData.airspaces);
-    }
-  }
-
-  function onClearClick() {
-    setWaypoints([]);
-  }
-
-  // const dragDuration = 200;
-  // const animatingWaypoints = new Set();
-
-  // function swapWaypointDetails(
-  //   _draggingWaypoint: Waypoint,
-  //   _waypointToSwap: Waypoint,
-  // ): void {
-  //   if (
-  //     _draggingWaypoint === _waypointToSwap ||
-  //     animatingWaypoints.has(_waypointToSwap)
-  //   )
-  //     return;
-  //   animatingWaypoints.add(_waypointToSwap);
-  //   setTimeout(
-  //     (): boolean => animatingWaypoints.delete(_waypointToSwap),
-  //     dragDuration,
-  //   );
-
-  //   swapWaypoints(_draggingWaypoint, _waypointToSwap);
-  // }
-
-  const waypointDetails = useMemo(() => {
-    return waypoints.map((waypoint) => {
-      return (
-        <div
-          className="card flex flex-row place-content-center gap-3 rounded-xl p-2"
-          key={waypoint.id}
-          draggable
-          //   animate:flip={{ duration: dragDuration }}
-          //   on:dragstart={() => {
-          //     draggingWaypoint = waypoint;
-          //   }}
-          //   on:dragend={() => {
-          //     draggingWaypoint = undefined;
-          //   }}
-          //   on:dragenter={() => {
-          //     swapWith(waypoint);
-          //   }}
-          //   on:dragover={(e) => {
-          //     e.preventDefault();
-          //   }}
-        >
-          <div className="flex flex-col place-content-center">
-            {waypoint.index == 0 && <span>🛩️</span>}
-            {waypoint.index != 0 && waypoint.index == waypoints.length - 1 && (
-              <span>🏁</span>
-            )}
-            {waypoint.index != 0 && waypoint.index != waypoints.length - 1 && (
-              <span>🚩</span>
-            )}
-          </div>
-          <div className="flex flex-col place-content-center">
-            <Input placeholder={waypoint.name} />
-          </div>
-          <div className="flex flex-col place-content-center">
-            <button
-              className="flex flex-col place-content-center"
-              //   use:popup={{
-              //     event: "click",
-              //     target: waypoint.name + "-waypoint-details-popup",
-              //     placement: "bottom",
-              //   }}
-            >
-              <MdOutlineMoreHoriz />
-            </button>
-          </div>
-
-          <div
-            id={`${waypoint.name}-waypoint-details-popup`}
-            className="flex flex-col place-content-center"
-          >
-            <button
-              onClick={() => {
-                removeWaypoint(waypoint.id);
-              }}
-            >
-              <MdDelete />
-            </button>
-          </div>
-        </div>
-      );
-    });
-  }, [removeWaypoint, waypoints]);
 
   return (
     <Sidebar
@@ -310,7 +151,7 @@ export function ScenarioPlannerSidebar({
               variant={"link"}
               onClick={() => {
                 setOpen(false);
-                // Naive solution - make a helper function please!
+                // Naive solution - make a helper function please! (currently deletes all state held in url params)
                 router.replace("/plan");
               }}
             >
@@ -322,150 +163,15 @@ export function ScenarioPlannerSidebar({
           <SidebarGroup className="h-full px-0">
             <SidebarGroupContent className="h-full">
               <div className="flex h-full flex-col gap-2 px-2">
-                {activeSection == "Route Waypoints" &&
-                  waypoints.length == 0 && (
-                    <div className="px-1">
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Add a waypoint by clicking on an airport or any other
-                        spot on the map. Or use the <b>Auto-generate</b> tool.
-                      </p>
-                    </div>
-                  )}
-
-                {activeSection == "Route Waypoints" && waypoints.length > 0 && (
-                  <div className="flex h-full flex-col place-content-between">
-                    <div>{waypointDetails}</div>{" "}
-                    <Button onClick={onClearClick}>Clear All</Button>
-                  </div>
-                )}
+                {activeSection == "Route Waypoints" && <RouteSection />}
 
                 {activeSection == "Scenario Settings" && (
-                  <div className="flex flex-col gap-4 p-2">
-                    <div className="flex flex-col gap-1">
-                      <Label className="label text-sm">Scenario Seed</Label>
-                      <div className="flex flex-row gap-2">
-                        <Input
-                          id="scenario-seed-input"
-                          placeholder="Enter a seed"
-                          defaultValue={scenarioSeed}
-                          onChange={(e) => {
-                            scenarioSeed = e.target.value;
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          className="btn variant-filled w-10"
-                          onClick={() => {
-                            scenarioSeed = randomString(6);
-
-                            const element = document.getElementById(
-                              "scenario-seed-input",
-                            );
-                            if (element) {
-                              (element as HTMLInputElement).value =
-                                scenarioSeed;
-                            }
-                          }}
-                        >
-                          <MdOutlineRefresh />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="emergency-events-checkbox"
-                        defaultChecked={hasEmergencyEvents}
-                        onCheckedChange={() =>
-                          (hasEmergencyEvents = !hasEmergencyEvents)
-                        }
-                      />
-                      <Label>Emergency Events</Label>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Label>Maximum Flight Level</Label>
-                      <Input
-                        id="fl-input"
-                        defaultValue={maxFL}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (value >= 15 && value <= 250) {
-                            setMaxFL(value);
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <div>
-                        <Label>Distance Unit</Label>
-                      </div>
-                      <Select
-                        defaultValue={distanceUnit}
-                        onValueChange={(value) => setDistanceUnit(value)}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue
-                            defaultValue={"nm"}
-                            placeholder={"Nautical Miles"}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="nm">Nautical Miles</SelectItem>
-                          <SelectItem value="mi">Miles</SelectItem>
-                          <SelectItem value="km">Kilometers</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <ScenarioSettingsSection />
                 )}
 
-                {activeSection == "Aircraft Details" && (
-                  <AircraftDetailsSection />
-                )}
+                {activeSection == "Aircraft Details" && <AircraftSection />}
 
-                {activeSection == "Airspaces" && (
-                  <div className="flex flex-col gap-3 p-2"></div>
-                )}
-
-                {activeSection == "Generate" && (
-                  <div className="flex flex-col gap-4 p-2">
-                    <div className="flex flex-col gap-2">
-                      <Label>Route Seed</Label>
-                      <div className="flex flex-row gap-2">
-                        <Input
-                          id="route-seed-input"
-                          placeholder="Enter a seed"
-                          defaultValue={routeSeed}
-                          onChange={(e) => {
-                            routeSeed = e.target.value;
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn variant-filled w-10"
-                          onClick={() => {
-                            routeSeed = randomString(6);
-
-                            const element =
-                              document.getElementById("route-seed-input");
-                            if (element) {
-                              (element as HTMLInputElement).value = routeSeed;
-                            }
-                          }}
-                        >
-                          <MdOutlineRefresh />
-                        </button>
-                      </div>
-                      <div>
-                        <Button onClick={loadSeededRoute}>
-                          Generate Route
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {activeSection == "Airspaces" && <AirspacesSection />}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>

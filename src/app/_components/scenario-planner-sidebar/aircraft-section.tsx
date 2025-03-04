@@ -4,7 +4,7 @@ import useAircraftDataStore from "~/app/stores/aircraft-data-store";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
-const AircraftDetailsSection = () => {
+const AircraftSection = () => {
   const aircraftType = useAircraftDataStore((state) => state.type);
   const callsign = useAircraftDataStore((state) => state.callsign);
   const prefix = useAircraftDataStore((state) => state.prefix);
@@ -48,4 +48,4 @@ const AircraftDetailsSection = () => {
   );
 };
 
-export default AircraftDetailsSection;
+export default AircraftSection;

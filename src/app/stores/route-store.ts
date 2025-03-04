@@ -62,6 +62,8 @@ interface RouteStore {
   distanceKM: number;
   distanceDisplayUnit: string;
   maxFL: number;
+  scenarioSeed: string;
+  hasEmergencyEvents: boolean;
   setWaypoints: (waypoints: Waypoint[]) => void;
   moveWaypoint: (waypointId: string, newLocation: [number, number]) => void;
   addWaypoint: (waypoint: Waypoint) => void;
@@ -71,6 +73,8 @@ interface RouteStore {
   setAirportsOnRoute: (airports: Airport[]) => void;
   setDistanceUnit: (unit: string) => void;
   setMaxFL: (maxFL: number) => void;
+  setScenarioSeed: (seed: string) => void;
+  setHasEmergencyEvents: (hasEmergencyEvents: boolean) => void;
 }
 
 const useRouteStore = create(
@@ -82,6 +86,8 @@ const useRouteStore = create(
       distanceKM: 0,
       distanceDisplayUnit: "nm",
       maxFL: 30,
+      scenarioSeed: "",
+      hasEmergencyEvents: false,
       setWaypoints: (_waypoints: Waypoint[]) =>
         set(() => ({ waypoints: _waypoints })),
       moveWaypoint: (waypointId: string, newLocation: [number, number]) => {
@@ -119,6 +125,9 @@ const useRouteStore = create(
       setDistanceUnit: (unit: string) =>
         set(() => ({ distanceDisplayUnit: unit })),
       setMaxFL: (maxFL: number) => set(() => ({ maxFL })),
+      setScenarioSeed: (seed: string) => set(() => ({ scenarioSeed: seed })),
+      setHasEmergencyEvents: (hasEmergencyEvents: boolean) =>
+        set(() => ({ hasEmergencyEvents })),
     }),
     storageOptions,
   ),

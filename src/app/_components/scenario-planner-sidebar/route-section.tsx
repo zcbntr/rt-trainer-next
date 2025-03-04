@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { MdOutlineMoreHoriz, MdDelete, MdRefresh, MdLocationPin } from "react-icons/md";
+import {
+  MdOutlineMoreHoriz,
+  MdDelete,
+  MdRefresh,
+  MdLocationPin,
+} from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import useRoutePlannerStore from "~/app/stores/route-store";
 import { Button } from "~/components/ui/button";
@@ -14,7 +19,9 @@ import { randomString } from "~/lib/utils";
 const RouteSection = () => {
   let routeSeed = randomString(6);
 
-  const waypoints: Waypoint[] = useRoutePlannerStore((state) => state.waypoints);
+  const waypoints: Waypoint[] = useRoutePlannerStore(
+    (state) => state.waypoints,
+  );
   const setWaypoints = useRoutePlannerStore((state) => state.setWaypoints);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
   const removeWaypoint = useRoutePlannerStore((state) => state.removeWaypoint);
@@ -28,7 +35,9 @@ const RouteSection = () => {
   const setAirspacesOnRoute = useRoutePlannerStore(
     (state) => state.setAirspacesOnRoute,
   );
-  const setAirportsOnRoute = useRoutePlannerStore((state) => state.setAirportsOnRoute);
+  const setAirportsOnRoute = useRoutePlannerStore(
+    (state) => state.setAirportsOnRoute,
+  );
 
   async function loadSeededRoute() {
     if (
@@ -49,7 +58,7 @@ const RouteSection = () => {
     );
 
     if (routeData) {
-      setWaypoints(routeData.waypoints);
+      setWaypoints(routeData.waypoints, airspaces);
       setAirportsOnRoute(routeData.airports);
       setAirspacesOnRoute(routeData.airspaces);
     }
@@ -101,7 +110,7 @@ const RouteSection = () => {
           >
             <button
               onClick={() => {
-                removeWaypoint(waypoint.id);
+                removeWaypoint(waypoint.id, airspaces);
               }}
             >
               <MdDelete />
@@ -110,10 +119,10 @@ const RouteSection = () => {
         </div>
       );
     });
-  }, [removeWaypoint, waypoints]);
+  }, [removeWaypoint, waypoints, airspaces]);
 
   function onClearClick() {
-    setWaypoints([]);
+    setWaypoints([], []);
   }
 
   // const dragDuration = 200;

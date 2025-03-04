@@ -107,19 +107,25 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   useEffect(() => {
     async function fetchAirspaces() {
       // Lazy load airspaces/airports into stores
-      const freshAirspaces: Airspace[] = (
-        await fetch("/api/aeronautical-data/airspaces").then((res) =>
-          res.json(),
-        )
-      ).data as Airspace[];
+      const freshAirspaces: Airspace[] =
+        (
+          await fetch("/api/aeronautical-data/airspaces").then((res) =>
+            res.json(),
+          )
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        ).data as Airspace[];
 
       setAirspaces(freshAirspaces);
     }
 
     async function fetchAirports() {
-      const freshAirports: Airport[] = (
-        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
-      ).data as Airport[];
+      const freshAirports: Airport[] =
+        (
+          await fetch("/api/aeronautical-data/airports").then((res) =>
+            res.json(),
+          )
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        ).data as Airport[];
 
       useAeronauticalDataStore.setState({ airports: freshAirports });
     }
@@ -219,7 +225,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
           // Instead visuals could update on drag but not route date
           // Otherwise we would do a lot of unnecessary calculations
           onDragEnd={(e) => {
-            moveWaypoint(waypoint.id, [e.lngLat.lng, e.lngLat.lat]);
+            moveWaypoint(waypoint.id, [e.lngLat.lng, e.lngLat.lat], airspaces);
           }}
         >
           <div className="flex rounded-full p-4">
@@ -228,7 +234,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         </Marker>
       );
     });
-  }, [moveWaypoint, waypoints]);
+  }, [moveWaypoint, waypoints, airspaces]);
 
   const routeLine = useMemo(() => {
     if (waypoints.length < 2) {
@@ -295,16 +301,19 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
         const waypointName = `Waypoint ${airport.name}`;
 
-        addWaypoint({
-          id: `waypoint-${airport.name}-${randomString(6)}`,
-          location: airport.geometry.coordinates,
-          type: WaypointType.Airport,
-          index: waypoints.length,
-          name: waypointName,
-        });
+        addWaypoint(
+          {
+            id: `waypoint-${airport.name}-${randomString(6)}`,
+            location: airport.geometry.coordinates,
+            type: WaypointType.Airport,
+            index: waypoints.length,
+            name: waypointName,
+          },
+          airspaces,
+        );
       }
     },
-    [addWaypoint, airports, viewState.zoom, waypoints],
+    [addWaypoint, airports, viewState.zoom, waypoints, airspaces],
   );
 
   const onMapDoubleClick = useCallback(
@@ -323,15 +332,18 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
       // e.g. Waypoint Golf X-Ray
       const waypointName = `Waypoint ${getNRandomPhoneticAlphabetLetters(2)}`;
 
-      addWaypoint({
-        id: `waypoint-${randomString(6)}`,
-        location: [e.lngLat.lng, e.lngLat.lat],
-        type: WaypointType.GPS,
-        index: waypoints.length,
-        name: waypointName,
-      });
+      addWaypoint(
+        {
+          id: `waypoint-${randomString(6)}`,
+          location: [e.lngLat.lng, e.lngLat.lat],
+          type: WaypointType.GPS,
+          index: waypoints.length,
+          name: waypointName,
+        },
+        airspaces,
+      );
     },
-    [addWaypoint, waypoints],
+    [addWaypoint, waypoints, airspaces],
   );
 
   return (

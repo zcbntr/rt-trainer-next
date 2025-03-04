@@ -45,26 +45,26 @@ const TransmitButton = ({
     }
   };
 
-  const handleTransmitMouseDown = () => {
+  const handleTransmitMouseDown = async () => {
     if (speechEnabled && !disabled) {
       transmitButtonClasses = "bg-red-500";
-      SpeechRecognition.startListening();
+      await SpeechRecognition.startListening();
     }
   };
 
-  const handleTransmitMouseUp = () => {
+  const handleTransmitMouseUp = async () => {
     if (speechEnabled && !disabled) {
       transmitButtonClasses = "bg-red-300";
-      SpeechRecognition.abortListening();
+      await SpeechRecognition.abortListening();
       processSpeech(transcript);
       resetTranscript();
     }
   };
 
-  const handleTransmitMouseLeave = () => {
+  const handleTransmitMouseLeave = async () => {
     if (speechEnabled && !disabled) {
       transmitButtonClasses = "bg-red-300";
-      SpeechRecognition.abortListening();
+      await SpeechRecognition.abortListening();
       processSpeech(transcript);
       resetTranscript();
     }

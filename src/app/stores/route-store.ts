@@ -17,6 +17,7 @@ import { type Waypoint } from "~/lib/types/waypoint";
 import * as turf from "@turf/turf";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
+import { isAirspaceIncludedInRoute } from "~/lib/sim-utils/route";
 
 const getUrlSearch = () => {
   return window.location.search.slice(1);
@@ -61,11 +62,19 @@ interface RoutePlannerStore {
   hasEmergencyEvents: boolean;
   showOnlyOnRouteAirspaces: boolean;
   showAirspacesAboveMaxFL: boolean;
-  setWaypoints: (waypoints: Waypoint[]) => void;
-  moveWaypoint: (waypointId: string, newLocation: [number, number]) => void;
-  addWaypoint: (waypoint: Waypoint) => void;
-  removeWaypoint: (waypointId: string) => void;
-  swapWaypoints: (waypointA: Waypoint, waypointB: Waypoint) => void;
+  setWaypoints: (waypoints: Waypoint[], airspaces: Airspace[]) => void;
+  moveWaypoint: (
+    waypointId: string,
+    newLocation: [number, number],
+    airspaces: Airspace[],
+  ) => void;
+  addWaypoint: (waypoint: Waypoint, airspaces: Airspace[]) => void;
+  removeWaypoint: (waypointId: string, airspaces: Airspace[]) => void;
+  swapWaypoints: (
+    waypointA: Waypoint,
+    waypointB: Waypoint,
+    airspaces: Airspace[],
+  ) => void;
   setAirspacesOnRoute: (airspaces: Airspace[]) => void;
   setAirportsOnRoute: (airports: Airport[]) => void;
   setDistanceUnit: (unit: string) => void;
@@ -89,9 +98,18 @@ const useRoutePlannerStore = create(
       hasEmergencyEvents: false,
       showOnlyOnRouteAirspaces: false,
       showAirspacesAboveMaxFL: false,
-      setWaypoints: (_waypoints: Waypoint[]) =>
-        set(() => ({ waypoints: _waypoints })),
-      moveWaypoint: (waypointId: string, newLocation: [number, number]) => {
+      setWaypoints: (_waypoints: Waypoint[], airspaces: Airspace[]) => {
+        set(() => ({ waypoints: _waypoints }));
+        set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
+        set((state) => ({
+          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+        }));
+      },
+      moveWaypoint: (
+        waypointId: string,
+        newLocation: [number, number],
+        airspaces: Airspace[],
+      ) => {
         set((state) => ({
           waypoints: state.waypoints.map((waypoint) =>
             waypoint.id === waypointId
@@ -100,24 +118,40 @@ const useRoutePlannerStore = create(
           ),
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
+        set((state) => ({
+          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+        }));
       },
-      addWaypoint: (waypoint: Waypoint) => {
+      addWaypoint: (waypoint: Waypoint, airspaces: Airspace[]) => {
         set((state) => ({
           waypoints: addWaypoint(waypoint, state.waypoints),
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
+        set((state) => ({
+          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+        }));
       },
-      removeWaypoint: (waypointId: string) => {
+      removeWaypoint: (waypointId: string, airspaces: Airspace[]) => {
         set((state) => ({
           waypoints: removeWaypoint(waypointId, state.waypoints),
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
+        set((state) => ({
+          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+        }));
       },
-      swapWaypoints: (waypointA: Waypoint, waypointB: Waypoint) => {
+      swapWaypoints: (
+        waypointA: Waypoint,
+        waypointB: Waypoint,
+        airspaces: Airspace[],
+      ) => {
         set((state) => ({
           waypoints: swapWaypoints(waypointA, waypointB, state.waypoints),
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
+        set((state) => ({
+          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+        }));
       },
       setAirspacesOnRoute: (airspaces: Airspace[]) =>
         set(() => ({ airspacesOnRoute: airspaces })),
@@ -139,6 +173,23 @@ const useRoutePlannerStore = create(
 );
 
 export default useRoutePlannerStore;
+
+function updateAirspacesOnRoute(
+  waypoints: Waypoint[],
+  airspaces: Airspace[],
+): Airspace[] {
+  if (!airspaces || !waypoints || waypoints.length < 2) {
+    return [];
+  }
+
+  const airspacesOnRoute = airspaces.filter((airspace) =>
+    isAirspaceIncludedInRoute(
+      waypoints.map((waypoint) => waypoint.location),
+      airspace,
+    ),
+  );
+  return airspacesOnRoute;
+}
 
 function updateDistance(waypoints: Waypoint[]): number {
   let distance = 0;

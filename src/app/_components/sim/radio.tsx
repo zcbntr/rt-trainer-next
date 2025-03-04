@@ -16,7 +16,7 @@ type RadioProps = {
 const Radio = ({
   className = "",
   disabled = false,
-  onSpeechInput = () => {},
+  onSpeechInput,
 }: RadioProps) => {
   const RadioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
   type ArrayMaxLength7MinLength2 = readonly [
@@ -170,7 +170,7 @@ const Radio = ({
           <TransmitButton
             disabled={disabled}
             speechEnabled={true}
-            onSpeechRecieved={onSpeechInput}
+            onSpeechRecieved={onSpeechInput!}
           />
         </div>
         <div className="flex flex-row place-content-center">Transmit</div>

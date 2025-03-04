@@ -1,26 +1,24 @@
 "use client";
 
-import { index } from "drizzle-orm/pg-core";
-import { Marker, Popup } from "mapbox-gl";
-import { ParseResult } from "zod";
+import { type ParseResult } from "zod";
 import Parser from "~/lib/radio-calls/parser";
-import Scenario from "~/lib/scenario";
+import type Scenario from "~/lib/scenario";
 import { generateScenario } from "~/lib/scenario/scenario-generator";
 import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
-import { Airport } from "~/lib/types/airport";
-import { Airspace } from "~/lib/types/airspace";
-import { RadioCall, RadioMessageAttempt } from "~/lib/types/radio-call";
-import { WaypointURLObject } from "~/lib/types/scenario";
-import { AltimeterState } from "~/lib/types/simulator";
-import { Waypoint } from "~/lib/types/waypoint";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
+import { type RadioCall, type RadioMessageAttempt } from "~/lib/types/radio-call";
+import { type WaypointURLObject } from "~/lib/types/scenario";
+import { type AltimeterState } from "~/lib/types/simulator";
+import { type Waypoint } from "~/lib/types/waypoint";
 import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
 import { useSearchParams } from "next/navigation";
-import { RadioState } from "~/app/stores/radio-store";
-import { TransponderState } from "~/app/stores/transponder";
+import { type RadioState } from "~/app/stores/radio-store";
+import { type TransponderState } from "~/app/stores/transponder-store";
 import {
   Dialog,
   DialogContent,

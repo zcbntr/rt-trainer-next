@@ -123,7 +123,8 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.featureCollection(
       airspaces
         .map((airspace) => {
-          if (airspace.type != 14) return turf.polygon(airspace.geometry.coordinates);
+          if (airspace.type != 14)
+            return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
@@ -137,7 +138,8 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.featureCollection(
       airspaces
         .map((airspace) => {
-          if (airspace.type == 14) return turf.polygon(airspace.geometry.coordinates);
+          if (airspace.type == 14)
+            return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
@@ -188,10 +190,11 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.lineString(waypoints.map((waypoint) => waypoint.location));
   }, [waypoints]);
 
+  
   const [viewState, setViewState] = React.useState<ViewStateType>({
-    longitude: -122.4,
-    latitude: 37.8,
-    zoom: 1,
+    longitude: -1.83912391365976,
+    latitude: 53.34537967335982,
+    zoom: 6,
   });
 
   const onMove = React.useCallback(

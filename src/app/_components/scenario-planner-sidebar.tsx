@@ -6,12 +6,11 @@ import {
   MdLocationPin,
   MdOutlineMoreHoriz,
   MdOutlineRefresh,
-  MdRoute,
-  MdSettingsInputComposite,
   MdOutlineKeyboardDoubleArrowLeft,
   MdDelete,
 } from "react-icons/md";
-import { Checkbox } from "~/components/ui/checkbox";
+import { IoOptions } from "react-icons/io5";
+import { PiPolygonBold } from "react-icons/pi";
 import { randomString } from "~/lib/utils";
 import { generateFRTOLRouteFromSeed } from "~/lib/route-gen";
 import { type Waypoint } from "~/lib/types/waypoint";
@@ -43,6 +42,7 @@ import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
 import useRouteStore from "../stores/route-store";
 import useAeronauticalDataStore from "../stores/aeronautical-data-store";
+import { Switch } from "~/components/ui/switch";
 
 const sidebarSections = [
   {
@@ -54,7 +54,7 @@ const sidebarSections = [
   {
     title: "Scenario Settings",
     description: "Set the seed for the scenario and enable emergency events",
-    icon: MdRoute,
+    icon: IoOptions,
   },
   {
     title: "Aircraft Details",
@@ -62,9 +62,9 @@ const sidebarSections = [
     icon: MdAirplanemodeActive,
   },
   {
-    title: "Preferences",
-    description: "Set the units and maximum flight level",
-    icon: MdSettingsInputComposite,
+    title: "Airspaces",
+    description: "Show and hide airspaces based on parameters",
+    icon: PiPolygonBold,
   },
   {
     title: "Generate",
@@ -84,6 +84,8 @@ export function ScenarioPlannerSidebar({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const sidebarSection = searchParams.get("sidebar");
+  const randomScenarioParam = searchParams.get("randomScenario");
+  const randomRouteParam = searchParams.get("randomRoute");
 
   useEffect(() => {
     if (sidebarSection || activeSection) {
@@ -116,28 +118,11 @@ export function ScenarioPlannerSidebar({
   const setDistanceUnit = useRouteStore((state) => state.setDistanceUnit);
   const setMaxFL = useRouteStore((state) => state.setMaxFL);
 
-  let scenarioSeed: string = randomString(6);
-  //   ScenarioSeedStore.set(scenarioSeed); // Set initial value
+  let scenarioSeed: string = randomScenarioParam ? randomString(6) : "";
+
   let hasEmergencyEvents = true;
-  //   HasEmergencyEventsStore.set(hasEmergencyEvents); // Set initial value
 
-  // Route data
-  let routeSeed: string = randomString(6); // Only used for seeding the route generator
-
-  $: {
-    if (routeSeed !== "") {
-      //   loadSeededRoute();
-    }
-  }
-
-  //   $: ScenarioSeedStore.set(scenarioSeed);
-
-  //   $: HasEmergencyEventsStore.set(hasEmergencyEvents);
-
-  //   $: {
-  //     maxFL = Math.min(Math.max(15, maxFL), 250);
-  //     // maxFlightLevelStore.set(maxFL);
-  //   }
+  let routeSeed: string = randomRouteParam ? randomString(6) : ""; // Only used for seeding the route generator
 
   async function loadSeededRoute() {
     if (
@@ -353,9 +338,9 @@ export function ScenarioPlannerSidebar({
                 )}
 
                 {activeSection == "Scenario Settings" && (
-                  <div className="flex flex-col gap-2 p-2">
+                  <div className="flex flex-col gap-4 p-2">
                     <div className="flex flex-col gap-1">
-                      <div className="label text-sm">Scenario Seed</div>
+                      <Label className="label text-sm">Scenario Seed</Label>
                       <div className="flex flex-row gap-2">
                         <Input
                           id="scenario-seed-input"
@@ -385,21 +370,31 @@ export function ScenarioPlannerSidebar({
                       </div>
                     </div>
 
-                    <label className="flex items-center space-x-2">
-                      <Checkbox
+                    <div className="flex items-center gap-2">
+                      <Switch
                         id="emergency-events-checkbox"
-                        checked
+                        defaultChecked={hasEmergencyEvents}
                         onCheckedChange={() =>
                           (hasEmergencyEvents = !hasEmergencyEvents)
                         }
                       />
-                      <p>Emergency Events</p>
-                    </label>
-                  </div>
-                )}
+                      <Label>Emergency Events</Label>
+                    </div>
 
-                {activeSection == "Preferences" && (
-                  <div className="flex flex-col gap-3 p-2">
+                    <div className="flex flex-col gap-2">
+                      <Label>Maximum Flight Level</Label>
+                      <Input
+                        id="fl-input"
+                        defaultValue={maxFL}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value >= 15 && value <= 250) {
+                            setMaxFL(value);
+                          }
+                        }}
+                      />
+                    </div>
+
                     <div className="flex flex-col gap-2">
                       <div>
                         <Label>Distance Unit</Label>
@@ -421,27 +416,30 @@ export function ScenarioPlannerSidebar({
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                )}
 
+                {activeSection == "Aircraft Details" && (
+                  <div className="flex flex-col gap-4 p-2">
                     <div className="flex flex-col gap-2">
-                      <Label>Maximum Flight Level</Label>
-                      <Input
-                        id="fl-input"
-                        defaultValue={maxFL}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (value >= 15 && value <= 250) {
-                            setMaxFL(value);
-                          }
-                        }}
-                      />
+                      <Label>Callsign</Label>
+                      <Input placeholder="Enter a callsign" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Aircraft Type</Label>
+                      <Input placeholder="Enter an aircraft type" />
                     </div>
                   </div>
                 )}
 
+                {activeSection == "Airspaces" && (
+                  <div className="flex flex-col gap-3 p-2"></div>
+                )}
+
                 {activeSection == "Generate" && (
-                  <div className="flex flex-col gap-2 p-2">
+                  <div className="flex flex-col gap-4 p-2">
                     <div className="flex flex-col gap-2">
-                      <div className="label">Route Seed</div>
+                      <Label>Route Seed</Label>
                       <div className="flex flex-row gap-2">
                         <Input
                           id="route-seed-input"

@@ -45,7 +45,7 @@ const ScenarioPlannerFooter = () => {
         </div>
       </div>
 
-      <div className="flex grow flex-row place-content-end gap-3 p-2">
+      <div className="flex grow flex-row place-content-end gap-3 p-3">
         <div className="flex flex-col place-content-center">
           <Button
             className="btn variant-filled h-10 text-sm"

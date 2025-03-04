@@ -51,7 +51,7 @@ const persistentStorage: StateStorage = {
 };
 
 const storageOptions = {
-  name: "routeStore",
+  name: "routeData",
   storage: createJSONStorage<RouteStore>(() => persistentStorage),
 };
 

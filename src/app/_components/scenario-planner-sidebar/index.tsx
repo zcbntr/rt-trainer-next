@@ -40,9 +40,11 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
-import useRouteStore from "../stores/route-store";
-import useAeronauticalDataStore from "../stores/aeronautical-data-store";
+import useRouteStore from "../../stores/route-store";
+import useAeronauticalDataStore from "../../stores/aeronautical-data-store";
 import { Switch } from "~/components/ui/switch";
+import useAircraftDataStore from "../../stores/aircraft-data-store";
+import AircraftDetailsSection from "./aircraft-details-section";
 
 const sidebarSections = [
   {
@@ -420,16 +422,7 @@ export function ScenarioPlannerSidebar({
                 )}
 
                 {activeSection == "Aircraft Details" && (
-                  <div className="flex flex-col gap-4 p-2">
-                    <div className="flex flex-col gap-2">
-                      <Label>Callsign</Label>
-                      <Input placeholder="Enter a callsign" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label>Aircraft Type</Label>
-                      <Input placeholder="Enter an aircraft type" />
-                    </div>
-                  </div>
+                  <AircraftDetailsSection />
                 )}
 
                 {activeSection == "Airspaces" && (

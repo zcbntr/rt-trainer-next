@@ -1,16 +1,23 @@
 "use client";
 
 import * as React from "react";
-import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
+import Map, {
+  Source,
+  Layer,
+  Marker,
+  type MapRef,
+  MarkerEvent,
+} from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
 import useRouteStore from "~/app/stores/route-store";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
 import { MdLocationPin } from "react-icons/md";
+import { TbPlaystationCircle } from "react-icons/tb";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
@@ -24,28 +31,29 @@ const routeLayerStyle: LayerSpecification = {
     "line-cap": "round",
   },
   paint: {
-    "line-color": "#888",
-    "line-width": 8,
+    "line-color": "#A44",
+    "line-width": 6,
+    "line-opacity": 0.5,
   },
 };
 
 const airspaceLayerStyle: LayerSpecification = {
   id: "airspaces",
-  type: "fill",
+  type: "line",
   source: "airspaces",
   paint: {
-    "fill-color": "#088",
-    "fill-opacity": 0.5,
+    "line-color": "#08C",
+    "line-width": 1,
   },
 };
 
 const matzLayerStyle: LayerSpecification = {
   id: "matzs",
-  type: "fill",
+  type: "line",
   source: "matzs",
   paint: {
-    "fill-color": "#f00",
-    "fill-opacity": 0.5,
+    "line-color": "#900",
+    "line-width": 1,
   },
 };
 
@@ -54,7 +62,8 @@ const airportLayerStyle: LayerSpecification = {
   type: "symbol",
   source: "airports",
   layout: {
-    "icon-image": "airport-15",
+    "icon-image": "circle-stroked-15",
+    "icon-size": 0.5,
   },
 };
 
@@ -74,6 +83,8 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
       "REACT_APP_MAPBOX_ACCESS_TOKEN is not defined in the environment",
     );
   }
+
+  const mapRef = useRef<MapRef>(null);
 
   const waypoints: Waypoint[] = useRouteStore((state) => state.waypoints);
   const airspaces: Airspace[] = useAeronauticalDataStore(
@@ -151,13 +162,13 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     }
 
     return turf.featureCollection(
-      airports.map((airport) => {
-        return turf.point(airport.geometry.coordinates);
-      }),
+      airports.map((airport) =>
+        turf.point(airport.geometry.coordinates, { name: airport.name }),
+      ),
     );
   }, [airports]);
 
-  const markers = useMemo(() => {
+  const routeMarkers = useMemo(() => {
     return waypoints.map((waypoint) => {
       return (
         <Marker
@@ -190,21 +201,67 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     return turf.lineString(waypoints.map((waypoint) => waypoint.location));
   }, [waypoints]);
 
-  
-  const [viewState, setViewState] = React.useState<ViewStateType>({
+  // Set initial map view to point roughly in the center of the UK zoomed out to mostly get the UK in view
+  const [viewState, setViewState] = useState<ViewStateType>({
     longitude: -1.83912391365976,
     latitude: 53.34537967335982,
     zoom: 6,
   });
 
-  const onMove = React.useCallback(
-    ({ viewState }: { viewState: ViewStateType }) => {
-      setViewState(viewState);
+  const checkIfPositionInViewport = (lat: number, lng: number) => {
+    const bounds = mapRef?.current?.getBounds();
+
+    if (bounds) return bounds.contains([lng, lat]);
+  };
+
+  const onMove = useCallback(({ viewState }: { viewState: ViewStateType }) => {
+    setViewState(viewState);
+  }, []);
+
+  const onMapClick = useCallback(
+    (e: MapMouseEvent) => {
+      const nearestAirport = turf.nearestPoint(
+        turf.point([e.lngLat.lng, e.lngLat.lat]),
+        turf.featureCollection(
+          airports.map((airport) =>
+            turf.point(airport.geometry.coordinates, { name: airport.name }),
+          ),
+        ),
+      );
+
+      const distanceToNearestPoint = turf.distance(
+        nearestAirport,
+        turf.point([e.lngLat.lng, e.lngLat.lat]),
+      );
+
+      // Check if the nearest airport is close enough to the click location,
+      // threshold scaled by zoom level to make it harder to accidentally add waypoints
+      if (distanceToNearestPoint < 2000 / Math.pow(viewState.zoom, 4)) {
+        const airport = airports.find(
+          (airport) =>
+            airport.geometry.coordinates[0] ==
+              nearestAirport.geometry.coordinates[0] &&
+            airport.geometry.coordinates[1] ==
+              nearestAirport.geometry.coordinates[1],
+        );
+
+        if (!airport) return;
+
+        const waypointName = `Waypoint ${airport.name}`;
+
+        addWaypoint({
+          id: `waypoint-${airport.name}-${randomString(6)}`,
+          location: airport.geometry.coordinates,
+          type: WaypointType.Airport,
+          index: waypoints.length,
+          name: waypointName,
+        });
+      }
     },
-    [],
+    [addWaypoint, airports, viewState.zoom, waypoints.length],
   );
 
-  const onDoubleClick = React.useCallback(
+  const onMapDoubleClick = useCallback(
     (e: MapMouseEvent) => {
       // e.g. Waypoint Golf X-Ray
       const waypointName = `Waypoint ${getNRandomPhoneticAlphabetLetters(2)}`;
@@ -223,12 +280,14 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   return (
     <div className={`h-full min-h-96 w-full min-w-96 ${className}`}>
       <Map
+        ref={mapRef}
         {...viewState}
         reuseMaps
         doubleClickZoom={false}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
         onMove={onMove}
-        onDblClick={onDoubleClick}
+        onClick={onMapClick}
+        onDblClick={onMapDoubleClick}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
       >
@@ -244,7 +303,7 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
         <Source id="matzs" type="geojson" data={matzsGeoJSONData}>
           <Layer {...matzLayerStyle} />
         </Source>
-        {markers}
+        {routeMarkers}
       </Map>
     </div>
   );

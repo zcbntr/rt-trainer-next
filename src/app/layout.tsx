@@ -1,8 +1,5 @@
 import "~/styles/globals.css";
 
-import TopNav from "~/app/_components/topnav";
-import Footer from "~/app/_components/footer";
-
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 

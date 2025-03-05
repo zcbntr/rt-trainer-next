@@ -2,10 +2,21 @@
 
 import { MdOutlinePlayCircleFilled } from "react-icons/md";
 import useRoutePlannerStore from "../stores/route-store";
-import { kmToUnit } from "~/lib/sim-utils/route";
+import { getRouteIssues, kmToUnit } from "~/lib/sim-utils/route";
 import { Button } from "~/components/ui/button";
+import { Waypoint } from "~/lib/types/waypoint";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const ScenarioPlannerFooter = () => {
+  const router = useRouter();
+
+  const waypoints: Waypoint[] = useRoutePlannerStore(
+    (state) => state.waypoints,
+  );
+  const airportsOnRoute = useRoutePlannerStore(
+    (state) => state.airportsOnRoute,
+  );
   const distance: number = useRoutePlannerStore((state) => state.distanceKM);
   const distanceUnit: string = useRoutePlannerStore(
     (state) => state.distanceDisplayUnit,
@@ -20,7 +31,30 @@ const ScenarioPlannerFooter = () => {
     // Check if the route doesn't have any glaring issues e.g. <2 waypoints, no airports, etc.
     // If it does, show a toast and return
     // Otherwise, start the scenario by navigating to the scenario page with the route data in the URL
-    console.log("Play button clicked");
+
+    const issues: string[] = getRouteIssues(
+      waypoints,
+      airspacesOnRoute,
+      airportsOnRoute,
+    );
+    if (issues.length > 0) {
+      let message = issues[0];
+      if (issues.length > 1) {
+        message += `, and ${issues.length - 1} more issues`;
+      }
+
+      toast.message("Warning", {
+        description: message,
+        action: {
+          label: "Proceed Anyway",
+          onClick: () => router.push("/scenario"),
+        },
+      });
+      return;
+    }
+
+    // Start
+    router.push("/scenario");
   };
 
   return (

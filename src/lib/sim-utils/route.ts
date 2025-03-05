@@ -2,6 +2,8 @@ import type { Position } from "geojson";
 import * as turf from "@turf/turf";
 import { type Airspace } from "../types/airspace";
 import { getAirspaceLowerLimitFL } from "./airspaces";
+import { Airport } from "../types/airport";
+import { Waypoint } from "../types/waypoint";
 
 export function kmToUnit(km: number, unit: string): number {
   switch (unit) {
@@ -209,4 +211,26 @@ export function isAirspaceIncludedInRoute(
   }
 
   return false;
+}
+
+export function getRouteIssues(
+  waypoints: Waypoint[],
+  airspaces: Airspace[],
+  airports: Airport[],
+): string[] {
+  const issues = [];
+
+  if (waypoints.length < 2) {
+    issues.push("Route has less than 2 waypoints");
+  }
+
+  if (airports.length < 2) {
+    issues.push("Route has less than 2 airports");
+  }
+
+  if (airspaces.length < 1) {
+    issues.push("Route has no airspaces");
+  }
+
+  return issues;
 }

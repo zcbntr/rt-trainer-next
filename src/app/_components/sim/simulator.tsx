@@ -8,7 +8,10 @@ import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
-import { type RadioCall, type RadioMessageAttempt } from "~/lib/types/radio-call";
+import {
+  type RadioCall,
+  type RadioMessageAttempt,
+} from "~/lib/types/radio-call";
 import { type WaypointURLObject } from "~/lib/types/scenario";
 import { type AltimeterState } from "~/lib/types/simulator";
 import { type Waypoint } from "~/lib/types/waypoint";
@@ -31,9 +34,10 @@ import Radio from "./radio";
 
 type SimulatorProps = {
   className?: string;
+  loadFromURL?: boolean;
 };
 
-const Simulator = ({ className }: SimulatorProps) => {
+const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   // Scenario settings
   let seed = "";
   let hasEmergencies = false;
@@ -48,103 +52,140 @@ const Simulator = ({ className }: SimulatorProps) => {
   let waypoints: Waypoint[] = [];
   let airportIDs: string[] = [];
 
-  const searchParams = useSearchParams();
-  const seedString = searchParams.get("seed");
-  const hasEmergencyString = searchParams.get("hasEmergency");
-  const waypointsString = searchParams.get("waypoints");
-  const airportsString = searchParams.get("airports");
-  const callsignString = searchParams.get("callsign");
-  const prefixString = searchParams.get("prefix");
-  const aircraftTypeString = searchParams.get("aircraftType");
-  const startPointIndexString = searchParams.get("startPoint");
-  const endPointIndexString = searchParams.get("endPoint");
-  const tutorialString = searchParams.get("tutorial");
+  // Simulator state and settings
+  let radioState: RadioState; // Current radio settings
+  let transponderState: TransponderState; // Current transponder settings
+  let altimeterState: AltimeterState;
+  let atcMessage: string;
+  let userMessage: string;
+  let currentTarget: string;
+  let currentTargetFrequency: string;
+  let currentRoutePointIndex = 0;
+  let failedAttempts = 0;
+  let currentRadioCall: RadioCall;
+  let currentMessageAttempt: RadioMessageAttempt;
+  let currentSimConext: string;
 
-  // Check whether the seed is specified - if not then warn user
-  if (seedString != null && seedString != "") {
-    seed = seedString;
-  } else {
-    criticalDataMissing = true;
-    throw new Error("Seed not specified");
-  }
+  // Page settings
+  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfil
+  let speechInput: boolean;
+  let speechNoiseLevel = 0;
+  let readRecievedCalls = false;
+  let liveFeedback = false;
+  let tutorialStep4 = false;
+  let dialogOpen = false;
+  let dialogTitle = "";
+  let dialogDescription = "";
 
-  // Check whether the hasEmergency is specified
-  if (hasEmergencyString != null) {
-    hasEmergencies = hasEmergencyString === "true";
-  }
+  // Tutorial state
+  let tutorialEnabled = false;
+  let tutorialComplete = false;
+  let tutorialStep = 1;
 
-  // Get waypoints from the URL's JSON.stringify form
-  if (waypointsString != null) {
-    const waypointsDataArray: WaypointURLObject[] = JSON.parse(waypointsString);
-    waypoints = waypointsDataArray.map((waypoint: WaypointURLObject) => {
-      return {
-        id: waypoint.id,
-        type: waypoint.type,
-        location: waypoint.location,
-        name: waypoint.name,
-        index: waypoint.index,
-        referenceObjectId: waypoint.referenceObjectId,
-        description: waypoint.description,
-      };
-    });
-    // WaypointsStore.set(waypoints);
-  } else {
-    criticalDataMissing = true;
-  }
+  // Server state
+  let awaitingRadioCallCheck = false;
+  let serverNotResponding = false;
+  let nullRoute = false;
 
-  // Get airports from the URL's JSON.stringify form
-  if (airportsString != null) {
-    airportIDs = airportsString.split(",");
-  } else {
-    criticalDataMissing = true;
-  }
+  if (loadFromURL) {
+    const searchParams = useSearchParams();
+    const seedString = searchParams.get("seed");
+    const hasEmergencyString = searchParams.get("hasEmergency");
+    const waypointsString = searchParams.get("waypoints");
+    const airportsString = searchParams.get("airports");
+    const callsignString = searchParams.get("callsign");
+    const prefixString = searchParams.get("prefix");
+    const aircraftTypeString = searchParams.get("aircraftType");
+    const startPointIndexString = searchParams.get("startPoint");
+    const endPointIndexString = searchParams.get("endPoint");
+    const tutorialString = searchParams.get("tutorial");
 
-  // Check whether the callsign is specified
-  if (callsignString != null && callsignString != "") {
-    callsign = callsignString;
-  }
-
-  // Check whether the prefix is specified
-  if (prefixString != null) {
-    if (
-      prefixString == "" ||
-      prefixString == "STUDENT" ||
-      prefixString == "HELICOPTER" ||
-      prefixString == "POLICE" ||
-      prefixString == "SUPER" ||
-      prefixString == "FASTJET" ||
-      prefixString == "FASTPROP"
-    ) {
-      prefix = prefixString;
+    // Check whether the seed is specified - if not then warn user
+    if (seedString != null && seedString != "") {
+      seed = seedString;
+    } else {
+      criticalDataMissing = true;
+      throw new Error("Seed not specified");
     }
-  }
 
-  // Check whether the aircraft type is specified
-  if (aircraftTypeString != null && aircraftTypeString != "") {
-    aircraftType = aircraftTypeString;
-  }
-
-  // Check whether start point index has been set
-  let startPointIndex = 0;
-  if (startPointIndexString != null) {
-    startPointIndex = parseInt(startPointIndexString);
-    if (startPointIndex < 0) {
-      startPointIndex = 0;
+    // Check whether the hasEmergency is specified
+    if (hasEmergencyString != null) {
+      hasEmergencies = hasEmergencyString === "true";
     }
-  }
 
-  // Check whether end point index has been set
-  let endPointIndex = -1;
-  if (endPointIndexString != null) {
-    endPointIndex = parseInt(endPointIndexString);
-    if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
-      endPointIndex = -1;
+    // Get waypoints from the URL's JSON.stringify form
+    if (waypointsString != null) {
+      const waypointsDataArray: WaypointURLObject[] =
+        JSON.parse(waypointsString);
+      waypoints = waypointsDataArray.map((waypoint: WaypointURLObject) => {
+        return {
+          id: waypoint.id,
+          type: waypoint.type,
+          location: waypoint.location,
+          name: waypoint.name,
+          index: waypoint.index,
+          referenceObjectId: waypoint.referenceObjectId,
+          description: waypoint.description,
+        };
+      });
+      // WaypointsStore.set(waypoints);
+    } else {
+      criticalDataMissing = true;
     }
-  }
 
-  let tutorial = false;
-  if (tutorialString != null) {
-    tutorial = tutorialString === "true";
+    // Get airports from the URL's JSON.stringify form
+    if (airportsString != null) {
+      airportIDs = airportsString.split(",");
+    } else {
+      criticalDataMissing = true;
+    }
+
+    // Check whether the callsign is specified
+    if (callsignString != null && callsignString != "") {
+      callsign = callsignString;
+    }
+
+    // Check whether the prefix is specified
+    if (prefixString != null) {
+      if (
+        prefixString == "" ||
+        prefixString == "STUDENT" ||
+        prefixString == "HELICOPTER" ||
+        prefixString == "POLICE" ||
+        prefixString == "SUPER" ||
+        prefixString == "FASTJET" ||
+        prefixString == "FASTPROP"
+      ) {
+        prefix = prefixString;
+      }
+    }
+
+    // Check whether the aircraft type is specified
+    if (aircraftTypeString != null && aircraftTypeString != "") {
+      aircraftType = aircraftTypeString;
+    }
+
+    // Check whether start point index has been set
+    let startPointIndex = 0;
+    if (startPointIndexString != null) {
+      startPointIndex = parseInt(startPointIndexString);
+      if (startPointIndex < 0) {
+        startPointIndex = 0;
+      }
+    }
+
+    // Check whether end point index has been set
+    let endPointIndex = -1;
+    if (endPointIndexString != null) {
+      endPointIndex = parseInt(endPointIndexString);
+      if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
+        endPointIndex = -1;
+      }
+    }
+
+    if (tutorialString != null) {
+      tutorialEnabled = tutorialString === "true";
+    }
   }
 
   // Load stores if not populated
@@ -234,41 +275,6 @@ const Simulator = ({ className }: SimulatorProps) => {
   //     aircraftType: aircraftType,
   //   });
 
-  // Simulator state and settings
-  let radioState: RadioState; // Current radio settings
-  let transponderState: TransponderState; // Current transponder settings
-  let altimeterState: AltimeterState;
-  let atcMessage: string;
-  let userMessage: string;
-  let currentTarget: string;
-  let currentTargetFrequency: string;
-  let currentRoutePointIndex = 0;
-  let failedAttempts = 0;
-  let currentRadioCall: RadioCall;
-  let currentMessageAttempt: RadioMessageAttempt;
-  let currentSimConext: string;
-
-  // Page settings
-  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfil
-  let speechInput: boolean;
-  let speechNoiseLevel = 0;
-  let readRecievedCalls = false;
-  let liveFeedback = false;
-  let tutorialStep4 = false;
-  let dialogOpen = false;
-  let dialogTitle = "";
-  let dialogDescription = "";
-
-  // Tutorial state
-  let tutorialEnabled = false;
-  let tutorialComplete = false;
-  let tutorialStep = 1;
-
-  // Server state
-  let awaitingRadioCallCheck = false;
-  let serverNotResponding = false;
-  let nullRoute = false;
-
   if (serverNotResponding) {
     dialogOpen = true;
     dialogTitle = "Server did not respond";
@@ -353,7 +359,7 @@ const Simulator = ({ className }: SimulatorProps) => {
   // });
 
   let waypointPoints: number[][] = [];
-  let bounds: L.LatLngBounds;
+  let bounds: [number, number, number, number] = [0, 0, 0, 0];
   let bbox: number[] = [];
   //   WaypointPointsMapStore.subscribe((value) => {
   //     waypointPoints = value;

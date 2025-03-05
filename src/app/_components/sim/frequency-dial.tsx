@@ -116,7 +116,7 @@ const FrequencyDial = ({
                     d="M1.52 5.29A6.67 6.67 0 011.05.15"
                     fill="none"
                     stroke="#fff"
-                    stroke-miterlimit="10"
+                    strokeMiterlimit="10"
                   />
                   <path
                     data-name="X jog left arrow"
@@ -134,7 +134,7 @@ const FrequencyDial = ({
                     d="M1.82.15a6.62 6.62 0 01-.47 5.12"
                     fill="none"
                     stroke="#fff"
-                    stroke-miterlimit="10"
+                    strokeMiterlimit="10"
                   />
                   <path
                     data-name="X jog right line"

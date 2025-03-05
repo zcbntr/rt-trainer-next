@@ -20,8 +20,8 @@ import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
 import { useSearchParams } from "next/navigation";
-import { type RadioState } from "~/app/stores/radio-store";
-import { type TransponderState } from "~/app/stores/transponder-store";
+import useRadioStore from "~/app/stores/radio-store";
+import useTransponderStore from "~/app/stores/transponder-store";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,8 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "sonner";
 import Radio from "./radio";
+import SimulatorMap from "../maps/simulator";
+import { useMemo } from "react";
 
 type SimulatorProps = {
   className?: string;
@@ -53,8 +55,12 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   let airportIDs: string[] = [];
 
   // Simulator state and settings
-  let radioState: RadioState; // Current radio settings
-  let transponderState: TransponderState; // Current transponder settings
+  let radioDialMode = useRadioStore((state) => state.dialMode);
+  let radioActiveFrequency = useRadioStore((state) => state.activeFrequency);
+
+  let transponderDialMode = useTransponderStore((state) => state.dialMode);
+  let transponderFrequency = useTransponderStore((state) => state.frequency);
+
   let altimeterState: AltimeterState;
   let atcMessage: string;
   let userMessage: string;
@@ -67,7 +73,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   let currentSimConext: string;
 
   // Page settings
-  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfil
+  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
   let speechInput: boolean;
   let speechNoiseLevel = 0;
   let readRecievedCalls = false;
@@ -83,8 +89,6 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   let tutorialStep = 1;
 
   // Server state
-  let awaitingRadioCallCheck = false;
-  let serverNotResponding = false;
   let nullRoute = false;
 
   if (loadFromURL) {
@@ -275,107 +279,23 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   //     aircraftType: aircraftType,
   //   });
 
-  if (serverNotResponding) {
-    dialogOpen = true;
-    dialogTitle = "Server did not respond";
-    dialogDescription =
-      "This may be due to a bad request or the feature you are trying to use not being implemented yet. This software is still early in development, expect errors like this one.";
-  }
-
   if (nullRoute) {
     dialogTitle = "No Route Generated";
     dialogDescription =
       "After 1000 iterations no feasible route was generated for this seed. Please try another one. The route generation is not finalised and will frequently encounter issues like this one. ";
   }
 
-  $: if (readRecievedCalls && atcMessage) {
-    TTSWithNoise(speechNoiseLevel);
-  }
+  useMemo(() => {
+    if (readRecievedCalls && atcMessage) {
+      TTSWithNoise(speechNoiseLevel);
+    }
+  }, [readRecievedCalls, atcMessage]);
 
   //   $: tutorialStep2 =
   //     transponderState?.dialMode == "SBY" && radioState?.dialMode == "SBY";
   //   $: tutorialStep3 =
   //     radioState?.activeFrequency ==
   //     scenario?.getCurrentPoint().updateData.currentTargetFrequency;
-
-  // ScenarioStore.subscribe((value) => {
-  // 	scenario = value;
-  // });
-
-  // SpeechOutputEnabledStore.subscribe((value) => {
-  // 	readRecievedCalls = value;
-  // });
-
-  // SpeechNoiseStore.subscribe((value) => {
-  // 	speechNoiseLevel = value;
-  // });
-
-  // LiveFeedbackStore.subscribe((value) => {
-  // 	liveFeedback = value;
-  // });
-
-  // AircraftDetailsStore.subscribe((value) => {
-  // 	 = value;
-  // });
-
-  // RadioStateStore.subscribe((value) => {
-  // 	radioState = value;
-  // });
-
-  // TransponderStateStore.subscribe((value) => {
-  // 	transponderState = value;
-  // });
-
-  // AltimeterStateStore.subscribe((value) => {
-  // 	altimeterState = value;
-  // });
-
-  // UserMessageStore.subscribe((value) => {
-  // 	userMessage = value;
-  // });
-
-  // MostRecentlyReceivedMessageStore.subscribe((value) => {
-  // 	atcMessage = value;
-  // });
-
-  // CurrentScenarioContextStore.subscribe((value) => {
-  // 	currentSimConext = value;
-  // });
-
-  // CurrentScenarioPointIndexStore.subscribe((value) => {
-  // 	currentRoutePointIndex = value;
-  // });
-
-  // CurrentTargetStore.subscribe((value) => {
-  // 	currentTarget = value;
-  // });
-
-  // CurrentTargetFrequencyStore.subscribe((value) => {
-  // 	currentTargetFrequency = value;
-  // });
-
-  // TutorialStore.subscribe((value) => {
-  // 	tutorialEnabled = value;
-  // });
-
-  let waypointPoints: number[][] = [];
-  let bounds: [number, number, number, number] = [0, 0, 0, 0];
-  let bbox: number[] = [];
-  //   WaypointPointsMapStore.subscribe((value) => {
-  //     waypointPoints = value;
-  //   });
-
-  let position: number[] = [0, 0];
-  let displayHeading = 0;
-  let altitude = 0;
-  let airSpeed = 0;
-
-  //   CurrentScenarioPointStore.subscribe((value) => {
-  //     position = value?.pose.position.reverse() ?? [0, 0];
-  //     displayHeading = value?.pose.trueHeading ? value?.pose.trueHeading - 45 : 0;
-  //     altitude = value?.pose.altitude ?? 0;
-  //     airSpeed = value?.pose.airSpeed ?? 0;
-  //   });
 
   /**
    * Reads out the current atc message using the speech synthesis API, with added static noise
@@ -448,20 +368,20 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
    * @returns boolean
    */
   function checkClientSimStateCorrect(): boolean {
-    if (radioState.dialMode == "OFF") {
+    if (radioDialMode == "OFF") {
       toast.message("Error", { description: "Radio is off" });
       return false;
-    } else if (transponderState.dialMode == "OFF") {
+    } else if (transponderDialMode == "OFF") {
       toast.message("Error", { description: "Transponder is off" });
       return false;
     } else if (
-      radioState.activeFrequency !=
+      radioActiveFrequency !=
       scenario?.getCurrentPoint().updateData.currentTargetFrequency
     ) {
       toast.message("Error", { description: "Radio frequency incorrect" });
       return false;
     } else if (
-      transponderState.frequency !=
+      transponderFrequency !=
       scenario?.getCurrentPoint().updateData.currentTransponderFrequency
     ) {
       toast.message("Error", {
@@ -567,16 +487,11 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
       return false;
     } else if (minorMistakes.length > 0) {
       // Show a toast with the minor mistakes and advance scenario
-      const t: ToastSettings = {
-        message:
-          "Correct with minor mistakes: " + minorMistakes.join("<br>") + ".",
-      };
-      toastStore.trigger(t);
+      toast.message("Correct with minor mistakes", {
+        description: minorMistakes.join("<br>"),
+      });
     } else {
-      const t: ToastSettings = {
-        message: "Correct!",
-      };
-      toastStore.trigger(t);
+      toast.message("Correct");
     }
 
     tutorialStep4 = true;
@@ -768,136 +683,11 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
           <Transponder />
 
-          {/* <div className="card p-2 rounded-md w-[420px] h-[452px] bg-neutral-600 flex flex-row grow">
-				<div className="w-full h-full">
-					<Map view={scenario?.getCurrentPoint().pose.position} zoom={9}>
-						 {#if waypointPoints.length > 0}
-							{#each waypoints as waypoint (waypoint.index)}
-								{#if waypoint.index == waypoints.length - 1 || waypoint.type == WaypointType.Airport}
-									<Marker
-										latLng={[waypoint.location[1], waypoint.location[0]]}
-										width={50}
-										height={50}
-										aeroObject={waypoint}
-										on:click={(e) => {
-											e.preventDefault();
-										}}
-										on:mouseover={(e) => {
-											e.detail.marker.openPopup();
-										}}
-										on:mouseout={(e) => {
-											e.detail.marker.closePopup();
-										}}
-									>
-										 {#if waypoint.index == waypoints.length - 1}
-											<div className="text-2xl">🏁</div>
-										{:else if waypoint.type == WaypointType.Airport}
-											<div className="text-2xl">🛫</div>
-										{/if}
-
-										<Popup
-											><div className="flex flex-col gap-2">
-												<div>{waypoint.name}</div>
-											</div></Popup
-										></Marker
-									>
-								{:else}
-									<Marker
-										latLng={[waypoint.location[1], waypoint.location[0]]}
-										width={50}
-										height={50}
-										aeroObject={waypoint}
-										iconAnchor={L.point(8, 26)}
-										on:click={(e) => {
-											e.preventDefault();
-										}}
-										on:mouseover={(e) => {
-											e.detail.marker.openPopup();
-										}}
-										on:mouseout={(e) => {
-											e.detail.marker.closePopup();
-										}}
-									>
-										<div className="text-2xl">🚩</div>
-
-										<Popup
-											><div className="flex flex-col gap-2">
-												<div>{waypoint.name}</div>
-											</div></Popup
-										></Marker
-									>
-								 {/if}
-							{/each}
-						{/if} 
-
-						{#each waypointPoints as waypointPoint, index}
-							{#if index > 0}
-								<!-- Force redraw if either waypoint of the line changes location -->
-								{#key [waypointPoints[index - 1], waypointPoints[index]]}
-									<Polyline
-										latLngArray={[waypointPoints[index - 1], waypointPoints[index]]}
-										colour="#FF69B4"
-										fillOpacity={1}
-										weight={7}
-									/>
-								 {/key}
-							{/if}
-						{/each}
-
-						{#each onRouteAirspaces as airspace}
-							{#if airspace.type == 14}
-								<Polygon
-									latLngArray={airspace.coordinates[0].map((point) => [point[1], point[0]])}
-									color={'red'}
-									fillOpacity={0.2}
-									weight={1}
-									on:click={(e) => {
-										e.preventDefault();
-									}}
-									on:mouseover={(e) => {
-										e.detail.polygon.openPopup();
-									}}
-									on:mouseout={(e) => {
-										e.detail.polygon.closePopup();
-									}}
-								/>
-							{:else}
-								<Polygon
-									latLngArray={airspace.coordinates[0].map((point) => [point[1], point[0]])}
-									color={'blue'}
-									fillOpacity={0.2}
-									weight={1}
-									on:click={(e) => {
-										e.preventDefault();
-									}}
-									on:mouseover={(e) => {
-										e.detail.polygon.openPopup();
-									}}
-									on:mouseout={(e) => {
-										e.detail.polygon.closePopup();
-									}}
-								/>
-							{/if}
-						{/each}
-
-						{#key position}
-							<Marker latLng={position} width={50} height={50} rotation={displayHeading}>
-								<div className="text-2xl">🛩️</div>
-
-								<Popup
-									><div className="flex flex-col gap-2">
-										<div>
-											<!-- Lat, Long format -->
-											<div>{position[1].toFixed(6)}</div>
-											<div>{position[0].toFixed(6)}</div>
-										</div>
-									</div></Popup
-								>
-							</Marker>
-						{/key}
-					</Map>
-				</div>
-			</div>*/}
+          <div className="card flex h-[452px] w-[420px] grow flex-row rounded-md bg-neutral-600 p-2">
+            <div className="h-full w-full">
+              <SimulatorMap />
+            </div>
+          </div>
 
           <Altimeter />
 

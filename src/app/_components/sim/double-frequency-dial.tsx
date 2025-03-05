@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { randomString } from "~/lib/utils";
 
 type DoubleFrequencyDialProps = {
@@ -30,7 +30,10 @@ const DoubleFrequencyDial = ({
   const [intervalDuration, setIntervalDuration] = useState(
     initialIntervalDuration,
   );
-  setIntervalDuration(initialIntervalDuration);
+
+  useEffect(() => {
+    setIntervalDuration(initialIntervalDuration);
+  });
 
   // Ensures that dial is mounted before modifying its properties
   //   $: if (mounted) {
@@ -151,7 +154,7 @@ const DoubleFrequencyDial = ({
                   d="M1.65 8.25A11.22 11.22 0 011.48.17"
                   fill="none"
                   stroke="#fff"
-                  stroke-miterlimit="10"
+                  strokeMiterlimit="10"
                 />
                 <path
                   data-name="rad jog left out arrow"
@@ -169,7 +172,7 @@ const DoubleFrequencyDial = ({
                   d="M1.54.17a11.25 11.25 0 01-.17 8.09"
                   fill="none"
                   stroke="#fff"
-                  stroke-miterlimit="10"
+                  strokeMiterlimit="10"
                 />
                 <path
                   data-name="rad jog right out line"
@@ -211,7 +214,7 @@ const DoubleFrequencyDial = ({
                     d="M1.48 4.85a4.12 4.12 0 01-.81-2.46A4.06 4.06 0 011.26.26"
                     fill="none"
                     stroke="#fff"
-                    stroke-miterlimit="10"
+                    strokeMiterlimit="10"
                   />
                   <path
                     data-name="rad jog left in arrow"
@@ -229,7 +232,7 @@ const DoubleFrequencyDial = ({
                     d="M1.57.26a4.07 4.07 0 01.6 2.13 4.13 4.13 0 01-.82 2.46"
                     fill="none"
                     stroke="#fff"
-                    stroke-miterlimit="10"
+                    strokeMiterlimit="10"
                   />
                   <path
                     data-name="rad jog right in line"

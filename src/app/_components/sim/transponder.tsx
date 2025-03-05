@@ -173,7 +173,7 @@ const Transponder = ({
         disabled={disabled}
       />
 
-      <div className="display-panel order-first flex grow flex-col items-center justify-center sm:order-2">
+      <div className="order-first flex min-w-[200px] max-w-[600px] grow flex-col items-center justify-center sm:order-2">
         <TransponderDisplay
           turnedOn={displayOn}
           mode={transponderDialModes[dialModeIndex]}
@@ -182,28 +182,28 @@ const Transponder = ({
         />
         <div className="flex flex-row items-center gap-2 pt-1">
           <button
-            className="button"
+            className="w-[50px]"
             id="button-ident"
             onClick={handleIDENTButtonClick}
           >
             IDENT
           </button>
           <button
-            className="button"
+            className="w-[50px]"
             id="button-vfr"
             onClick={handleVFRButtonClick}
           >
             VFR
           </button>
           <button
-            className="button"
+            className="w-[50px]"
             id="button-enter"
             onClick={handleENTERButtonClick}
           >
             ENT
           </button>
           <button
-            className="button"
+            className="w-[50px]"
             id="button-back"
             onClick={handleBACKButtonClick}
           >
@@ -227,15 +227,6 @@ const Transponder = ({
 export default Transponder;
 
 // <style lang="postcss">
-// 	.display-panel {
-// 		max-width: 600px;
-// 		min-width: 200px;
-// 	}
-
-// 	.button {
-// 		width: 50px;
-// 	}
-
 // 	/* Global flag required otherwise .active-button is unused at page load
 //     and hence removed by the compiler */
 // 	:global(.active-button) {

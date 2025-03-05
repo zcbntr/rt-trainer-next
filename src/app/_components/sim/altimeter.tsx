@@ -37,7 +37,7 @@ const Altimeter = ({
     };
   }, [mounted]);
 
-  if (altitude < 980 || altitude > 1035) {
+  if (pressure < 980 || pressure > 1035) {
     throw new Error("Altitude must be between 980 and 1035");
   }
 

@@ -156,7 +156,7 @@ const Radio = ({
 
   return (
     <div
-      className={`card flex max-w-screen-lg grow flex-row flex-wrap place-content-evenly gap-2 bg-neutral-600 p-3 text-white ${className}`}
+      className={`min-w-3xl flex-no-wrap flex max-h-64 max-w-5xl grow flex-row place-content-evenly gap-2 rounded-md bg-neutral-600 p-3 text-white ${className}`}
     >
       <ModeDial
         disabled={disabled}

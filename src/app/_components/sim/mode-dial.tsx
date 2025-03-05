@@ -105,13 +105,13 @@ const ModeDial = ({
     const radius = 60;
 
     return modes.map((modeName, index) => {
-      const x = radius * Math.sin(angle);
-      const y = (radius + modeName!.length) * -Math.cos(angle);
+      const x = Math.round(radius * Math.sin(angle));
+      const y = Math.round((radius + modeName!.length) * -Math.cos(angle));
       angle -= step;
       return (
         <div
           key={index}
-          className={`absolute t-[${x}px] l-[${y}px]`}
+          style={{ transform: `translate(${x}px, ${y}px)` }}
           onClick={handleModeClick}
         >
           {modeName}

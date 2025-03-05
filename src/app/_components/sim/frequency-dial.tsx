@@ -22,7 +22,6 @@ const FrequencyDial = ({
   onClockwiseTurn,
   onAntiClockwiseTurn,
 }: FrequencyDialProps) => {
-  const id = randomString(6);
   let interval: NodeJS.Timeout;
   let mounted = false;
   const dialOnClasses = turnedOn ? "ring" : ""; // Check that this is the correct colour (white)
@@ -95,17 +94,10 @@ const FrequencyDial = ({
 
   return (
     <div className={`flex flex-row ${className}`}>
-      <div
-        id={`dial-and-frequency-container-${id}`}
-        className="flex flex-col place-content-center"
-      >
-        <div id={`dial-container-${id}`} className="relative">
-          <div
-            id={`frequency-center-div-${id}`}
-            className="absolute left-1/2 top-1/2 m-auto h-0 w-0 rotate-0"
-          />
+      <div className="flex flex-col place-content-center">
+        <div className="relative">
+          <div className="absolute left-1/2 top-1/2 m-auto h-0 w-0 rotate-0" />
           <button
-            id={`frequency-dial-${id}`}
             className={`frequency-dial flex h-20 w-20 rounded-full border-2 ${dialOnClasses} ${disabled ? "disabled" : ""}`}
           >
             <div className="pointer-events-none absolute left-4 top-[30%] w-7">

@@ -9,18 +9,12 @@ import useTransponderStore from "~/app/stores/transponder-store";
 type TransponderProps = {
   className?: string;
   disabled?: boolean;
-  initialFrequency?: string;
 };
 
 const Transponder = ({
   className = "",
   disabled = false,
-  initialFrequency = "7000",
 }: TransponderProps) => {
-  if (initialFrequency.length != 4) {
-    throw new Error("Initial frequency must be a 4 digit string");
-  }
-
   const { dialMode, frequency, identEnabled, vfrHasExecuted } =
     useTransponderStore((state) => state);
   const setFrequency = useTransponderStore((state) => state.setFrequency);
@@ -51,8 +45,6 @@ const Transponder = ({
 
   const dialModeIndex = 0;
   let displayOn = false;
-
-  setFrequency(initialFrequency);
 
   let frequencyDialEnabled = false;
   let displayDigitSelected = 0;

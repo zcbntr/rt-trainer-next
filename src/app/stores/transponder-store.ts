@@ -1,3 +1,5 @@
+"use client";
+
 import { type TransponderDialMode } from "~/lib/types/simulator";
 import { create } from "zustand";
 import {

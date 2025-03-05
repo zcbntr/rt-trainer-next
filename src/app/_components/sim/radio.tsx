@@ -3,7 +3,7 @@
 import ModeDial from "./mode-dial";
 import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
-import useRadioStore, { type RadioState } from "~/app/stores/radio-store";
+import useRadioStore from "~/app/stores/radio-store";
 import { type RadioMode } from "~/lib/types/simulator";
 import TransmitButton from "./transmit-button";
 
@@ -35,7 +35,7 @@ const Radio = ({
     activeFrequency,
     standbyFrequency,
     tertiaryFrequency,
-  }: RadioState = useRadioStore((state) => state);
+  } = useRadioStore((state) => state);
   const setMode = useRadioStore((state) => state.setMode);
   const setDialMode = useRadioStore((state) => state.setDialMode);
   const setActiveFrequency = useRadioStore((state) => state.setActiveFrequency);

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { randomString } from "~/lib/utils";
 
 type DoubleFrequencyDialProps = {
   className?: string;
@@ -24,7 +23,6 @@ const DoubleFrequencyDial = ({
   onOuterClockwiseTurn,
   onOuterAntiClockwiseTurn,
 }: DoubleFrequencyDialProps) => {
-  const id: string = randomString(6);
   let interval: NodeJS.Timeout;
 
   const [intervalDuration, setIntervalDuration] = useState(
@@ -135,14 +133,10 @@ const DoubleFrequencyDial = ({
   }
 
   return (
-    <div id={id} className={`flex items-center justify-center ${className}`}>
-      <div id={`dial-container-${id}`} className="relative">
-        <div
-          id={`frequency-center-div-${id}`}
-          className="absolute left-1/2 top-1/2 m-auto"
-        />
+    <div className={`flex items-center justify-center ${className}`}>
+      <div className="relative">
+        <div className="absolute left-1/2 top-1/2 m-auto" />
         <button
-          id={`double-frequency-dial-outer-${id}`}
           disabled={disabled || !turnedOn}
           className="height-[100px] transition-350 flex w-[100px] justify-center rounded-xl border border-white ease-in-out"
         >
@@ -182,10 +176,7 @@ const DoubleFrequencyDial = ({
               </g>
             </svg>
           </div>
-          <div
-            id={`click-container-${id}`}
-            className="absolute left-0 top-0 flex h-full w-full flex-row"
-          >
+          <div className="absolute left-0 top-0 flex h-full w-full flex-row">
             <div
               className="relative w-1/2"
               aria-label="Outer Dial Anti-Clockwise"
@@ -202,7 +193,6 @@ const DoubleFrequencyDial = ({
             />
           </div>
           <button
-            id={`double-frequency-dial-inner-${id}`}
             disabled={disabled || !turnedOn}
             className="double-frequency-dial-inner absolute flex"
           >

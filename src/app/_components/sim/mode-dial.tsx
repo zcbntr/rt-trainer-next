@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { randomString } from "~/lib/utils";
 
 // Used to limit number of modes so that the dial doesn't get too crowded
@@ -31,150 +31,114 @@ const ModeDial = ({
   currentModeIndex = 0,
   onModeChanged,
 }: ModeDialProps) => {
-  const id: string = randomString(6);
   const width: string = modes.length > 2 ? "w-40" : "w-28";
-  const dialOnClasses = turnedOn ? "ring" : ""; // Check that this is the correct colour (white)
+
+  const modesMultiplier = Math.round(300 / modes.length);
+  let modeDialTransform = "";
+  let modeDialRingClass = "";
+
+  if (modes.length == 2) {
+    if (currentModeIndex == 0) {
+      modeDialTransform = "rotate(-150deg)";
+      modeDialRingClass = "";
+    } else {
+      modeDialTransform = "rotate(0deg)";
+      modeDialRingClass = "ring";
+    }
+  } else {
+    if (currentModeIndex == 0) {
+      modeDialTransform = "rotate(-150deg)";
+      modeDialRingClass = "";
+    } else {
+      const newRotation = currentModeIndex * modesMultiplier - 150;
+      modeDialTransform = `rotate(${newRotation}deg)`;
+      modeDialRingClass = "ring";
+    }
+  }
+
+  const modeDialRef = useRef<HTMLDivElement>(null);
+  const modeCenterDivRef = useRef<HTMLDivElement>(null);
+  const modeLabels: Array<HTMLDivElement> = [];
 
   const handleDialClick = () => {
     if (disabled) return;
 
-    const ModeDial = document.getElementById(
-      "mode-dial-" + id,
-    ) as HTMLDivElement;
-    if (ModeDial != null) {
+    if (modeDialRef != null) {
       /* If there are only two modes no need to check the side of dial to 
             / determine rotation direction */
-      if (modes.length == 2) {
-        setMode(currentModeIndex == 0 ? 1 : 0);
+      if (modes.length == 2 && onModeChanged) {
+        onModeChanged(currentModeIndex == 0 ? 1 : 0);
       }
       // Otherwise the clickable divs either side of the dial line will handle rotation
     }
   };
 
-  function handleModeClick(event: Event) {
+  const handleModeClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
 
     const tgt = event.target as HTMLDivElement;
     const mode = tgt.id.split("-")[1];
-    const ModeLabel = document.getElementById("mode-" + mode) as HTMLDivElement;
-    const ModeDial = document.getElementById(
-      "mode-dial-" + id,
-    ) as HTMLDivElement;
-    if (ModeLabel != null && ModeDial != null) {
+    const ModeLabel = modeLabels.find((x) => x.id == "mode-" + mode);
+    if (ModeLabel != null) {
       const ModeIndex = modes.indexOf(mode);
-      if (ModeIndex > -1 && ModeIndex < modes.length) {
-        setMode(ModeIndex);
+      if (ModeIndex > -1 && ModeIndex < modes.length && onModeChanged) {
+        onModeChanged(ModeIndex);
       }
     }
-  }
+  };
 
   const incrementMode = () => {
-    if (currentModeIndex != modes.length - 1) {
-      setMode(currentModeIndex + 1);
+    if (currentModeIndex != modes.length - 1 && onModeChanged) {
+      onModeChanged(currentModeIndex + 1);
     }
   };
 
   const decrementMode = () => {
-    if (currentModeIndex != 0) {
-      setMode(currentModeIndex - 1);
+    if (currentModeIndex != 0 && onModeChanged) {
+      onModeChanged(currentModeIndex - 1);
     }
   };
 
-  function addModes() {
-    // Add mode clickable labels around dial from -150 to 150 degrees
-    const centerDiv = document.getElementById(
-      "mode-center-div-" + id,
-    ) as HTMLDivElement;
+  const modeElements = useMemo(() => {
     let angle = 0.33 * Math.PI;
     const step = (0.83 * 2 * Math.PI) / modes.length;
     const radius = 60;
-    if (centerDiv != null) {
-      for (const mode of modes) {
-        if (mode != undefined) {
-          addMode(
-            mode,
-            radius * Math.sin(angle),
-            (radius + mode.length) * -Math.cos(angle),
-            centerDiv,
-          );
-          angle -= step;
-        }
-      }
-    }
-  }
 
-  // Add mode label to dial at given x and y coordinates
-  function addMode(
-    mode: string,
-    x: number,
-    y: number,
-    centerDiv: HTMLDivElement,
-  ) {
-    const ModeDiv = document.createElement("div");
-    ModeDiv.setAttribute("style", "top:" + x + "px; left:" + y + "px;");
-    ModeDiv.setAttribute("className", "dial-label absolute");
-    ModeDiv.setAttribute("id", "mode-" + mode);
-    ModeDiv.addEventListener("click", handleModeClick);
-    ModeDiv.textContent = mode;
-    centerDiv.appendChild(ModeDiv);
-  }
-
-  function setMode(modeIndex: number) {
-    // goes from -150 to 150
-    const modesMultiplier = Math.round(300 / modes.length);
-    const ModeDial = document.getElementById(
-      "mode-dial-" + id,
-    ) as HTMLDivElement;
-    if (ModeDial != null) {
-      if (modes.length == 2) {
-        if (modeIndex == 0) {
-          ModeDial.style.transform = "rotate(-150deg)";
-          turnedOn = false;
-        } else {
-          ModeDial.style.transform = "rotate(0deg)";
-          turnedOn = true;
-        }
-      } else {
-        if (modeIndex == 0) {
-          ModeDial.style.transform = "rotate(-150deg)";
-          turnedOn = false;
-        } else {
-          const newRotation = modeIndex * modesMultiplier - 150;
-          ModeDial.style.transform = "rotate(" + newRotation + "deg)";
-          turnedOn = true;
-        }
-      }
-    }
-
-    currentModeIndex = modeIndex;
-    if (onModeChanged != null) {
-      onModeChanged(modeIndex);
-    }
-  }
-
-  useEffect(() => {
-    addModes();
-    setMode(currentModeIndex);
-
-    // return () => {};
-  });
+    return modes.map((modeName, index) => {
+      const x = radius * Math.sin(angle);
+      const y = (radius + modeName!.length) * -Math.cos(angle);
+      angle -= step;
+      return (
+        <div
+          key={index}
+          className={`absolute t-[${x}px] l-[${y}px]`}
+          onClick={handleModeClick}
+        >
+          {modeName}
+        </div>
+      );
+    });
+  }, [modes]);
 
   return (
     <div
-      id={`dial-and-modes-container-' + ${id}`}
+      id={`dial-and-modes-container`}
       className={`flex h-[130px] flex-row place-content-center ${width} ${className}`}
     >
       <div
-        id={`dial-container-${id}`}
+        id={`dial-container`}
         className="relative flex flex-col place-content-center"
       >
         <div
-          id={`mode-center-div-${id}`}
+          ref={modeCenterDivRef}
           className="absolute left-1/2 top-1/2 m-auto"
-        />
+        >
+          {modeElements}
+        </div>
+
         <div
-          id={`mode-dial-${id}`}
-          className={`duration-350 flex h-20 w-20 rotate-[150deg] justify-center rounded-full border-2 ease-in-out ${dialOnClasses}`}
+          ref={modeDialRef}
+          className={`duration-350 flex h-20 w-20 rotate-[150deg] justify-center rounded-full border-2 ease-in-out`}
           onClick={handleDialClick}
           onKeyDown={handleDialClick}
           aria-label="Mode Dial"

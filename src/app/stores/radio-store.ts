@@ -1,3 +1,5 @@
+"use client";
+
 import { type RadioDialMode, type RadioMode } from "~/lib/types/simulator";
 import { create } from "zustand";
 import {

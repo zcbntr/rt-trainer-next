@@ -1,3 +1,5 @@
+"use client";
+
 /*
   This store is used to manage the waypoints and the route data.
   It uses zustand for state management and zustand/middleware for persistence.

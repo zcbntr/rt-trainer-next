@@ -19,7 +19,7 @@ import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useRadioStore from "~/app/stores/radio-store";
 import useTransponderStore from "~/app/stores/transponder-store";
 import {
@@ -40,6 +40,8 @@ type SimulatorProps = {
 };
 
 const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
+  const router = useRouter();
+
   // Scenario settings
   let seed = "";
   let hasEmergencies = false;
@@ -62,7 +64,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   let transponderFrequency = useTransponderStore((state) => state.frequency);
 
   let altimeterState: AltimeterState;
-  let atcMessage: string;
+  let atcMessage: string = "";
   let userMessage: string;
   let currentTarget: string;
   let currentTargetFrequency: string;
@@ -562,7 +564,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
         body: "Do you want view your feedback?",
         response: (r: boolean) => {
           if (r) {
-            goto("/scenario/results/");
+            router.push("/scenario/results/");
           }
         },
       };

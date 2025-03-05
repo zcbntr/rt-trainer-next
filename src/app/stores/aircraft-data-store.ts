@@ -1,3 +1,5 @@
+"use client";
+
 /*
   This store holds the data about the aircraft e.g. callsign, prefix, and type
 */

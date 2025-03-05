@@ -63,15 +63,17 @@ const airportLayerStyle: LayerSpecification = {
 
 type RoutePlannerProps = {
   className?: string;
+  initialBBOX?: [number, number, number, number];
 };
 
 type ViewStateType = {
   longitude: number;
   latitude: number;
   zoom: number;
+  lnglatBounds?: [number, number, number, number];
 };
 
-const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
+const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
   if (!process.env.NEXT_PUBLIC_MAPBOX_API_KEY) {
     throw new Error(
       "REACT_APP_MAPBOX_ACCESS_TOKEN is not defined in the environment",
@@ -108,11 +110,11 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     async function fetchAirspaces() {
       // Lazy load airspaces/airports into stores
       const freshAirspaces: Airspace[] =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (
           await fetch("/api/aeronautical-data/airspaces").then((res) =>
             res.json(),
           )
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ).data as Airspace[];
 
       setAirspaces(freshAirspaces);
@@ -120,11 +122,11 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
 
     async function fetchAirports() {
       const freshAirports: Airport[] =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (
           await fetch("/api/aeronautical-data/airports").then((res) =>
             res.json(),
           )
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         ).data as Airport[];
 
       useAeronauticalDataStore.setState({ airports: freshAirports });
@@ -211,6 +213,23 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
     );
   }, [airports]);
 
+  useEffect(() => {
+    if (waypoints.length < 2) {
+      mapRef.current?.fitBounds([-7.65108, 50.521311, 1.825189, 58.203818], {
+        padding: 50,
+      });
+      return;
+    }
+
+    const [x1, y1, x2, y2] = turf.bbox(
+      turf.lineString(waypoints.map((waypoint) => waypoint.location)),
+    );
+
+    mapRef.current?.fitBounds([x1, y1, x2, y2], {
+      padding: 70,
+    });
+  }, [waypoints]);
+
   const routeMarkers = useMemo(() => {
     return waypoints.map((waypoint) => {
       return (
@@ -245,10 +264,12 @@ const RoutePlannerMap = ({ className }: RoutePlannerProps) => {
   }, [waypoints]);
 
   // Set initial map view to point roughly in the center of the UK zoomed out to mostly get the UK in view
+  // If initialBBOX is provided, use that instead
   const [viewState, setViewState] = useState<ViewStateType>({
     longitude: -1.83912391365976,
     latitude: 53.34537967335982,
     zoom: 6,
+    lnglatBounds: initialBBOX,
   });
 
   const checkIfPositionInViewport = (lat: number, lng: number) => {

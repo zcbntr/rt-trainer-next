@@ -92,36 +92,16 @@ const Transponder = ({
     }
   };
 
-  function handleTransponderDialModeChange(newModeIndex: number) {
-    if (newModeIndex == 0) {
+  function handleTransponderDialModeChange(newMode: string) {
+    if (newMode == "OFF") {
       if (identEnabled) {
-        const IDENTModeButton = document.getElementById(
-          "button-ident",
-        ) as HTMLInputElement;
-        IDENTModeButton.classList.remove("active-button");
         setIdentEnabled(false);
       }
       setDialMode("OFF");
       displayOn = false;
       frequencyDialEnabled = false;
     } else {
-      switch (newModeIndex) {
-        case 1:
-          setDialMode("SBY");
-          break;
-        case 2:
-          setDialMode("GND");
-          break;
-        case 3:
-          setDialMode("ON");
-          break;
-        case 4:
-          setDialMode("ALT");
-          break;
-        case 5:
-          setDialMode("TEST");
-          break;
-      }
+      setDialMode(newMode as TransponderDialMode);
 
       displayOn = true;
       frequencyDialEnabled = true;
@@ -160,12 +140,12 @@ const Transponder = ({
     >
       <ModeDial
         modes={transponderDialModes}
-        currentModeIndex={dialModeIndex}
+        currentMode={dialMode}
         onModeChanged={handleTransponderDialModeChange}
         disabled={disabled}
       />
 
-      <div className="order-first flex min-w-[200px] max-w-[600px] grow flex-col mt-6 items-center justify-center sm:order-2">
+      <div className="order-first mt-6 flex min-w-[200px] max-w-[600px] grow flex-col items-center justify-center sm:order-2">
         <TransponderDisplay
           turnedOn={displayOn}
           mode={transponderDialModes[dialModeIndex]}
@@ -204,7 +184,7 @@ const Transponder = ({
         </div>
       </div>
 
-      <div className="order-3 flex flex-row w-[100px] place-content-center">
+      <div className="order-3 flex w-[100px] flex-row place-content-center">
         <FrequencyDial
           turnedOn={frequencyDialEnabled}
           onAntiClockwiseTurn={onTransponderFrequencyReduce}

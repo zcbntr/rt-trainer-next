@@ -16,7 +16,9 @@ const TransponderDisplay = ({
   digitSelected = 0,
   frequency,
 }: TransponderDisplayProps) => {
-  const hidden = turnedOn ? "" : "hidden";
+  const hiddenClass = turnedOn ? "" : "hidden";
+  const underlineClassArray: string[] = [];
+  underlineClassArray[digitSelected] = "underline";
 
   useEffect(() => {
     const oldSelectedDigit = document.querySelector(".tselected");
@@ -36,21 +38,21 @@ const TransponderDisplay = ({
       className={`transponder-segdisplay {showDisplayText} nowrap flex min-h-[82px] w-full flex-row place-content-between items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
       <div
-        className={`ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6 ${hidden}`}
+        className={`ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6 ${hiddenClass}`}
       >
         {mode}
       </div>
-      <div className={`mr-5 flex flex-row ${hidden}`}>
-        <div id="tdigit-0" className="font-mono sm:text-xl md:text-4xl/6">
+      <div className={`mr-5 flex flex-row ${hiddenClass}`}>
+        <div className={`font-mono sm:text-xl md:text-4xl/6 ${underlineClassArray[0]}`}>
           {frequency[3]}
         </div>
-        <div id="tdigit-1" className="font-mono sm:text-xl md:text-4xl/6">
+        <div className={`font-mono sm:text-xl md:text-4xl/6 ${underlineClassArray[1]}`}>
           {frequency[2]}
         </div>
-        <div id="tdigit-2" className="font-mono sm:text-xl md:text-4xl/6">
+        <div className={`font-mono sm:text-xl md:text-4xl/6 ${underlineClassArray[2]}`}>
           {frequency[1]}
         </div>
-        <div id="tdigit-3" className="font-mono sm:text-xl md:text-4xl/6">
+        <div className={`font-mono sm:text-xl md:text-4xl/6 ${underlineClassArray[3]}`}>
           {frequency[0]}
         </div>
       </div>

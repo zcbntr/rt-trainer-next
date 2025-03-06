@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 // Used to limit number of modes so that the dial doesn't get too crowded
 export type ArrayMaxLength7MinLength2 = readonly [
@@ -18,8 +18,8 @@ type ModeDialProps = {
   disabled?: boolean;
   modes: ArrayMaxLength7MinLength2;
   turnedOn?: boolean;
-  currentModeIndex?: number;
-  onModeChanged?: (mode: number) => void;
+  currentMode?: string;
+  onModeChanged?: (mode: string) => void;
 };
 
 const ModeDial = ({
@@ -27,39 +27,14 @@ const ModeDial = ({
   disabled = false,
   modes,
   turnedOn = true,
-  currentModeIndex = 0,
+  currentMode = modes[0],
   onModeChanged,
 }: ModeDialProps) => {
   const width: string = modes.length >= 2 ? "w-52" : "w-28";
   const offRotation = -140;
 
-  const modesMultiplier = Math.round(300 / modes.length);
-  let modeDialTransform = "";
+  const modesMultiplier = Math.round(330 / modes.length);
   let modeDialRingClass = "";
-
-  if (!turnedOn) {
-    modeDialTransform = `rotate-[${offRotation}deg]`;
-    modeDialRingClass = "";
-  }
-
-  if (modes.length == 2) {
-    if (currentModeIndex == 0) {
-      modeDialTransform = `rotate-[${offRotation}deg]`;
-      modeDialRingClass = "";
-    } else {
-      modeDialTransform = "";
-      modeDialRingClass = "ring";
-    }
-  } else {
-    if (currentModeIndex == 0) {
-      modeDialTransform = `rotate-[${offRotation}deg]`;
-      modeDialRingClass = "";
-    } else {
-      const newRotation = currentModeIndex * modesMultiplier + offRotation;
-      modeDialTransform = `rotate-[${newRotation}deg]`;
-      modeDialRingClass = "ring";
-    }
-  }
 
   const modeDialRef = useRef<HTMLDivElement>(null);
   const modeCenterDivRef = useRef<HTMLDivElement>(null);
@@ -71,7 +46,7 @@ const ModeDial = ({
       /* If there are only two modes no need to check the side of dial to 
             / determine rotation direction */
       if (modes.length == 2 && onModeChanged) {
-        onModeChanged(currentModeIndex == 0 ? 1 : 0);
+        onModeChanged(currentMode == modes[0] ? modes[1] : modes[0]);
       }
 
       // Otherwise the clickable divs either side of the dial line will handle rotation and we simply return
@@ -87,22 +62,26 @@ const ModeDial = ({
     const mode = tgt.id.split("-")[1];
 
     if (mode) {
-      const ModeIndex = modes.indexOf(mode);
-      if (ModeIndex >= 0 && ModeIndex < modes.length && onModeChanged) {
-        onModeChanged(ModeIndex);
+      if (onModeChanged) {
+        onModeChanged(mode);
       }
     }
   };
 
   const incrementMode = () => {
-    if (currentModeIndex != modes.length - 1 && onModeChanged) {
-      onModeChanged(currentModeIndex + 1);
+    if (onModeChanged) {
+      const modeIndex = modes.findIndex((x) => x == currentMode);
+      const nextModeIndex =
+        modeIndex == modes.length - 1 ? modeIndex : modeIndex + 1;
+      onModeChanged(modes[nextModeIndex]!);
     }
   };
 
   const decrementMode = () => {
-    if (currentModeIndex != 0 && onModeChanged) {
-      onModeChanged(currentModeIndex - 1);
+    if (onModeChanged) {
+      const modeIndex = modes.findIndex((x) => x == currentMode);
+      const nextModeIndex = modeIndex == 0 ? modeIndex : modeIndex - 1;
+      onModeChanged(modes[nextModeIndex]!);
     }
   };
 
@@ -133,6 +112,25 @@ const ModeDial = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modes]);
 
+  useEffect(() => {
+    if (!turnedOn) {
+      modeDialRef.current!.style.transform = `rotate(${offRotation}deg)`;
+      modeDialRingClass = "";
+    } else {
+      if (currentMode == modes[0]) {
+        modeDialRef.current!.style.transform = `rotate(${offRotation}deg)`;
+        modeDialRingClass = "";
+      } else {
+        const newRotation =
+          modes.findIndex((x) => x == currentMode) * modesMultiplier +
+          offRotation;
+        modeDialRingClass =
+          "shadow-md shadow-white inset-shadow-sm inset-shadow-white";
+        modeDialRef.current!.style.transform = `rotate(${newRotation}deg)`;
+      }
+    }
+  }, [currentMode, modes, modesMultiplier, offRotation, turnedOn]);
+
   return (
     <div
       id={`dial-and-modes-container`}
@@ -148,7 +146,7 @@ const ModeDial = ({
 
         <div
           ref={modeDialRef}
-          className={`duration-350 flex h-20 w-20 justify-center rounded-full border-2 ease-in-out ${modeDialRingClass} ${modeDialTransform} `}
+          className={`${modeDialRingClass} duration-350 flex h-20 w-20 justify-center rounded-full border-2 ease-in-out`}
           onClick={handleDialClick}
           onKeyDown={handleDialClick}
           aria-label="Mode Dial"

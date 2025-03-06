@@ -93,14 +93,14 @@ const Altimeter = ({
           alt="Avatar"
           className="rotate-[20deg]"
         />
-        <div className="flex flex-col place-content-end gap-5">
+        <div className="flex flex-col place-content-between gap-1 absolute -mt-20">
           <FrequencyDial
-            className="absolute"
             disabled={disabled || !turnedOn}
             turnedOn={turnedOn}
             onAntiClockwiseTurn={handleAntiClockwiseTurn}
             onClockwiseTurn={handleClockwiseTurn}
           />
+          <span className="text-center">Pressure</span>
         </div>
         <div className="width-[200%] h-auto opacity-100">
           <div className="absolute left-0 top-0 text-center">

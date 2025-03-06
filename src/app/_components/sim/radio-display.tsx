@@ -19,6 +19,21 @@ const RadioDisplay = ({
 }: RadioDisplayProps) => {
   const hidden = turnedOn ? "" : "hidden";
 
+  if (activeFrequency.length != 7) {
+    console.log(activeFrequency);
+    throw new Error("Active frequency must be 7 characters long");
+  }
+
+  if (standbyFrequency.length != 7) {
+    console.log(standbyFrequency);
+    throw new Error("Standby frequency must be 7 characters long");
+  }
+
+  if (tertiaryFrequency.length != 7) {
+    console.log(tertiaryFrequency);
+    throw new Error("Tertiary frequency must be 7 characters long");
+  }
+
   return (
     <div
       className={`radio-segdisplay {showDisplayText} flex min-h-[82px] w-full flex-row items-center rounded-sm border bg-gray-900 p-3 ${className}`}

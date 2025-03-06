@@ -59,9 +59,9 @@ const useRadioStore = create(
     (set) => ({
       mode: "OFF",
       dialMode: "OFF",
-      activeFrequency: "121.5",
-      standbyFrequency: "121.5",
-      tertiaryFrequency: "121.5",
+      activeFrequency: "121.130",
+      standbyFrequency: "121.210",
+      tertiaryFrequency: "121.900",
       setMode: (mode: RadioMode) => set(() => ({ mode: mode })),
       setDialMode: (dialMode: RadioDialMode) =>
         set(() => ({ dialMode: dialMode })),

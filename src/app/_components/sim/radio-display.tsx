@@ -11,22 +11,24 @@ type RadioDisplayProps = {
 
 const RadioDisplay = ({
   className = "",
-  turnedOn = false,
+  turnedOn = true,
   mode = "COM",
   activeFrequency = "000.000",
   standbyFrequency = "000.000",
   tertiaryFrequency = "000.000",
 }: RadioDisplayProps) => {
-  //   $: showDisplayText = DisplayOn ? "displayon" : "displayoff";
+  const hidden = turnedOn ? "" : "hidden";
 
   return (
     <div
       className={`radio-segdisplay {showDisplayText} flex min-h-[82px] w-full flex-row items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
-      <div className="ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6">
+      <div
+        className={`ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6 ${hidden}`}
+      >
         {mode}
       </div>
-      <div className="ml-4 flex flex-col gap-2">
+      <div className={`ml-4 flex flex-col gap-2 ${hidden}`}>
         <div className="sevenSEG flex flex-row flex-wrap sm:ml-8 sm:mr-10">
           <div className="flex flex-row">
             <div className="rdigit font-mono text-[23px] sm:text-lg md:text-3xl/6">
@@ -66,34 +68,6 @@ export default RadioDisplay;
 		height: 90px;
 		transition: all 0.4 ease-in-out 0s;
 		background: rgba(var(--color-surface-900) / 1);
-	}
-
-	:global(.displayon) {
-		color: #f74;
-		text-shadow: 0 0 7px #f07c0765, 0 0 10px #f07c0765, 0 0 21px #f07c0765, 0 0 32px #f74;
-	}
-
-	:global(.displayoff) {
-		color: rgba(var(--color-surface-900) / 1);
-		text-shadow: none;
-	}
-
-	.radio-segdisplay .mode-icon {
-		font-family: DSEG7ClassicMini;
-		font-size: 23px;
-		text-align: left;
-		padding: 2px;
-	}
-
-	.radio-segdisplay .rdigit {
-		font-family: DSEG7ClassicMini;
-		text-align: right;
-		padding: 8px 0px;
-	}
-
-	.radio-segdisplay .divider-pipe {
-		text-align: right;
-		padding: 8px 0px;
 	}
 </style> */
 }

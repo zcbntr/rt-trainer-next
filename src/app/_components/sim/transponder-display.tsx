@@ -16,7 +16,7 @@ const TransponderDisplay = ({
   digitSelected = 0,
   frequency,
 }: TransponderDisplayProps) => {
-  //   $: showDisplayText = DisplayOn ? "displayon" : "displayoff";
+  const hidden = turnedOn ? "" : "hidden";
 
   useEffect(() => {
     const oldSelectedDigit = document.querySelector(".tselected");
@@ -35,10 +35,12 @@ const TransponderDisplay = ({
     <div
       className={`transponder-segdisplay {showDisplayText} nowrap flex min-h-[82px] w-full flex-row place-content-between items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
-      <div className="ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6">
+      <div
+        className={`ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6 ${hidden}`}
+      >
         {mode}
       </div>
-      <div className="mr-5 flex flex-row">
+      <div className={`mr-5 flex flex-row ${hidden}`}>
         <div id="tdigit-0" className="font-mono sm:text-xl md:text-4xl/6">
           {frequency[3]}
         </div>

@@ -21,8 +21,7 @@ const FrequencyDial = ({
   onClockwiseTurn,
   onAntiClockwiseTurn,
 }: FrequencyDialProps) => {
-  let interval: NodeJS.Timeout;
-  let mounted = false;
+  let interval: NodeJS.Timeout | null = null;
   const dialOnClasses = turnedOn ? "ring" : ""; // Check that this is the correct colour (white)
 
   const [intervalDuration, setIntervalDuration] = useState(
@@ -30,17 +29,15 @@ const FrequencyDial = ({
   );
 
   useEffect(() => {
-    mounted = true;
     setIntervalDuration(initialIntervalDuration);
 
     return () => {
-      mounted = false;
-      clearInterval(interval);
+      clearInterval(interval!);
     };
-  }, [mounted]);
+  }, [initialIntervalDuration, interval]);
 
   function onAntiClockwiseTick() {
-    clearInterval(interval);
+    clearInterval(interval!);
 
     const newIntervalDuration = intervalDuration * 0.9 + 5;
     if (newIntervalDuration < minIntervalDuration) {
@@ -62,11 +59,11 @@ const FrequencyDial = ({
   }
 
   function stopIncrementingAntiClockwiseHold() {
-    clearInterval(interval);
+    clearInterval(interval!);
   }
 
   function onClockwiseTick() {
-    clearInterval(interval);
+    clearInterval(interval!);
 
     const newIntervalDuration = intervalDuration * 0.9 + 5;
     if (newIntervalDuration < minIntervalDuration) {
@@ -88,7 +85,7 @@ const FrequencyDial = ({
   }
 
   function stopIncrementingClockwiseHold() {
-    clearInterval(interval);
+    clearInterval(interval!);
   }
 
   return (

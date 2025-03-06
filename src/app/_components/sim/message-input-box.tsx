@@ -84,21 +84,21 @@ const MessageInputBox = ({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex grow">
-          <div className="flex w-full flex-col place-content-between gap-1">
+          <div className="flex h-[198px] w-full flex-col place-content-between gap-1">
             <FormField
               control={form.control}
               name="message"
               render={({ field }) => (
-                <FormItem className="h-full w-full">
+                <FormItem className="[h-144px] w-full">
                   <FormControl className="h-full w-full">
                     <Textarea
-                      className="textarea h-36 w-full resize-none overflow-auto rounded-md bg-neutral-700"
+                      className="h-max max-h-36 min-h-[122px] w-full resize-none overflow-auto rounded-md bg-neutral-700"
                       disabled={disabled}
                       placeholder="Enter your radio message here."
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="h-min" />
                 </FormItem>
               )}
             />
@@ -109,10 +109,10 @@ const MessageInputBox = ({
                   <Switch
                     id="enable-live-feedback"
                     name="slider-label"
-                    checked={liveFeedback}
                     role="switch"
                     aria-checked={liveFeedback}
                     aria-label="Toggle live feedback"
+                    defaultChecked={liveFeedback}
                     onCheckedChange={() => {
                       liveFeedback = !liveFeedback;
                       if (onLiveFeedbackSettingChanged) {

@@ -4,13 +4,12 @@ import ModeDial from "./mode-dial";
 import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
 import useRadioStore from "~/app/stores/radio-store";
-import { type RadioMode } from "~/lib/types/simulator";
 import TransmitButton from "./transmit-button";
 
 type RadioProps = {
   className?: string;
   disabled?: boolean;
-  onSpeechInput?: (transcript: string) => void;
+  onSpeechInput: (transcript: string) => void;
 };
 
 const Radio = ({
@@ -165,12 +164,12 @@ const Radio = ({
         onModeChanged={handleDialModeChange}
       />
 
-      <div className="flex flex-col place-content-end gap-1">
+      <div className="flex flex-col place-content-end gap-1 pl-2 pr-4">
         <div className="flex flex-row place-content-center">
           <TransmitButton
             disabled={disabled}
             speechEnabled={true}
-            onSpeechRecieved={onSpeechInput!}
+            onSpeechRecieved={onSpeechInput}
           />
         </div>
         <div className="flex flex-row place-content-center">Transmit</div>
@@ -184,7 +183,7 @@ const Radio = ({
         <RadioDisplay
           className="min-w-[200px] max-w-[600px]"
           turnedOn={displayOn || disabled}
-          mode={mode as RadioMode}
+          mode={mode}
           activeFrequency={activeFrequency}
           standbyFrequency={standbyFrequency}
           tertiaryFrequency={tertiaryFrequency}

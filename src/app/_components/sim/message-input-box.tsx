@@ -19,6 +19,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Button } from "~/components/ui/button";
 
 type MessageInputBoxProps = {
   className?: string;
@@ -78,20 +79,20 @@ const MessageInputBox = ({
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div
-          className={`card flex min-h-72 max-w-lg grow grid-cols-1 flex-col gap-2 rounded-md bg-neutral-600 p-1.5 text-white ${className}`}
-        >
-          <div className="flex grow justify-self-stretch">
+    <div
+      className={`flex h-52 grid-cols-1 flex-col gap-1 rounded-md bg-neutral-600 p-1.5 text-white ${className}`}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex grow">
+          <div className="flex w-full flex-col place-content-between gap-1">
             <FormField
               control={form.control}
               name="message"
               render={({ field }) => (
-                <FormItem>
-                  <FormControl>
+                <FormItem className="h-full w-full">
+                  <FormControl className="h-full w-full">
                     <Textarea
-                      className="textarea resize-none overflow-auto bg-neutral-700"
+                      className="textarea h-36 w-full resize-none overflow-auto rounded-md bg-neutral-700"
                       disabled={disabled}
                       placeholder="Enter your radio message here."
                       {...field}
@@ -101,90 +102,81 @@ const MessageInputBox = ({
                 </FormItem>
               )}
             />
-          </div>
 
-          <div className="flex flex-row flex-wrap place-content-evenly gap-x-1 pb-1 lg:flex-nowrap">
-            <div className="flex flex-col py-2">
-              <div className="flex flex-row place-content-start gap-2">
-                <Switch
-                  id="enable-live-feedback"
-                  name="slider-label"
-                  checked={liveFeedback}
-                  role="switch"
-                  aria-checked={liveFeedback}
-                  aria-label="Toggle live feedback"
-                  onCheckedChange={() => {
-                    liveFeedback = !liveFeedback;
-                    if (onLiveFeedbackSettingChanged) {
-                      onLiveFeedbackSettingChanged(liveFeedback);
-                    }
-                  }}
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <div className="pointer-events-none flex flex-col place-content-center">
-                        Live Feedback
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div>
-                        <p>
-                          Shows feedback immediately, instead of just at the end
-                          of the scenario.
-                        </p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+            <div className="flex h-min flex-row flex-wrap place-content-evenly gap-x-1 pb-1 lg:flex-nowrap">
+              <div className="flex flex-col py-2">
+                <div className="flex flex-row place-content-start gap-2">
+                  <Switch
+                    id="enable-live-feedback"
+                    name="slider-label"
+                    checked={liveFeedback}
+                    role="switch"
+                    aria-checked={liveFeedback}
+                    aria-label="Toggle live feedback"
+                    onCheckedChange={() => {
+                      liveFeedback = !liveFeedback;
+                      if (onLiveFeedbackSettingChanged) {
+                        onLiveFeedbackSettingChanged(liveFeedback);
+                      }
+                    }}
+                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="pointer-events-none flex flex-col place-content-center">
+                          Live Feedback
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div>
+                          <p>
+                            Shows feedback immediately, instead of just at the
+                            end of the scenario.
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col py-2">
-              <div className="flex flex-row place-content-start gap-2">
-                <SpeechRecognitionToggle
-                  speechInputSupported={speechRecognitionSupported}
-                  onSpeechInputSettingChanged={() => {
-                    if (onSpeechInputSettingChanged) {
-                      onSpeechInputSettingChanged(!speechInput);
-                    }
-                  }}
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <div className="pointer-events-none flex flex-col place-content-center">
-                        Voice Input
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div>
-                        <p>{voiceInputTooltipText}</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              <div className="flex flex-col py-2">
+                <div className="flex flex-row place-content-start gap-2">
+                  <SpeechRecognitionToggle
+                    speechInputSupported={speechRecognitionSupported}
+                    onSpeechInputSettingChanged={() => {
+                      if (onSpeechInputSettingChanged) {
+                        onSpeechInputSettingChanged(!speechInput);
+                      }
+                    }}
+                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="pointer-events-none flex flex-col place-content-center">
+                          Voice Input
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div>
+                          <p>{voiceInputTooltipText}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
+
+              <Button type="submit">Submit</Button>
+
+              <Button onClick={onReset} type="reset">
+                Clear
+              </Button>
             </div>
-
-            <button
-              className="submit-button bg-surface-400 h-20 px-3"
-              type="submit"
-            >
-              Submit
-            </button>
-
-            <button
-              className="clear-button bg-surface-400 h-20"
-              onClick={onReset}
-              type="reset"
-            >
-              Clear
-            </button>
           </div>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </div>
   );
 };
 

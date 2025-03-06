@@ -165,7 +165,7 @@ const Transponder = ({
         disabled={disabled}
       />
 
-      <div className="order-first flex min-w-[200px] max-w-[600px] grow flex-col items-center justify-center sm:order-2">
+      <div className="order-first flex min-w-[200px] max-w-[600px] grow flex-col mt-6 items-center justify-center sm:order-2">
         <TransponderDisplay
           turnedOn={displayOn}
           mode={transponderDialModes[dialModeIndex]}

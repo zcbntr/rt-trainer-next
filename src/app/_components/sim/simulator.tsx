@@ -670,7 +670,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
           </div> */}
           {/* {/if} */}
 
-          <div className="flex flex-col place-content-evenly gap-5 sm:grid sm:grid-cols-2">
+          <div className="flex w-full flex-col place-content-evenly gap-5 sm:grid sm:grid-cols-2">
             <MessageOutputBox />
 
             <MessageInputBox

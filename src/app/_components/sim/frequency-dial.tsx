@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { randomString } from "~/lib/utils";
 
 type FrequencyDialProps = {
   className?: string;
@@ -100,7 +99,7 @@ const FrequencyDial = ({
           <button
             className={`frequency-dial flex h-20 w-20 rounded-full border-2 ${dialOnClasses} ${disabled ? "disabled" : ""}`}
           >
-            <div className="pointer-events-none absolute left-4 top-[30%] w-7">
+            <div className="pointer-events-none absolute left-2 top-[30%] w-3.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 6.25">
                 <g opacity="0.25">
                   <path
@@ -118,7 +117,7 @@ const FrequencyDial = ({
                 </g>
               </svg>
             </div>
-            <div className="pointer-events-none absolute right-4 top-[30%] w-7">
+            <div className="pointer-events-none absolute right-2 top-[30%] w-3.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 6.24">
                 <g opacity="0.25">
                   <path
@@ -153,7 +152,7 @@ const FrequencyDial = ({
               />
             </div>
 
-            <div className="center absolute h-10 w-0.5 bg-white" />
+            <div className="center absolute left-1/2 h-10 w-0.5 bg-white" />
           </button>
         </div>
       </div>

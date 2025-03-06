@@ -138,9 +138,9 @@ const DoubleFrequencyDial = ({
         <div className="absolute left-1/2 top-1/2 m-auto" />
         <button
           disabled={disabled || !turnedOn}
-          className="height-[100px] transition-350 flex w-[100px] justify-center rounded-xl border border-white ease-in-out"
+          className="transition-350 flex h-[100px] w-[100px] justify-center rounded-full border-2 border-white ease-in-out"
         >
-          <div className="pointer-events-none absolute left-4 top-[30%] w-6">
+          <div className="absolute left-2 top-[30%] w-3">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
               <g opacity="0.25">
                 <path
@@ -158,7 +158,7 @@ const DoubleFrequencyDial = ({
               </g>
             </svg>
           </div>
-          <div className="pointer-events-none absolute right-4 top-[30%] w-6">
+          <div className="absolute right-2 top-[30%] w-3">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.97 9.43">
               <g opacity="0.25">
                 <path
@@ -192,63 +192,63 @@ const DoubleFrequencyDial = ({
               onMouseLeave={stopIncrementingOuterClockwiseHold}
             />
           </div>
-          <button
-            disabled={disabled || !turnedOn}
-            className="double-frequency-dial-inner absolute flex"
-          >
-            <div className="pointer-events-none absolute left-4 top-[26%] w-6">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
-                <g opacity="0.25">
-                  <path
-                    data-name="rad jog left in line"
-                    d="M1.48 4.85a4.12 4.12 0 01-.81-2.46A4.06 4.06 0 011.26.26"
-                    fill="none"
-                    stroke="#fff"
-                    strokeMiterlimit="10"
-                  />
-                  <path
-                    data-name="rad jog left in arrow"
-                    fill="#fff"
-                    d="M2.7 3.23v2.69H0"
-                  />
-                </g>
-              </svg>
-            </div>
-            <div className="pointer-events-none absolute right-4 top-[26%] w-6">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
-                <g opacity="0.25">
-                  <path
-                    data-name="rad jog right in line"
-                    d="M1.57.26a4.07 4.07 0 01.6 2.13 4.13 4.13 0 01-.82 2.46"
-                    fill="none"
-                    stroke="#fff"
-                    strokeMiterlimit="10"
-                  />
-                  <path
-                    data-name="rad jog right in line"
-                    fill="#fff"
-                    d="M2.7 5.92H0V3.23"
-                  />
-                </g>
-              </svg>
-            </div>
-            <div className="absolute left-0 top-0 flex h-full w-full flex-row">
-              <div
-                className="relative w-1/2"
-                aria-label="Inner Dial Anti-Clockwise"
-                onMouseDown={startIncrementingInnerAntiClockwiseHold}
-                onMouseUp={stopIncrementingInnerAntiClockwiseHold}
-                onMouseLeave={stopIncrementingInnerAntiClockwiseHold}
-              />
-              <div
-                className="relative w-1/2"
-                aria-label="Inner Dial Clockwise"
-                onMouseDown={startIncrementingInnerClockwiseHold}
-                onMouseUp={stopIncrementingInnerClockwiseHold}
-                onMouseLeave={stopIncrementingInnerClockwiseHold}
-              />
-            </div>
-          </button>
+        </button>
+        <button
+          disabled={disabled || !turnedOn}
+          className="double-frequency-dial-inner absolute left-1/4 top-1/4 flex h-[50px] w-[50px] rounded-full border-2 border-white"
+        >
+          <div className="absolute left-2 top-[26%] w-3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+              <g opacity="0.25">
+                <path
+                  data-name="rad jog left in line"
+                  d="M1.48 4.85a4.12 4.12 0 01-.81-2.46A4.06 4.06 0 011.26.26"
+                  fill="none"
+                  stroke="#fff"
+                  strokeMiterlimit="10"
+                />
+                <path
+                  data-name="rad jog left in arrow"
+                  fill="#fff"
+                  d="M2.7 3.23v2.69H0"
+                />
+              </g>
+            </svg>
+          </div>
+          <div className="absolute right-2 top-[26%] w-3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
+              <g opacity="0.25">
+                <path
+                  data-name="rad jog right in line"
+                  d="M1.57.26a4.07 4.07 0 01.6 2.13 4.13 4.13 0 01-.82 2.46"
+                  fill="none"
+                  stroke="#fff"
+                  strokeMiterlimit="10"
+                />
+                <path
+                  data-name="rad jog right in line"
+                  fill="#fff"
+                  d="M2.7 5.92H0V3.23"
+                />
+              </g>
+            </svg>
+          </div>
+          <div className="absolute left-0 top-0 flex h-full w-full flex-row">
+            <div
+              className="relative w-1/2"
+              aria-label="Inner Dial Anti-Clockwise"
+              onMouseDown={startIncrementingInnerAntiClockwiseHold}
+              onMouseUp={stopIncrementingInnerAntiClockwiseHold}
+              onMouseLeave={stopIncrementingInnerAntiClockwiseHold}
+            />
+            <div
+              className="relative w-1/2"
+              aria-label="Inner Dial Clockwise"
+              onMouseDown={startIncrementingInnerClockwiseHold}
+              onMouseUp={stopIncrementingInnerClockwiseHold}
+              onMouseLeave={stopIncrementingInnerClockwiseHold}
+            />
+          </div>
         </button>
       </div>
     </div>

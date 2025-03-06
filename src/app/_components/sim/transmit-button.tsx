@@ -20,7 +20,7 @@ const TransmitButton = ({
   speechEnabled,
   onSpeechRecieved,
 }: TransmitButtonProps) => {
-  let transmitButtonClasses = "disabled";
+  let transmitButtonClasses = "";
 
   const {
     transcript,
@@ -31,9 +31,9 @@ const TransmitButton = ({
   } = useSpeechRecognition();
 
   if (speechEnabled && !disabled) {
-    transmitButtonClasses = "bg-red-300";
+    transmitButtonClasses = "bg-red-600/50";
   } else {
-    transmitButtonClasses = "bg-red-200/50";
+    transmitButtonClasses = "bg-red-800/50";
   }
 
   const processSpeech = (speechInput: string) => {
@@ -96,9 +96,9 @@ const TransmitButton = ({
   // }
 
   return (
-    <div
+    <button
       id="transmit-button"
-      className={`${transmitButtonClasses} w-50 h-50 cursor-pointer rounded-full ${className}`}
+      className={`${transmitButtonClasses} w-[50px] h-[50px] cursor-pointer rounded-full border border-red-900/50 ${className}`}
       onMouseDown={handleTransmitMouseDown}
       onKeyDown={handleTransmitMouseDown}
       onMouseUp={handleTransmitMouseUp}

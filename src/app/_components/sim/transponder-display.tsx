@@ -33,7 +33,7 @@ const TransponderDisplay = ({
 
   return (
     <div
-      className={`transponder-segdisplay {showDisplayText} card nowrap flex flex-row place-content-between items-center ${className}`}
+      className={`transponder-segdisplay {showDisplayText} nowrap flex min-h-[82px] w-full flex-row place-content-between items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
       <div>
         <div className="mode-icon">{mode}</div>

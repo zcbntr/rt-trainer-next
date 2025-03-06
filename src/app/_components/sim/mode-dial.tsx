@@ -31,7 +31,7 @@ const ModeDial = ({
   currentModeIndex = 0,
   onModeChanged,
 }: ModeDialProps) => {
-  const width: string = modes.length > 2 ? "w-40" : "w-28";
+  const width: string = modes.length >= 2 ? "w-52" : "w-28";
 
   const modesMultiplier = Math.round(300 / modes.length);
   let modeDialTransform = "";
@@ -73,7 +73,7 @@ const ModeDial = ({
     }
   };
 
-  const handleModeClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleModeClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
 
     const tgt = event.target as HTMLDivElement;
@@ -100,22 +100,26 @@ const ModeDial = ({
   };
 
   const modeElements = useMemo(() => {
-    let angle = 0.33 * Math.PI;
+    let angle = 1.4 * 2 * Math.PI;
     const step = (0.83 * 2 * Math.PI) / modes.length;
-    const radius = 60;
+    const radius = 65;
 
     return modes.map((modeName, index) => {
-      const x = Math.round(radius * Math.sin(angle));
-      const y = Math.round((radius + modeName!.length) * -Math.cos(angle));
-      angle -= step;
+      const x = Math.round((radius + modeName!.length) * Math.cos(angle)) - modeName!.length * 5;
+      const y = Math.round((radius + modeName!.length) * Math.sin(angle)) - 3;
+      angle += step;
+
       return (
-        <div
-          key={index}
+        <button
+          key={index + modeName!}
           style={{ transform: `translate(${x}px, ${y}px)` }}
+          className="absolute"
           onClick={handleModeClick}
         >
-          {modeName}
-        </div>
+          <span>
+            {modeName}
+          </span>
+        </button>
       );
     });
   }, [modes]);
@@ -131,7 +135,7 @@ const ModeDial = ({
       >
         <div
           ref={modeCenterDivRef}
-          className="absolute left-1/2 top-1/2 m-auto"
+          className="absolute left-1/2 top-1/2"
         >
           {modeElements}
         </div>
@@ -146,7 +150,7 @@ const ModeDial = ({
         >
           {modes.length > 2 && (
             <>
-              <div className="pointer-events-none absolute left-4 top-[30%] w-7">
+              <div className="pointer-events-none absolute left-2 top-[30%] w-3.5">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 6.25">
                   <g opacity="0.25">
                     <path
@@ -164,7 +168,7 @@ const ModeDial = ({
                   </g>
                 </svg>
               </div>
-              <div className="pointer-events-none absolute right-4 top-[30%] w-7">
+              <div className="pointer-events-none absolute right-2 top-[30%] w-3.5">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 6.24">
                   <g opacity="0.25">
                     <path

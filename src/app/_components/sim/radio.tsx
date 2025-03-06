@@ -177,7 +177,7 @@ const Radio = ({
       </div>
 
       <div className="display-panel order-first flex w-full grow flex-col sm:order-2">
-        <div className="flex grow flex-row place-content-evenly">
+        <div className="flex grow flex-row place-content-evenly pl-12">
           <div>ACTIVE</div>
           <div>STANDBY</div>
         </div>

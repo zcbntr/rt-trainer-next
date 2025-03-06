@@ -35,20 +35,20 @@ const TransponderDisplay = ({
     <div
       className={`transponder-segdisplay {showDisplayText} nowrap flex min-h-[82px] w-full flex-row place-content-between items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
-      <div>
-        <div className="mode-icon">{mode}</div>
+      <div className="ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6">
+        {mode}
       </div>
-      <div className="sevenSEG mr-5 flex flex-row">
-        <div id="tdigit-0" className="tdigit tselected">
+      <div className="mr-5 flex flex-row">
+        <div id="tdigit-0" className="font-mono sm:text-xl md:text-4xl/6">
           {frequency[3]}
         </div>
-        <div id="tdigit-1" className="tdigit">
+        <div id="tdigit-1" className="font-mono sm:text-xl md:text-4xl/6">
           {frequency[2]}
         </div>
-        <div id="tdigit-2" className="tdigit">
+        <div id="tdigit-2" className="font-mono sm:text-xl md:text-4xl/6">
           {frequency[1]}
         </div>
-        <div id="tdigit-3" className="tdigit">
+        <div id="tdigit-3" className="font-mono sm:text-xl md:text-4xl/6">
           {frequency[0]}
         </div>
       </div>

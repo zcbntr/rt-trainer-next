@@ -687,7 +687,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
           <div className="card flex h-[452px] w-[420px] grow flex-row rounded-md bg-neutral-600 p-2">
             <div className="h-full w-full">
-              <SimulatorMap />
+              <SimulatorMap className="rounded-md"/>
             </div>
           </div>
 

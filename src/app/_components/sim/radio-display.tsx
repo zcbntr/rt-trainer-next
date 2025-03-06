@@ -23,29 +23,29 @@ const RadioDisplay = ({
     <div
       className={`radio-segdisplay {showDisplayText} flex min-h-[82px] w-full flex-row items-center rounded-sm border bg-gray-900 p-3 ${className}`}
     >
-      <div className="ml-2 flex flex-col place-content-center sm:ml-4">
-        <div className="mode-icon">{mode}</div>
+      <div className="ml-2 flex flex-col place-content-center font-mono sm:ml-4 sm:text-lg md:text-2xl/6">
+        {mode}
       </div>
-      <div className="flex flex-col gap-2 ml-20">
+      <div className="ml-4 flex flex-col gap-2">
         <div className="sevenSEG flex flex-row flex-wrap sm:ml-8 sm:mr-10">
           <div className="flex flex-row">
-            <div className="rdigit sm:text-md text-[23px] md:text-3xl/6">
+            <div className="rdigit font-mono text-[23px] sm:text-lg md:text-3xl/6">
               {activeFrequency}
             </div>
           </div>
           <div>
-            <div className="divider-pipe sm:text-md mx-2 text-[23px] sm:mx-8 md:text-3xl/6">
+            <div className="divider-pipe mx-2 font-mono text-[23px] sm:mx-8 sm:text-lg md:text-3xl/6">
               |
             </div>
           </div>
           <div className="flex flex-row">
-            <div className="rdigit sm:text-md text-[23px] md:text-3xl/6">
+            <div className="rdigit font-mono text-[23px] sm:text-lg md:text-3xl/6">
               {standbyFrequency}
             </div>
           </div>
         </div>
         <div className="flex flex-row">
-          <div className="rdigit sm:text-md text-[23px] sm:ml-8 md:text-3xl/6">
+          <div className="rdigit font-mono text-[23px] sm:ml-8 sm:text-lg md:text-3xl/6">
             {tertiaryFrequency}
           </div>
         </div>

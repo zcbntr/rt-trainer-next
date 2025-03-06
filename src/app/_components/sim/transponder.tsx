@@ -204,7 +204,7 @@ const Transponder = ({
         </div>
       </div>
 
-      <div className="order-3 mx-4 flex flex-row">
+      <div className="order-3 flex flex-row w-[100px] place-content-center">
         <FrequencyDial
           turnedOn={frequencyDialEnabled}
           onAntiClockwiseTurn={onTransponderFrequencyReduce}

@@ -1,6 +1,7 @@
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
+import { Sixtyfour } from "next/font/google";
 import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "~/trpc/react";
@@ -33,11 +34,17 @@ export const metadata: Metadata = {
   },
 };
 
+const sixtyfour = Sixtyfour({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sixtyfour",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${sixtyfour.variable}`}>
       <body>
         <Analytics />
 

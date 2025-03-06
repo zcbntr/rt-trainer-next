@@ -274,7 +274,7 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
         onMove={onMove}
         onClick={onMapClick}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", borderRadius: "3px" }}
         mapStyle="mapbox://styles/mapbox/streets-v9"
       >
         <Source id="airspace-data" type="geojson" data={routeLine}>

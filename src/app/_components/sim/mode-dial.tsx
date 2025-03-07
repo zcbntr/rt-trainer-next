@@ -30,7 +30,7 @@ const ModeDial = ({
   currentMode = modes[0],
   onModeChanged,
 }: ModeDialProps) => {
-  const width: string = modes.length >= 2 ? "w-52" : "w-28";
+  const width: string = modes.length > 2 ? "w-56" : "w-56 -mr-6";
   const offRotation = -140;
 
   const modesMultiplier = Math.round(330 / modes.length);

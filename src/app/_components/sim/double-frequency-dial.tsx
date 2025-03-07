@@ -197,7 +197,7 @@ const DoubleFrequencyDial = ({
           disabled={disabled || !turnedOn}
           className="double-frequency-dial-inner absolute left-1/4 top-1/4 flex h-[50px] w-[50px] rounded-full border-2 border-white"
         >
-          <div className="absolute left-2 top-[26%] w-3">
+          <div className="absolute left-2 top-[21%] w-3">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
               <g opacity="0.25">
                 <path
@@ -215,7 +215,7 @@ const DoubleFrequencyDial = ({
               </g>
             </svg>
           </div>
-          <div className="absolute right-2 top-[26%] w-3">
+          <div className="absolute right-2 top-[21%] w-3">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2.7 5.92">
               <g opacity="0.25">
                 <path

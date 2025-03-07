@@ -45,10 +45,12 @@ interface TransponderStateStore {
   frequency: string;
   identEnabled: boolean;
   vfrHasExecuted: boolean;
+  displayDigitSelected: number;
   setDialMode: (dialMode: TransponderDialMode) => void;
   setFrequency: (frequency: string) => void;
   setIdentEnabled: (identEnabled: boolean) => void;
   setVFRHasExecuted: (vfrHasExecuted: boolean) => void;
+  setDisplayDigitSelected: (displayDigitSelected: number) => void;
 }
 
 const useTransponderStore = create(
@@ -58,6 +60,9 @@ const useTransponderStore = create(
       frequency: "1200",
       identEnabled: false,
       vfrHasExecuted: false,
+      displayDigitSelected: 0,
+      setDisplayDigitSelected: (displayDigitSelected: number) =>
+        set(() => ({ displayDigitSelected: displayDigitSelected })),
       setDialMode: (dialMode: TransponderDialMode) =>
         set(() => ({ dialMode: dialMode })),
       setFrequency: (frequency: string) =>

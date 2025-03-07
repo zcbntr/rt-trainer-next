@@ -15,13 +15,21 @@ const Transponder = ({
   className = "",
   disabled = false,
 }: TransponderProps) => {
-  const { dialMode, frequency, identEnabled, vfrHasExecuted } =
-    useTransponderStore((state) => state);
+  const {
+    dialMode,
+    frequency,
+    identEnabled,
+    vfrHasExecuted,
+    displayDigitSelected,
+  } = useTransponderStore((state) => state);
   const setFrequency = useTransponderStore((state) => state.setFrequency);
   const setDialMode = useTransponderStore((state) => state.setDialMode);
   const setIdentEnabled = useTransponderStore((state) => state.setIdentEnabled);
   const setVFRHasExecuted = useTransponderStore(
     (state) => state.setVFRHasExecuted,
+  );
+  const setDisplayDigitSelected = useTransponderStore(
+    (state) => state.setDisplayDigitSelected,
   );
 
   const transponderDialModes: ArrayMaxLength7MinLength2 = [
@@ -43,11 +51,9 @@ const Transponder = ({
     TransponderDialMode?,
   ];
 
-  const dialModeIndex = 0;
-  let displayOn = false;
+  let displayOn = dialMode != transponderDialModes[0];
 
   let frequencyDialEnabled = false;
-  let displayDigitSelected = 0;
 
   // Click handlers
   const handleIDENTButtonClick = () => {
@@ -75,9 +81,9 @@ const Transponder = ({
   const handleENTERButtonClick = () => {
     if (displayOn) {
       if (displayDigitSelected < 3) {
-        displayDigitSelected += 1;
+        setDisplayDigitSelected(displayDigitSelected + 1);
       } else {
-        displayDigitSelected = 0;
+        setDisplayDigitSelected(0);
       }
     }
   };
@@ -85,9 +91,9 @@ const Transponder = ({
   const handleBACKButtonClick = () => {
     if (displayOn) {
       if (displayDigitSelected > 0) {
-        displayDigitSelected -= 1;
+        setDisplayDigitSelected(displayDigitSelected - 1);
       } else {
-        displayDigitSelected = 3;
+        setDisplayDigitSelected(3);
       }
     }
   };
@@ -109,27 +115,27 @@ const Transponder = ({
   }
 
   function onTransponderFrequencyIncrease() {
-    if (frequency[displayDigitSelected] == "7") {
+    if (frequency[3 - displayDigitSelected] == "7") {
       const newFreq = frequency.split("");
-      newFreq[displayDigitSelected] = "0";
+      newFreq[3 - displayDigitSelected] = "0";
       setFrequency(newFreq.join(""));
     } else {
-      const val = parseInt(frequency[displayDigitSelected] ?? "0") ?? 0;
+      const val = parseInt(frequency[3 - displayDigitSelected] ?? "0") ?? 0;
       const newFreq = frequency.split("");
-      newFreq[displayDigitSelected] = (val + 1).toString();
+      newFreq[3 - displayDigitSelected] = (val + 1).toString();
       setFrequency(newFreq.join(""));
     }
   }
 
   function onTransponderFrequencyReduce() {
-    if (frequency[displayDigitSelected] == "0") {
+    if (frequency[3 - displayDigitSelected] == "0") {
       const newFreq = frequency.split("");
-      newFreq[displayDigitSelected] = "7";
+      newFreq[3 - displayDigitSelected] = "7";
       setFrequency(newFreq.join(""));
     } else {
-      const val = parseInt(frequency[displayDigitSelected] ?? "0") ?? 0;
+      const val = parseInt(frequency[3 - displayDigitSelected] ?? "0") ?? 0;
       const newFreq = frequency.split("");
-      newFreq[displayDigitSelected] = (val - 1).toString();
+      newFreq[3 - displayDigitSelected] = (val - 1).toString();
       setFrequency(newFreq.join(""));
     }
   }
@@ -143,12 +149,13 @@ const Transponder = ({
         currentMode={dialMode}
         onModeChanged={handleTransponderDialModeChange}
         disabled={disabled}
+        className="-ml-5"
       />
 
       <div className="order-first mt-6 flex min-w-[200px] max-w-[600px] grow flex-col items-center justify-center sm:order-2">
         <TransponderDisplay
           turnedOn={displayOn}
-          mode={transponderDialModes[dialModeIndex]}
+          mode={dialMode}
           frequency={frequency}
           digitSelected={displayDigitSelected}
         />

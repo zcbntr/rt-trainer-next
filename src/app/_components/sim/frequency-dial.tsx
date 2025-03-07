@@ -16,77 +16,10 @@ const FrequencyDial = ({
   className = "",
   disabled = false,
   turnedOn = true,
-  initialIntervalDuration = 250,
-  minIntervalDuration = 20,
   onClockwiseTurn,
   onAntiClockwiseTurn,
 }: FrequencyDialProps) => {
-  let interval: NodeJS.Timeout | null = null;
   const dialOnClasses = turnedOn ? "ring" : ""; // Check that this is the correct colour (white)
-
-  const [intervalDuration, setIntervalDuration] = useState(
-    initialIntervalDuration,
-  );
-
-  useEffect(() => {
-    setIntervalDuration(initialIntervalDuration);
-
-    return () => {
-      clearInterval(interval!);
-    };
-  }, [initialIntervalDuration, interval]);
-
-  function onAntiClockwiseTick() {
-    clearInterval(interval!);
-
-    const newIntervalDuration = intervalDuration * 0.9 + 5;
-    if (newIntervalDuration < minIntervalDuration) {
-      setIntervalDuration(minIntervalDuration);
-    } else {
-      setIntervalDuration(newIntervalDuration);
-    }
-
-    interval = setInterval(onAntiClockwiseTick, intervalDuration);
-
-    if (onAntiClockwiseTurn) onAntiClockwiseTurn();
-  }
-
-  function startIncrementingAntiClockwiseHold() {
-    setIntervalDuration(initialIntervalDuration);
-    interval = setInterval(onAntiClockwiseTick, intervalDuration);
-
-    if (onAntiClockwiseTurn) onAntiClockwiseTurn();
-  }
-
-  function stopIncrementingAntiClockwiseHold() {
-    clearInterval(interval!);
-  }
-
-  function onClockwiseTick() {
-    clearInterval(interval!);
-
-    const newIntervalDuration = intervalDuration * 0.9 + 5;
-    if (newIntervalDuration < minIntervalDuration) {
-      setIntervalDuration(minIntervalDuration);
-    } else {
-      setIntervalDuration(newIntervalDuration);
-    }
-
-    interval = setInterval(onClockwiseTick, intervalDuration);
-
-    if (onClockwiseTurn) onClockwiseTurn();
-  }
-
-  function startIncrementingClockwiseHold() {
-    setIntervalDuration(initialIntervalDuration);
-    interval = setInterval(onClockwiseTick, intervalDuration);
-
-    if (onClockwiseTurn) onClockwiseTurn();
-  }
-
-  function stopIncrementingClockwiseHold() {
-    clearInterval(interval!);
-  }
 
   return (
     <div className={`flex flex-row ${className}`}>
@@ -136,16 +69,12 @@ const FrequencyDial = ({
               <div
                 className="w-100 h-100 z-[3] h-full w-1/2"
                 aria-label="Frequency dial anticlockwise turn"
-                onMouseDown={startIncrementingAntiClockwiseHold}
-                onMouseUp={stopIncrementingAntiClockwiseHold}
-                onMouseLeave={stopIncrementingAntiClockwiseHold}
+                onClick={() => onAntiClockwiseTurn && onAntiClockwiseTurn()}
               />
               <div
                 className="w-100 h-100 z-[3] h-full w-1/2"
                 aria-label="Frequency dial clockwise turn"
-                onMouseDown={startIncrementingClockwiseHold}
-                onMouseUp={stopIncrementingClockwiseHold}
-                onMouseLeave={stopIncrementingClockwiseHold}
+                onClick={() => onClockwiseTurn && onClockwiseTurn()}
               />
             </div>
 

@@ -5,6 +5,7 @@ import RadioDisplay from "./radio-display";
 import DoubleFrequencyDial from "./double-frequency-dial";
 import useRadioStore from "~/app/stores/radio-store";
 import TransmitButton from "./transmit-button";
+import { type RadioDialMode } from "~/lib/types/simulator";
 
 type RadioProps = {
   className?: string;
@@ -17,7 +18,7 @@ const Radio = ({
   disabled = false,
   onSpeechInput,
 }: RadioProps) => {
-  const RadioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
+  const radioDialModes: ArrayMaxLength7MinLength2 = ["OFF", "SBY"];
   type ArrayMaxLength7MinLength2 = readonly [
     string,
     string,
@@ -48,7 +49,7 @@ const Radio = ({
     (state) => state.swapActiveAndStandbyFrequencies,
   );
 
-  let displayOn = false;
+  let displayOn = dialMode != radioDialModes[0];
   let frequencyDialEnabled = false;
   let transmitButtonEnabled = false;
   // eslint-disable-next-line prefer-const
@@ -101,8 +102,8 @@ const Radio = ({
     }
   };
 
-  function handleDialModeChange(modeIndex: number) {
-    if (modeIndex == 0) {
+  function handleDialModeChange(newDialMode: string) {
+    if (newDialMode == radioDialModes[0]) {
       if (mode === "COM") {
         const COMModeButton = document.getElementById(
           "button-com",
@@ -128,11 +129,7 @@ const Radio = ({
       transmitButtonEnabled = true;
     }
 
-    if (modeIndex == 0) {
-      setDialMode("OFF");
-    } else {
-      setDialMode("SBY");
-    }
+    setDialMode(newDialMode as RadioDialMode);
   }
 
   // Fix all this stuff with a utility method for going from string frequency to number, modify value, and back to string
@@ -155,16 +152,16 @@ const Radio = ({
 
   return (
     <div
-      className={`min-w-3xl flex-no-wrap flex max-h-64 max-w-5xl grow flex-row place-content-evenly gap-2 rounded-md bg-neutral-600 p-3 text-white ${className}`}
+      className={`min-w-3xl flex-no-wrap flex max-h-64 max-w-5xl grow flex-row place-content-evenly gap-2 rounded-md bg-neutral-600 p-3 pl-6 text-white ${className}`}
     >
       <ModeDial
         disabled={disabled}
-        modes={RadioDialModes}
-        currentModeIndex={0}
+        modes={radioDialModes}
+        currentMode={dialMode}
         onModeChanged={handleDialModeChange}
       />
 
-      <div className="flex flex-col place-content-end gap-1 pl-2 pr-4">
+      <div className="mr-5 flex flex-col place-content-end gap-1">
         <div className="flex flex-row place-content-center">
           <TransmitButton
             disabled={disabled}
@@ -176,13 +173,13 @@ const Radio = ({
       </div>
 
       <div className="display-panel order-first flex w-full grow flex-col sm:order-2">
-        <div className="flex grow flex-row place-content-evenly pl-12">
-          <div>ACTIVE</div>
-          <div>STANDBY</div>
+        <div className="flex grow flex-row h-6">
+          <div className="absolute right-1/2">ACTIVE</div>
+          <div className="absolute left-2/3">STANDBY</div>
         </div>
         <RadioDisplay
           className="min-w-[200px] max-w-[600px]"
-          turnedOn={displayOn || disabled}
+          turnedOn={displayOn}
           mode={mode}
           activeFrequency={activeFrequency}
           standbyFrequency={standbyFrequency}
@@ -190,21 +187,21 @@ const Radio = ({
         />
         <div className="display-buttons-container flex grow flex-row place-content-center">
           <button
-            className="w-[50px]"
+            className="h-[24px] w-[50px]"
             id="button-com"
             onClick={handleCOMButtonClick}
           >
             COM
           </button>
           <button
-            className="w-[50px]"
+            className="w-[50px] h-[24px]"
             id="button-swap"
             onClick={handleSWAPButtonClick}
           >
             ⇆
           </button>
           <button
-            className="w-[50px]"
+            className="w-[50px] h-[24px]"
             id="button-nav"
             onClick={handleNAVButtonClick}
           >

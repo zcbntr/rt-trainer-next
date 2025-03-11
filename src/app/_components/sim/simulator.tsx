@@ -42,6 +42,7 @@ type SimulatorProps = {
 
 const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Scenario settings
   let seed = "";
@@ -58,49 +59,47 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   let airportIDs: string[] = [];
 
   // Simulator state and settings
-  let radioDialMode = useRadioStore((state) => state.dialMode);
-  let radioActiveFrequency = useRadioStore((state) => state.activeFrequency);
+  const radioDialMode = useRadioStore((state) => state.dialMode);
+  const radioActiveFrequency = useRadioStore((state) => state.activeFrequency);
 
-  let transponderDialMode = useTransponderStore((state) => state.dialMode);
-  let transponderFrequency = useTransponderStore((state) => state.frequency);
+  const transponderDialMode = useTransponderStore((state) => state.dialMode);
+  const transponderFrequency = useTransponderStore((state) => state.frequency);
 
   const altimeterPressure = useAltimeterStore((state) => state.shownPressure);
   const setAltimeterPressure = useAltimeterStore(
     (state) => state.setShownPressure,
   );
 
-  let altimeterState: AltimeterState;
-  let atcMessage: string = "";
+  const atcMessage = "";
   let userMessage: string;
   let currentTarget: string;
   let currentTargetFrequency: string;
-  let currentRoutePointIndex = 0;
+  const currentRoutePointIndex = 0;
   let failedAttempts = 0;
   let currentRadioCall: RadioCall;
   let currentMessageAttempt: RadioMessageAttempt;
   let currentSimConext: string;
 
   // Page settings
-  let speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
+  const speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
   let speechInput: boolean;
-  let speechNoiseLevel = 0;
-  let readRecievedCalls = false;
-  let liveFeedback = false;
+  const speechNoiseLevel = 0;
+  const readRecievedCalls = false;
+  const liveFeedback = false;
   let tutorialStep4 = false;
-  let dialogOpen = false;
+  const dialogOpen = false;
   let dialogTitle = "";
   let dialogDescription = "";
 
   // Tutorial state
   let tutorialEnabled = false;
-  let tutorialComplete = false;
-  let tutorialStep = 1;
+  const tutorialComplete = false;
+  const tutorialStep = 1;
 
   // Server state
-  let nullRoute = false;
+  const nullRoute = false;
 
   if (loadFromURL) {
-    const searchParams = useSearchParams();
     const seedString = searchParams.get("seed");
     const hasEmergencyString = searchParams.get("hasEmergency");
     const waypointsString = searchParams.get("waypoints");
@@ -195,30 +194,30 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
       }
     }
 
-    if (tutorialString != null) {
-      tutorialEnabled = tutorialString === "true";
-    }
+    // if (tutorialString != null) {
+    //   tutorialEnabled = tutorialString === "true";
+    // }
   }
 
   // Load stores if not populated
-  let airspaces: Airspace[] = [];
+  const airspaces: Airspace[] = [];
   //   AllAirspacesStore.subscribe((value) => {
   //     airspaces = value;
   //   });
   //   if (airspaces.length === 0) fetchAirspaces();
 
-  let onRouteAirspaces: Airspace[] = [];
+  const onRouteAirspaces: Airspace[] = [];
   //   OnRouteAirspacesStore.subscribe((value) => {
   //     onRouteAirspaces = value;
   //   });
 
-  let airports: Airport[] = [];
+  const airports: Airport[] = [];
   //   AllAirportsStore.subscribe((value) => {
   //     airports = value;
   //   });
   //   if (airports.length === 0) fetchAirports();
 
-  let onRouteAirports: Airport[] = [];
+  const onRouteAirports: Airport[] = [];
   //   OnRouteAirportsStore.subscribe((value) => {
   //     onRouteAirports = value;
   //   });
@@ -297,7 +296,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
     if (readRecievedCalls && atcMessage) {
       TTSWithNoise(speechNoiseLevel);
     }
-  }, [readRecievedCalls, atcMessage]);
+  }, [readRecievedCalls, atcMessage, TTSWithNoise, speechNoiseLevel]);
 
   //   $: tutorialStep2 =
   //     transponderState?.dialMode == "SBY" && radioState?.dialMode == "SBY";
@@ -397,15 +396,13 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
       });
       return false;
     } else if (
-      altimeterState.pressure !=
+      altimeterPressure !=
       scenario?.getCurrentPoint().updateData.currentPressure
     ) {
-      // modalStore.trigger({
-      // 	type: 'alert',
-      // 	title: 'Error',
-      // 	body: 'Altimeter pressure setting incorrect'
-      // });
-      // return false;
+      toast.message("Error", {
+        description: "Altimeter pressure setting incorrect",
+      });
+      return false;
     }
 
     return true;
@@ -446,10 +443,10 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
     }
 
     // Get whether there are severe mistakes, and record all minor ones
-    let callsignMentioned: boolean =
+    const callsignMentioned: boolean =
       currentRadioCall.callContainsUserCallsign();
-    let minorMistakes: string[] = feedback.getMinorMistakes();
-    let severeMistakes: string[] = feedback.getSevereMistakes();
+    const minorMistakes: string[] = feedback.getMinorMistakes();
+    const severeMistakes: string[] = feedback.getSevereMistakes();
 
     // Handle mistakes
     if (severeMistakes.length > 0) {
@@ -697,10 +694,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
             </div>
           </div>
 
-          <Altimeter
-            altitude={0}
-            pressure={1013}
-          />
+          <Altimeter altitude={0} pressure={1013} />
 
           <div className="flex w-full flex-row flex-wrap gap-5 p-2 text-neutral-600/50">
             <div>

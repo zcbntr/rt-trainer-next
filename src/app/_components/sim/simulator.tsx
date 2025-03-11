@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import Radio from "./radio";
 import SimulatorMap from "../maps/simulator";
 import { useMemo } from "react";
+import useAltimeterStore from "~/app/stores/altimeter-store";
 
 type SimulatorProps = {
   className?: string;
@@ -62,6 +63,11 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
   let transponderDialMode = useTransponderStore((state) => state.dialMode);
   let transponderFrequency = useTransponderStore((state) => state.frequency);
+
+  const altimeterPressure = useAltimeterStore((state) => state.shownPressure);
+  const setAltimeterPressure = useAltimeterStore(
+    (state) => state.setShownPressure,
+  );
 
   let altimeterState: AltimeterState;
   let atcMessage: string = "";
@@ -691,7 +697,10 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
             </div>
           </div>
 
-          <Altimeter />
+          <Altimeter
+            altitude={0}
+            pressure={1013}
+          />
 
           <div className="flex w-full flex-row flex-wrap gap-5 p-2 text-neutral-600/50">
             <div>

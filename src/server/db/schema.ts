@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   pgTableCreator,
@@ -30,13 +31,13 @@ export const posts = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
+      () => new Date(),
     ),
   },
   (example) => ({
     createdByIdIdx: index("created_by_idx").on(example.createdById),
     nameIndex: index("name_idx").on(example.name),
-  })
+  }),
 );
 
 export const users = createTable("user", {
@@ -83,7 +84,7 @@ export const accounts = createTable(
       columns: [account.provider, account.providerAccountId],
     }),
     userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
+  }),
 );
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -106,7 +107,7 @@ export const sessions = createTable(
   },
   (session) => ({
     userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
+  }),
 );
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -125,5 +126,79 @@ export const verificationTokens = createTable(
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );
+
+export const scenarios = createTable("scenario", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  name: varchar("name", { length: 256 }),
+  description: text("description"),
+  private: boolean("private").notNull().default(false),
+  cover: text("cover"),
+  createdBy: varchar("created_by", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+    () => new Date(),
+  ),
+});
+
+export const scenariosRelations = relations(scenarios, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [scenarios.createdBy],
+    references: [users.id],
+  }),
+  waypoints: many(waypoints),
+  airports: many(airports),
+  airspaces: many(airspaces),
+}));
+
+export const waypoints = createTable("waypoint", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  name: varchar("name", { length: 256 }),
+  lat: varchar("lat", { length: 255 }).notNull(),
+  lon: varchar("lon", { length: 255 }).notNull(),
+  alt: integer("alt").notNull().default(0),
+  scenarioId: integer("scenario_id")
+    .notNull()
+    .references(() => scenarios.id),
+  order: integer("order").notNull(),
+});
+
+export const waypointsRelations = relations(waypoints, ({ one }) => ({
+  scenario: one(scenarios, {
+    fields: [waypoints.scenarioId],
+    references: [scenarios.id],
+  }),
+}));
+
+export const airports = createTable("airport", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  scenarioId: integer("scenario_id")
+    .notNull()
+    .references(() => scenarios.id),
+});
+
+export const airportsRelations = relations(airports, ({ one }) => ({
+  scenario: one(scenarios, {
+    fields: [airports.scenarioId],
+    references: [scenarios.id],
+  }),
+}));
+
+export const airspaces = createTable("airspace", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  scenarioId: integer("scenario_id")
+    .notNull()
+    .references(() => scenarios.id),
+});
+
+export const airspacesRelations = relations(airspaces, ({ one }) => ({
+  scenario: one(scenarios, {
+    fields: [airspaces.scenarioId],
+    references: [scenarios.id],
+  }),
+}));

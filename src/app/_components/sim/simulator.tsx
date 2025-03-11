@@ -587,19 +587,19 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
     MostRecentlyReceivedMessageStore.set(response.responseCall);
   }
 
-  function onStepHandler(e: {
-    detail: { state: { current: number; total: number }; step: number };
-  }): void {
-    tutorialStep = e.detail.state.current + 1;
-  }
+  // function onStepHandler(e: {
+  //   detail: { state: { current: number; total: number }; step: number };
+  // }): void {
+  //   tutorialStep = e.detail.state.current + 1;
+  // }
 
-  function onCompleteHandler(e: Event): void {
-    tutorialComplete = true;
-  }
+  // function onCompleteHandler(e: Event): void {
+  //   tutorialComplete = true;
+  // }
 
-  function cancelTutorial(): void {
-    tutorialEnabled = false;
-  }
+  // function cancelTutorial(): void {
+  //   tutorialEnabled = false;
+  // }
 
   return (
     <div className={`flex justify-center ${className}`}>

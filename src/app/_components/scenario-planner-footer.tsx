@@ -28,7 +28,10 @@ import { type z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { useMemo } from "react";
-import { scenarioFormSchema, type ScenarioFormSchema } from "../validation/create-scenario";
+import {
+  scenarioFormSchema,
+  type ScenarioFormSchema,
+} from "../validation/create-scenario";
 import { submitForm } from "~/server/api/actions/scenarios";
 
 const ScenarioPlannerFooter = () => {
@@ -50,6 +53,13 @@ const ScenarioPlannerFooter = () => {
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
 
+  const form = useForm<z.infer<typeof scenarioFormSchema>>({
+    resolver: zodResolver(scenarioFormSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
   const routeDefaultName: string = useMemo(() => {
     const firstWaypoint = waypoints[0];
     const lastWaypoint = waypoints[waypoints.length - 1];
@@ -57,15 +67,16 @@ const ScenarioPlannerFooter = () => {
       return "";
     }
 
-    return `${firstWaypoint?.name} to ${lastWaypoint?.name}`.substring(0, 50);
-  }, [waypoints]);
+    const name = `${firstWaypoint?.name} to ${lastWaypoint?.name}`.substring(
+      0,
+      50,
+    );
 
-  const form = useForm<z.infer<typeof scenarioFormSchema>>({
-    resolver: zodResolver(scenarioFormSchema),
-    defaultValues: {
-      name: routeDefaultName,
-    },
-  });
+    form.setValue("name", name);
+
+    return name;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waypoints]);
 
   const onSubmit: SubmitHandler<ScenarioFormSchema> = async (data) => {
     // call the server action
@@ -74,7 +85,7 @@ const ScenarioPlannerFooter = () => {
 
     await submitForm(data, airportIds, airspaceIds, waypoints);
 
-    router.push("/scenarios");
+    router.push("/my-scenarios");
   };
 
   const routeIssues: JSX.Element[] = useMemo(() => {

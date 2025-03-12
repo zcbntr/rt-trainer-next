@@ -15,7 +15,7 @@ import {
 import { api } from "~/trpc/server";
 import { type Waypoint } from "~/lib/types/waypoint";
 
-export const transformZodErrors = (error: z.ZodError) => {
+export const transformZodErrors = async (error: z.ZodError) => {
   return error.issues.map((issue) => ({
     path: issue.path.join("."),
     message: issue.message,
@@ -74,6 +74,7 @@ export async function submitForm(
             lon: waypoint.location[0].toFixed(8),
             alt: 0,
             order: index,
+            referenceOpenAIPId: waypoint.referenceObjectId,
           })),
         )
         .returning({ insertedID: waypointsTable.id })
@@ -85,7 +86,7 @@ export async function submitForm(
         .values(
           airportIds.map((airportId) => ({
             scenarioId: insertedId,
-            airportId,
+            openAIPId: airportId,
           })),
         )
         .returning({ insertedID: airports.id })
@@ -97,7 +98,7 @@ export async function submitForm(
         .values(
           airspaceIds.map((airspaceId) => ({
             scenarioId: insertedId,
-            airspaceId,
+            openAIPId: airspaceId,
           })),
         )
         .returning({ insertedID: airspaces.id })

@@ -162,6 +162,7 @@ export const waypoints = createTable("waypoint", {
   lat: varchar("lat", { length: 255 }).notNull(),
   lon: varchar("lon", { length: 255 }).notNull(),
   alt: integer("alt").notNull().default(0),
+  referenceOpenAIPId: varchar("openaip_id", { length: 255 }),
   scenarioId: integer("scenario_id")
     .notNull()
     .references(() => scenarios.id),
@@ -177,6 +178,7 @@ export const waypointsRelations = relations(waypoints, ({ one }) => ({
 
 export const airports = createTable("airport", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  openAIPId: varchar("openaip_id", { length: 255 }).notNull(),
   scenarioId: integer("scenario_id")
     .notNull()
     .references(() => scenarios.id),
@@ -191,6 +193,7 @@ export const airportsRelations = relations(airports, ({ one }) => ({
 
 export const airspaces = createTable("airspace", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  openAIPId: varchar("openaip_id", { length: 255 }).notNull(),
   scenarioId: integer("scenario_id")
     .notNull()
     .references(() => scenarios.id),

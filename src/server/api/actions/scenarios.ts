@@ -14,13 +14,7 @@ import {
 } from "~/server/db/schema";
 import { api } from "~/trpc/server";
 import { type Waypoint } from "~/lib/types/waypoint";
-
-export const transformZodErrors = async (error: z.ZodError) => {
-  return error.issues.map((issue) => ({
-    path: issue.path.join("."),
-    message: issue.message,
-  }));
-};
+import { transformZodErrors } from "~/lib/utils";
 
 export async function submitForm(
   formData: ScenarioFormSchema,
@@ -32,7 +26,7 @@ export async function submitForm(
     //validate the FormData
     const validatedFields = scenarioFormSchema.parse(formData);
 
-    console.log({ validatedFields });
+    // console.log({ validatedFields, airportIds, airspaceIds, waypoints });
 
     const user = await api.user.getLoggedInUser();
 
@@ -47,7 +41,7 @@ export async function submitForm(
 
     await db.transaction(async (tx) => {
       // Create scenario row, then using the id create the waypoints, airportids, and airspaceids in the respective tables
-      const scenarioRow = await tx
+      const scenarioRows = await tx
         .insert(scenarios)
         .values({
           name: validatedFields.name,
@@ -56,12 +50,12 @@ export async function submitForm(
         .returning({ insertedID: scenarios.id })
         .execute();
 
-      if (!scenarioRow[0]?.insertedID) {
+      if (!scenarioRows[0]?.insertedID) {
         tx.rollback();
         return;
       }
 
-      const insertedId = scenarioRow[0].insertedID;
+      const insertedId = scenarioRows[0].insertedID;
 
       // Create waypoints
       const waypointsRows = await tx
@@ -125,6 +119,8 @@ export async function submitForm(
         data: null,
       };
     }
+
+    console.log(error);
 
     return {
       errors: {

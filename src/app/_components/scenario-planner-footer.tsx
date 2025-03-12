@@ -83,7 +83,28 @@ const ScenarioPlannerFooter = () => {
     const airportIds = airportsOnRoute.map((airport) => airport._id);
     const airspaceIds = airspacesOnRoute.map((airspace) => airspace._id);
 
-    await submitForm(data, airportIds, airspaceIds, waypoints);
+    const { data: success, errors } = await submitForm(
+      data,
+      airportIds,
+      airspaceIds,
+      waypoints,
+    );
+
+    if (errors) {
+      if (Array.isArray(errors)) {
+        errors.forEach((error) => {
+          form.setError("name", {
+            message: error.message,
+          });
+        });
+      } else {
+        form.setError("name", {
+          message: errors.message,
+        });
+      }
+
+      return;
+    }
 
     router.push("/my-scenarios");
   };

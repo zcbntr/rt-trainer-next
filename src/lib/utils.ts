@@ -8,6 +8,7 @@ import {
   differenceInYears,
 } from "date-fns";
 import { splitAndPadNumber } from "./sim-utils/string-processors";
+import { type z } from "zod";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -163,3 +164,10 @@ export function seededNormalDistribution(
 
   return result;
 }
+
+export const transformZodErrors = (error: z.ZodError) => {
+  return error.issues.map((issue) => ({
+    path: issue.path.join("."),
+    message: issue.message,
+  }));
+};

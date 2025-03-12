@@ -6,6 +6,8 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 
+import { lineString, bbox } from "@turf/turf";
+
 export const scenarioRouter = createTRPCRouter({
   getScenarioById: publicProcedure
     .input(z.object({ id: z.number() }))
@@ -30,10 +32,13 @@ export const scenarioRouter = createTRPCRouter({
       }
     }),
 
-  getOwnedScenarios: protectedProcedure.query(async ({ ctx }) => {
+  getOwnedScenariosWithWaypoints: protectedProcedure.query(async ({ ctx }) => {
     const scenarios = await ctx.db.query.scenarios.findMany({
       where: (scenarios, { eq }) =>
         eq(scenarios.createdBy, ctx.session.user.id),
+      with: {
+        waypoints: true,
+      },
     });
 
     return scenarios;

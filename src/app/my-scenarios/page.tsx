@@ -59,7 +59,7 @@ export default async function Page() {
             id: waypoint.id.toString(),
             name: waypoint.name,
             type: waypoint.type as WaypointType,
-            index: waypoint.order,
+            index: waypoint.index,
             location: [parseFloat(waypoint.lon), parseFloat(waypoint.lat)],
           };
         })}
@@ -81,13 +81,15 @@ export default async function Page() {
         {scenarioList.length == 0 && (
           <div className="flex flex-row place-content-center p-4">
             <div className="flex flex-col gap-2 rounded-md border p-4 text-center">
-              <span className="text-xl">
+              <span className="text-lg">
                 It seems like you don&apos;t have any saved scenarios.
               </span>
               <div className="flex flex-row place-content-center">
                 <Link
                   href="/plan"
-                  className={buttonVariants({ variant: "outline" }) + " w-fit"}
+                  className={
+                    buttonVariants({ variant: "outline" }) + " w-fit text-lg"
+                  }
                 >
                   Try making one
                 </Link>
@@ -99,7 +101,7 @@ export default async function Page() {
         {scenarioList.length > 0 && (
           <div className="flex flex-row place-content-center p-4">
             <div className="flex flex-col gap-3 p-4 text-center">
-              <span className="text-xl">
+              <span className="text-lg">
                 You can create more scenarios in the scenario planner.
               </span>
               <div className="flex flex-row place-content-center">

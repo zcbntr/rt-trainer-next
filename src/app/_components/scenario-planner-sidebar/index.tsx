@@ -20,14 +20,15 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { Command } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AircraftSection from "./aircraft-section";
 import RouteSection from "./route-section";
 import ScenarioSettingsSection from "./scenario-settings-section";
 import AirspacesSection from "./airspaces-section";
+import useSidebarStore from "~/app/stores/sidebar-store";
 
 const sidebarSections = [
   {
@@ -56,29 +57,26 @@ const sidebarSections = [
 export function ScenarioPlannerSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  // Note: I'm using state to show active item.
-  // IRL you should use the url/router.
-
   const { setOpen } = useSidebar();
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  const sidebarSection = searchParams.get("sidebar");
+  const sidebarSection = useSidebarStore((state) => state.section);
+  const setSidebarSection = useSidebarStore((state) => state.setSection);
 
   useEffect(() => {
-    if (sidebarSection || activeSection) {
+    if (sidebarSection !== "") {
       const section = sidebarSections.find(
         (item) => item.title === sidebarSection,
       );
       if (section) {
-        setActiveSection(section.title);
+        setOpen(true);
       } else {
+        setSidebarSection("");
         setOpen(false);
       }
     } else {
       setOpen(false);
     }
-  }, [sidebarSection, setOpen, activeSection]);
+  }, [sidebarSection, setOpen, setSidebarSection]);
 
   return (
     <Sidebar
@@ -118,13 +116,10 @@ export function ScenarioPlannerSidebar({
                         hidden: false,
                       }}
                       onClick={() => {
-                        setActiveSection(item.title);
-                        // Naive solution to update the url - need a function to update the url
-                        // So that if sidebar is already defined it doesnt do something funny
-                        router.push(`?sidebar=${item.title}`);
+                        setSidebarSection(item.title);
                         setOpen(true);
                       }}
-                      isActive={activeSection === item.title}
+                      isActive={sidebarSection === item.title}
                       className="px-2.5 md:px-2"
                     >
                       <item.icon />
@@ -145,14 +140,13 @@ export function ScenarioPlannerSidebar({
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
             <div className="text-base font-medium text-foreground">
-              {sidebarSections.find((x) => x.title == activeSection)?.title}
+              {sidebarSections.find((x) => x.title == sidebarSection)?.title}
             </div>
             <Button
               variant={"link"}
               onClick={() => {
+                setSidebarSection("");
                 setOpen(false);
-                // Naive solution - make a helper function please! (currently deletes all state held in url params)
-                router.replace("/plan");
               }}
             >
               <MdOutlineKeyboardDoubleArrowLeft />
@@ -163,15 +157,15 @@ export function ScenarioPlannerSidebar({
           <SidebarGroup className="h-full px-0">
             <SidebarGroupContent className="h-full">
               <div className="flex h-full flex-col gap-2 px-2">
-                {activeSection == "Route Waypoints" && <RouteSection />}
+                {sidebarSection == "Route Waypoints" && <RouteSection />}
 
-                {activeSection == "Scenario Settings" && (
+                {sidebarSection == "Scenario Settings" && (
                   <ScenarioSettingsSection />
                 )}
 
-                {activeSection == "Aircraft Details" && <AircraftSection />}
+                {sidebarSection == "Aircraft Details" && <AircraftSection />}
 
-                {activeSection == "Airspaces" && <AirspacesSection />}
+                {sidebarSection == "Airspaces" && <AirspacesSection />}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>

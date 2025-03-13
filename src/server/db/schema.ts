@@ -167,7 +167,7 @@ export const waypoints = createTable("waypoint", {
   scenarioId: integer("scenario_id")
     .notNull()
     .references(() => scenarios.id),
-  order: integer("order").notNull(),
+  index: integer("index").notNull(),
 });
 
 export const waypointsRelations = relations(waypoints, ({ one }) => ({

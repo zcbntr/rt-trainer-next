@@ -171,3 +171,7 @@ export const transformZodErrors = (error: z.ZodError) => {
     message: issue.message,
   }));
 };
+
+export const numberToAlphabetLetter = (num: number): string => {
+  return String.fromCharCode(65 + (num % 26));
+};

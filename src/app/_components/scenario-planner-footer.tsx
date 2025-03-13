@@ -60,7 +60,7 @@ const ScenarioPlannerFooter = () => {
     },
   });
 
-  const routeDefaultName: string = useMemo(() => {
+  useMemo(() => {
     const firstWaypoint = waypoints[0];
     const lastWaypoint = waypoints[waypoints.length - 1];
     if (!firstWaypoint || !lastWaypoint) {
@@ -106,7 +106,9 @@ const ScenarioPlannerFooter = () => {
       return;
     }
 
-    router.push("/my-scenarios");
+    if (success) {
+      router.push("/my-scenarios");
+    }
   };
 
   const routeIssues: JSX.Element[] = useMemo(() => {

@@ -8,6 +8,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "~/components/ui/sonner";
+import Footer from "./_components/footer";
 
 export const metadata: Metadata = {
   title: { template: "%s | RT-Trainer", default: "RT-Trainer" },
@@ -50,11 +51,12 @@ export default function RootLayout({
 
         <TRPCReactProvider>
           <div className="grid grid-rows-[auto,1fr] bg-[#f5f5f5] text-[#333]">
-            <main className="h-min min-h-dvh overflow-y-scroll">
+            <main className="h-fit min-h-dvh overflow-y-scroll">
               {children}
 
               <Toaster />
             </main>
+            <Footer />
           </div>
         </TRPCReactProvider>
       </body>

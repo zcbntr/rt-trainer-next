@@ -23,6 +23,8 @@ export async function submitForm(
   waypoints: Waypoint[],
 ) {
   try {
+    let scenarioId = -1;
+
     //validate the FormData
     const validatedFields = scenarioFormSchema.parse(formData);
 
@@ -55,19 +57,20 @@ export async function submitForm(
         return;
       }
 
-      const insertedId = scenarioRows[0].insertedID;
+      scenarioId = scenarioRows[0].insertedID;
 
       // Create waypoints
       const waypointsRows = await tx
         .insert(waypointsTable)
         .values(
           waypoints.map((waypoint, index) => ({
-            scenarioId: insertedId,
+            scenarioId: scenarioId,
             name: waypoint.name,
             lat: waypoint.location[1].toFixed(8),
             lon: waypoint.location[0].toFixed(8),
             alt: 0,
             order: index,
+            type: waypoint.type,
             referenceOpenAIPId: waypoint.referenceObjectId,
           })),
         )
@@ -79,7 +82,7 @@ export async function submitForm(
         .insert(airports)
         .values(
           airportIds.map((airportId) => ({
-            scenarioId: insertedId,
+            scenarioId: scenarioId,
             openAIPId: airportId,
           })),
         )
@@ -91,7 +94,7 @@ export async function submitForm(
         .insert(airspaces)
         .values(
           airspaceIds.map((airspaceId) => ({
-            scenarioId: insertedId,
+            scenarioId: scenarioId,
             openAIPId: airspaceId,
           })),
         )
@@ -109,8 +112,9 @@ export async function submitForm(
     });
 
     return {
+      success: true,
       errors: null,
-      data: "data received and mutated",
+      data: { scenarioId: scenarioId },
     };
   } catch (error) {
     if (error instanceof z.ZodError) {

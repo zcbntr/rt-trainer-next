@@ -158,10 +158,11 @@ export const scenariosRelations = relations(scenarios, ({ one, many }) => ({
 
 export const waypoints = createTable("waypoint", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-  name: varchar("name", { length: 256 }),
+  name: varchar("name", { length: 256 }).notNull(),
   lat: varchar("lat", { length: 255 }).notNull(),
   lon: varchar("lon", { length: 255 }).notNull(),
   alt: integer("alt").notNull().default(0),
+  type: integer("waypoint_type").notNull(),
   referenceOpenAIPId: varchar("openaip_id", { length: 255 }),
   scenarioId: integer("scenario_id")
     .notNull()

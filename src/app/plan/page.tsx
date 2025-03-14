@@ -9,6 +9,7 @@ export default async function Page({
 }) {
   const scenarioId = (await searchParams).edit;
 
+  let scenarioToLoadId: number | undefined = undefined;
   let waypoints: Waypoint[] = [];
   let airspaceIds: string[] = [];
   let airportIds: string[] = [];
@@ -27,6 +28,13 @@ export default async function Page({
       return;
     }
 
+    if (scenarioId) {
+      const intScenarioToLoadId = parseInt(scenarioId);
+      if (intScenarioToLoadId >= 0) {
+        scenarioToLoadId = intScenarioToLoadId;
+      }
+    }
+
     waypoints = scenario.waypoints.map((waypoint) => {
       return {
         id: waypoint.id.toString(),
@@ -43,6 +51,7 @@ export default async function Page({
 
   return (
     <PlanPageComponent
+      existingRouteId={scenarioToLoadId}
       waypoints={waypoints}
       airspaceIds={airspaceIds}
       airportIds={airportIds}

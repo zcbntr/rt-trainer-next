@@ -6,32 +6,41 @@ import { ScenarioPlannerSidebar } from "~/app/_components/scenario-planner-sideb
 import ScenarioPlannerFooter from "~/app/_components/scenario-planner-footer";
 import { type Waypoint } from "~/lib/types/waypoint";
 import React from "react";
-import useRoutePlannerStore from "~/app/stores/route-store";
+import useScenarioPlannerStore from "~/app/stores/plan-store";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 
 type PlanPageProps = {
+  existingRouteId?: number;
   waypoints: Waypoint[];
   airspaceIds: string[];
   airportIds: string[];
 };
 
 const PlanPageComponent = ({
+  existingRouteId,
   waypoints,
   airspaceIds,
   airportIds,
 }: PlanPageProps) => {
   // Push waypoints to store, look up airpsace and airport ids and add them to store
-  const setWaypoints = useRoutePlannerStore((state) => state.setWaypoints);
-  const setOnRouteAirspaces = useRoutePlannerStore(
+  const setExistingRouteId = useScenarioPlannerStore(
+    (state) => state.setExistingScenarioId,
+  );
+  const setWaypoints = useScenarioPlannerStore((state) => state.setWaypoints);
+  const setOnRouteAirspaces = useScenarioPlannerStore(
     (state) => state.setAirspacesOnRoute,
   );
-  const setOnRouteAirports = useRoutePlannerStore(
+  const setOnRouteAirports = useScenarioPlannerStore(
     (state) => state.setAirportsOnRoute,
   );
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
   React.useEffect(() => {
+    if (existingRouteId != -1 && existingRouteId != undefined) {
+      setExistingRouteId(existingRouteId);
+    }
+
     setWaypoints(waypoints, []);
 
     // Fetch airspaces and airports based on ids
@@ -53,6 +62,8 @@ const PlanPageComponent = ({
     airports,
     setOnRouteAirspaces,
     setOnRouteAirports,
+    existingRouteId,
+    setExistingRouteId,
   ]);
 
   return (

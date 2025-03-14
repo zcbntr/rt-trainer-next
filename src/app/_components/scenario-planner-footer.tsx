@@ -1,7 +1,7 @@
 "use client";
 
 import { MdSave } from "react-icons/md";
-import useRoutePlannerStore from "../stores/route-store";
+import useScenarioPlannerStore from "../stores/plan-store";
 import { getRouteIssues, kmToUnit } from "~/lib/sim-utils/route";
 import { Button } from "~/components/ui/button";
 import { type Waypoint } from "~/lib/types/waypoint";
@@ -37,22 +37,26 @@ import { submitForm } from "~/server/api/actions/scenarios";
 const ScenarioPlannerFooter = () => {
   const router = useRouter();
 
-  const waypoints: Waypoint[] = useRoutePlannerStore(
+  const existingScenarioId: number = useScenarioPlannerStore(
+    (state) => state.existingScenarioId,
+  );
+  const waypoints: Waypoint[] = useScenarioPlannerStore(
     (state) => state.waypoints,
   );
-  const airportsOnRoute = useRoutePlannerStore(
+  const airportsOnRoute = useScenarioPlannerStore(
     (state) => state.airportsOnRoute,
   );
-  const distance: number = useRoutePlannerStore((state) => state.distanceKM);
-  const distanceUnit: string = useRoutePlannerStore(
+  const distance: number = useScenarioPlannerStore((state) => state.distanceKM);
+  const distanceUnit: string = useScenarioPlannerStore(
     (state) => state.distanceDisplayUnit,
   );
-  const airspacesOnRoute = useRoutePlannerStore(
+  const airspacesOnRoute = useScenarioPlannerStore(
     (state) => state.airspacesOnRoute,
   );
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
-  const displayDuration = `${airspacesOnRoute.length * 5 + airportsOnRoute.length * 10} mins`;
+  const displayDuration = `${airspacesOnRoute.length * 4 + airportsOnRoute.length * 8} mins`;
+  const saveTitle = existingScenarioId >= 0 ? "Update Scenario" : "Create Scenario";
 
   const form = useForm<z.infer<typeof scenarioFormSchema>>({
     resolver: zodResolver(scenarioFormSchema),
@@ -85,6 +89,7 @@ const ScenarioPlannerFooter = () => {
     const airspaceIds = airspacesOnRoute.map((airspace) => airspace._id);
 
     const { data: success, errors } = await submitForm(
+      existingScenarioId,
       data,
       airportIds,
       airspaceIds,
@@ -168,7 +173,7 @@ const ScenarioPlannerFooter = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Save Scenario</DialogTitle>
+                <DialogTitle>{saveTitle}</DialogTitle>
                 <DialogDescription></DialogDescription>
               </DialogHeader>
               <Form {...form}>

@@ -1,23 +1,23 @@
 import { useMemo } from "react";
-import useRoutePlannerStore from "~/app/stores/route-store";
+import useScenarioPlannerStore from "~/app/stores/plan-store";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { type Airspace } from "~/lib/types/airspace";
 
 const AirspacesSection = () => {
-  const showOnlyOnRouteAirspaces = useRoutePlannerStore(
+  const showOnlyOnRouteAirspaces = useScenarioPlannerStore(
     (state) => state.showOnlyOnRouteAirspaces,
   );
-  const showAirspacesAboveMaxFL = useRoutePlannerStore(
+  const showAirspacesAboveMaxFL = useScenarioPlannerStore(
     (state) => state.showAirspacesAboveMaxFL,
   );
-  const setShowOnlyOnRouteAirspaces = useRoutePlannerStore(
+  const setShowOnlyOnRouteAirspaces = useScenarioPlannerStore(
     (state) => state.setShowOnlyOnRouteAirspaces,
   );
-  const setShowAirspacesAboveMaxFL = useRoutePlannerStore(
+  const setShowAirspacesAboveMaxFL = useScenarioPlannerStore(
     (state) => state.setShowAirspacesAboveMaxFL,
   );
-  const airspacesOnRoute: Airspace[] = useRoutePlannerStore(
+  const airspacesOnRoute: Airspace[] = useScenarioPlannerStore(
     (state) => state.airspacesOnRoute,
   );
 

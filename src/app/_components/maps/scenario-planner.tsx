@@ -6,7 +6,7 @@ import Map, { Source, Layer, Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
-import useRoutePlannerStore from "~/app/stores/route-store";
+import useScenarioPlannerStore from "~/app/stores/plan-store";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
@@ -83,7 +83,7 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
 
   const mapRef = useRef<MapRef>(null);
 
-  const waypoints: Waypoint[] = useRoutePlannerStore(
+  const waypoints: Waypoint[] = useScenarioPlannerStore(
     (state) => state.waypoints,
   );
   const airspaces: Airspace[] = useAeronauticalDataStore(
@@ -92,19 +92,19 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
   const airports: Airport[] = useAeronauticalDataStore(
     (state) => state.airports,
   );
-  const airspacesOnRoute: Airspace[] = useRoutePlannerStore(
+  const airspacesOnRoute: Airspace[] = useScenarioPlannerStore(
     (state) => state.airspacesOnRoute,
   );
-  const maxFL: number = useRoutePlannerStore((state) => state.maxFL);
-  const showAirspacesAboveMaxFL: boolean = useRoutePlannerStore(
+  const maxFL: number = useScenarioPlannerStore((state) => state.maxFL);
+  const showAirspacesAboveMaxFL: boolean = useScenarioPlannerStore(
     (state) => state.showAirspacesAboveMaxFL,
   );
-  const showOnlyOnRouteAirspaces: boolean = useRoutePlannerStore(
+  const showOnlyOnRouteAirspaces: boolean = useScenarioPlannerStore(
     (state) => state.showOnlyOnRouteAirspaces,
   );
 
-  const addWaypoint = useRoutePlannerStore((state) => state.addWaypoint);
-  const moveWaypoint = useRoutePlannerStore((state) => state.moveWaypoint);
+  const addWaypoint = useScenarioPlannerStore((state) => state.addWaypoint);
+  const moveWaypoint = useScenarioPlannerStore((state) => state.moveWaypoint);
 
   useEffect(() => {
     async function fetchAirspaces() {

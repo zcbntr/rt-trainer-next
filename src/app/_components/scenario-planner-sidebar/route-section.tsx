@@ -8,7 +8,7 @@ import {
   MdLocationPin,
 } from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
-import useRoutePlannerStore from "~/app/stores/route-store";
+import useScenarioPlannerStore from "~/app/stores/plan-store";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -19,23 +19,23 @@ import { randomString } from "~/lib/utils";
 const RouteSection = () => {
   let routeSeed = randomString(6);
 
-  const waypoints: Waypoint[] = useRoutePlannerStore(
+  const waypoints: Waypoint[] = useScenarioPlannerStore(
     (state) => state.waypoints,
   );
-  const setWaypoints = useRoutePlannerStore((state) => state.setWaypoints);
+  const setWaypoints = useScenarioPlannerStore((state) => state.setWaypoints);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const removeWaypoint = useRoutePlannerStore((state) => state.removeWaypoint);
+  const removeWaypoint = useScenarioPlannerStore((state) => state.removeWaypoint);
 
   //   For route gen
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
-  const maxFL = useRoutePlannerStore((state) => state.maxFL);
+  const maxFL = useScenarioPlannerStore((state) => state.maxFL);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const setAirspacesOnRoute = useRoutePlannerStore(
+  const setAirspacesOnRoute = useScenarioPlannerStore(
     (state) => state.setAirspacesOnRoute,
   );
-  const setAirportsOnRoute = useRoutePlannerStore(
+  const setAirportsOnRoute = useScenarioPlannerStore(
     (state) => state.setAirportsOnRoute,
   );
 

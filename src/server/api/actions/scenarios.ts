@@ -15,8 +15,10 @@ import {
 import { api } from "~/trpc/server";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { transformZodErrors } from "~/lib/utils";
+import { eq } from "drizzle-orm";
 
 export async function submitForm(
+  existingRouteId: number,
   formData: ScenarioFormSchema,
   airportIds: string[],
   airspaceIds: string[],
@@ -41,81 +43,168 @@ export async function submitForm(
       };
     }
 
-    await db.transaction(async (tx) => {
-      // Create scenario row, then using the id create the waypoints, airportids, and airspaceids in the respective tables
-      const scenarioRows = await tx
-        .insert(scenarios)
-        .values({
-          name: validatedFields.name,
-          createdBy: user.id,
-        })
-        .returning({ insertedID: scenarios.id })
-        .execute();
+    if (existingRouteId < 0) {
+      await db.transaction(async (tx) => {
+        // Create scenario row, then using the id create the waypoints, airportids, and airspaceids in the respective tables
+        const scenarioRows = await tx
+          .insert(scenarios)
+          .values({
+            name: validatedFields.name,
+            createdBy: user.id,
+          })
+          .returning({ insertedID: scenarios.id })
+          .execute();
 
-      if (!scenarioRows[0]?.insertedID) {
-        tx.rollback();
-        return;
+        if (!scenarioRows[0]?.insertedID) {
+          tx.rollback();
+          return;
+        }
+
+        scenarioId = scenarioRows[0].insertedID;
+
+        // Create waypoints
+        const waypointsRows = await tx
+          .insert(waypointsTable)
+          .values(
+            waypoints.map((waypoint, index) => ({
+              scenarioId: scenarioId,
+              name: waypoint.name,
+              lat: waypoint.location[1].toFixed(8),
+              lon: waypoint.location[0].toFixed(8),
+              alt: 0,
+              index: index,
+              type: waypoint.type,
+              referenceOpenAIPId: waypoint.referenceObjectId,
+            })),
+          )
+          .returning({ insertedID: waypointsTable.id })
+          .execute();
+
+        // Create airports
+        const airportsRows = await tx
+          .insert(airports)
+          .values(
+            airportIds.map((airportId) => ({
+              scenarioId: scenarioId,
+              openAIPId: airportId,
+            })),
+          )
+          .returning({ insertedID: airports.id })
+          .execute();
+
+        // Create airspaces
+        const airspacesRows = await tx
+          .insert(airspaces)
+          .values(
+            airspaceIds.map((airspaceId) => ({
+              scenarioId: scenarioId,
+              openAIPId: airspaceId,
+            })),
+          )
+          .returning({ insertedID: airspaces.id })
+          .execute();
+
+        if (
+          waypointsRows.length !== waypoints.length ||
+          airportsRows.length !== airportIds.length ||
+          airspacesRows.length !== airspaceIds.length
+        ) {
+          tx.rollback();
+          return;
+        }
+      });
+
+      return {
+        success: true,
+        errors: null,
+        data: { scenarioId: scenarioId },
+      };
+    } else {
+      // Update existing route
+      const scenario = await api.scenario.getOwnedScenarioById({
+        id: existingRouteId,
+      });
+
+      if (!scenario) {
+        return {
+          errors: {
+            message: "Scenario not found.",
+          },
+          data: null,
+        };
       }
 
-      scenarioId = scenarioRows[0].insertedID;
+      await db.transaction(async (tx) => {
+        // Update scenario
+        await tx
+          .update(scenarios)
+          .set({
+            name: validatedFields.name,
+          })
+          .where(eq(scenarios.id, existingRouteId))
+          .execute();
 
-      // Create waypoints
-      const waypointsRows = await tx
-        .insert(waypointsTable)
-        .values(
-          waypoints.map((waypoint, index) => ({
-            scenarioId: scenarioId,
-            name: waypoint.name,
-            lat: waypoint.location[1].toFixed(8),
-            lon: waypoint.location[0].toFixed(8),
-            alt: 0,
-            order: index,
-            type: waypoint.type,
-            referenceOpenAIPId: waypoint.referenceObjectId,
-          })),
-        )
-        .returning({ insertedID: waypointsTable.id })
-        .execute();
+        // Update waypoints
+        await tx
+          .delete(waypointsTable)
+          .where(eq(waypointsTable.scenarioId, existingRouteId))
+          .execute();
 
-      // Create airports
-      const airportsRows = await tx
-        .insert(airports)
-        .values(
-          airportIds.map((airportId) => ({
-            scenarioId: scenarioId,
-            openAIPId: airportId,
-          })),
-        )
-        .returning({ insertedID: airports.id })
-        .execute();
+        await tx
+          .insert(waypointsTable)
+          .values(
+            waypoints.map((waypoint, index) => ({
+              scenarioId: existingRouteId,
+              name: waypoint.name,
+              lat: waypoint.location[1].toFixed(8),
+              lon: waypoint.location[0].toFixed(8),
+              alt: 0,
+              index: index,
+              type: waypoint.type,
+              referenceOpenAIPId: waypoint.referenceObjectId,
+            })),
+          )
+          .execute();
 
-      // Create airspaces
-      const airspacesRows = await tx
-        .insert(airspaces)
-        .values(
-          airspaceIds.map((airspaceId) => ({
-            scenarioId: scenarioId,
-            openAIPId: airspaceId,
-          })),
-        )
-        .returning({ insertedID: airspaces.id })
-        .execute();
+        // Update airports
+        await tx
+          .delete(airports)
+          .where(eq(airports.scenarioId, existingRouteId))
+          .execute();
 
-      if (
-        waypointsRows.length !== waypoints.length ||
-        airportsRows.length !== airportIds.length ||
-        airspacesRows.length !== airspaceIds.length
-      ) {
-        tx.rollback();
-        return;
-      }
-    });
+        await tx
+          .insert(airports)
+          .values(
+            airportIds.map((airportId) => ({
+              scenarioId: existingRouteId,
+              openAIPId: airportId,
+            })),
+          )
+          .execute();
 
-    return {
-      success: true,
-      errors: null,
-      data: { scenarioId: scenarioId },
-    };
+        // Update airspaces
+        await tx
+          .delete(airspaces)
+          .where(eq(airspaces.scenarioId, existingRouteId))
+          .execute();
+
+        await tx
+          .insert(airspaces)
+          .values(
+            airspaceIds.map((airspaceId) => ({
+              scenarioId: existingRouteId,
+              openAIPId: airspaceId,
+            })),
+          )
+          .execute();
+      });
+
+      return {
+        success: true,
+        errors: null,
+        data: { scenarioId: existingRouteId },
+      };
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {

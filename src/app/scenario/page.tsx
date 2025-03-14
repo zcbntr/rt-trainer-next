@@ -5,8 +5,10 @@ import { HydrateClient } from "~/trpc/server";
 export default async function Page() {
   return (
     <HydrateClient>
-      <Link href="/">Back</Link>
-      <Simulator />
+      <div className="container mx-auto">
+        <Link href="/">Back</Link>
+        <Simulator />
+      </div>
     </HydrateClient>
   );
 }

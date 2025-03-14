@@ -56,7 +56,8 @@ const ScenarioPlannerFooter = () => {
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
   const displayDuration = `${airspacesOnRoute.length * 4 + airportsOnRoute.length * 8} mins`;
-  const saveTitle = existingScenarioId >= 0 ? "Update Scenario" : "Create Scenario";
+  const saveTitle =
+    existingScenarioId >= 0 ? "Update Scenario" : "Create Scenario";
 
   const form = useForm<z.infer<typeof scenarioFormSchema>>({
     resolver: zodResolver(scenarioFormSchema),

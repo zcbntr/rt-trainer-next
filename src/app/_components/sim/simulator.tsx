@@ -17,7 +17,6 @@ import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
-import { useSearchParams } from "next/navigation";
 import useRadioStore from "~/app/stores/radio-store";
 import useTransponderStore from "~/app/stores/transponder-store";
 import {
@@ -35,14 +34,28 @@ import useAltimeterStore from "~/app/stores/altimeter-store";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { Button, buttonVariants } from "~/components/ui/button";
 import Link from "next/link";
+import { type Waypoint } from "~/lib/types/waypoint";
 
 type SimulatorProps = {
   className?: string;
-  scenarioId: number;
+  scenarioId?: number;
+  startPointIndex?: number;
+  endPointIndex?: number;
+  waypoints?: Waypoint[];
+  airspacesOnRouteIds?: string[];
+  airportsOnRouteIds?: string[];
 };
 
-const Simulator = ({ className, scenarioId }: SimulatorProps) => {
-  const searchParams = useSearchParams();
+const Simulator = ({
+  className,
+  scenarioId,
+  startPointIndex,
+  endPointIndex,
+  waypoints,
+  airspacesOnRouteIds,
+  airportsOnRouteIds,
+}: SimulatorProps) => {
+  console.log(scenarioId);
 
   // Simulator state and settings
   const radioDialMode = useRadioStore((state) => state.dialMode);
@@ -61,7 +74,7 @@ const Simulator = ({ className, scenarioId }: SimulatorProps) => {
   let failedAttempts = 0;
   let currentRadioCall: RadioCall;
   let currentMessageAttempt: RadioMessageAttempt;
-  let currentSimConext: string;
+  let currentSimContext: string;
 
   // Page settings
   const speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
@@ -71,30 +84,6 @@ const Simulator = ({ className, scenarioId }: SimulatorProps) => {
   let endOfRouteDialogOpen = false;
   let dialogTitle = "";
   let dialogDescription = "";
-
-  // Server state
-  const nullRoute = false;
-
-  const startPointIndexString = searchParams.get("startPoint");
-  const endPointIndexString = searchParams.get("endPoint");
-
-  // Check whether start point index has been set
-  let startPointIndex = 0;
-  if (startPointIndexString != null) {
-    startPointIndex = parseInt(startPointIndexString);
-    if (startPointIndex < 0) {
-      startPointIndex = 0;
-    }
-  }
-
-  // Check whether end point index has been set
-  let endPointIndex = -1;
-  if (endPointIndexString != null) {
-    endPointIndex = parseInt(endPointIndexString);
-    if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
-      endPointIndex = -1;
-    }
-  }
 
   // Load stores if not populated
   const airspaces: Airspace[] = [];
@@ -408,6 +397,11 @@ const Simulator = ({ className, scenarioId }: SimulatorProps) => {
       return value;
     });
     MostRecentlyReceivedMessageStore.set(response.responseCall);
+  }
+
+  if (scenarioId == undefined) {
+    // Replace later with a dialog asking the user to enter a scenario seed and generate it on the fly
+    return <div>No scenario loaded</div>;
   }
 
   return (

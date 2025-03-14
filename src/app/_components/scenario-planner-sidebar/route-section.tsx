@@ -68,7 +68,7 @@ const RouteSection = () => {
     return waypoints.map((waypoint) => {
       return (
         <div
-          className="card flex flex-row place-content-center gap-2 rounded-sm border p-2"
+          className="flex flex-row place-content-center gap-2 rounded-sm border p-2"
           key={waypoint.id}
           draggable
           //   animate:flip={{ duration: dragDuration }}

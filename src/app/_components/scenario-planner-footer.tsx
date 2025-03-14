@@ -52,6 +52,7 @@ const ScenarioPlannerFooter = () => {
   );
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
+  const displayDuration = `${airspacesOnRoute.length * 5 + airportsOnRoute.length * 10} mins`;
 
   const form = useForm<z.infer<typeof scenarioFormSchema>>({
     resolver: zodResolver(scenarioFormSchema),
@@ -152,7 +153,7 @@ const ScenarioPlannerFooter = () => {
       <div className="flex flex-row place-content-center p-4">
         <div className="flex flex-col place-content-center">
           <div className="text-sm">Est. Scenario Duration</div>
-          <div className="text-xl">0 mins</div>
+          <div className="text-xl">{displayDuration}</div>
         </div>
       </div>
 

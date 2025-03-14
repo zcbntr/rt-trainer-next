@@ -5,13 +5,12 @@ import Map, { Source, Layer, Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
-import useScenarioPlannerStore from "~/app/stores/plan-store";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { MdLocationPin } from "react-icons/md";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
-import { getAirspaceLowerLimitFL } from "~/lib/sim-utils/airspaces";
+import useSimulatorStore from "~/app/stores/scenario-store";
 
 const routeLayerStyle: LayerSpecification = {
   id: "route",
@@ -79,21 +78,13 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
 
   const mapRef = useRef<MapRef>(null);
 
-  const waypoints: Waypoint[] = useScenarioPlannerStore(
-    (state) => state.waypoints,
-  );
-  const airportsOnRoute: Airport[] = useScenarioPlannerStore(
+  // Replace these with simulator store
+  const waypoints: Waypoint[] = useSimulatorStore((state) => state.waypoints);
+  const airportsOnRoute: Airport[] = useSimulatorStore(
     (state) => state.airportsOnRoute,
   );
-  const airspacesOnRoute: Airspace[] = useScenarioPlannerStore(
+  const airspacesOnRoute: Airspace[] = useSimulatorStore(
     (state) => state.airspacesOnRoute,
-  );
-  const maxFL: number = useScenarioPlannerStore((state) => state.maxFL);
-  const showAirspacesAboveMaxFL: boolean = useScenarioPlannerStore(
-    (state) => state.showAirspacesAboveMaxFL,
-  );
-  const showOnlyOnRouteAirspaces: boolean = useScenarioPlannerStore(
-    (state) => state.showOnlyOnRouteAirspaces,
   );
 
   const airspacesGeoJSONData = useMemo(() => {
@@ -104,22 +95,12 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
     return turf.featureCollection(
       airspacesOnRoute
         .map((airspace) => {
-          const lowerLimitFL = getAirspaceLowerLimitFL(airspace);
-
-          if (
-            airspace.type != 14 &&
-            (showAirspacesAboveMaxFL || lowerLimitFL < maxFL)
-          )
+          if (airspace.type != 14)
             return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
-  }, [
-    airspacesOnRoute,
-    maxFL,
-    showAirspacesAboveMaxFL,
-    showOnlyOnRouteAirspaces,
-  ]);
+  }, [airspacesOnRoute]);
 
   const matzsGeoJSONData = useMemo(() => {
     if (airspacesOnRoute.length === 0) {
@@ -129,22 +110,12 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
     return turf.featureCollection(
       airspacesOnRoute
         .map((airspace) => {
-          const lowerLimitFL = getAirspaceLowerLimitFL(airspace);
-
-          if (
-            airspace.type == 14 &&
-            (showAirspacesAboveMaxFL || lowerLimitFL < maxFL)
-          )
+          if (airspace.type == 14)
             return turf.polygon(airspace.geometry.coordinates);
         })
         .filter((x) => x != undefined),
     );
-  }, [
-    airspacesOnRoute,
-    maxFL,
-    showAirspacesAboveMaxFL,
-    showOnlyOnRouteAirspaces,
-  ]);
+  }, [airspacesOnRoute]);
 
   const airportsGeoJSONData = useMemo(() => {
     if (airportsOnRoute.length === 0) {
@@ -210,12 +181,6 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
     lnglatBounds: initialBBOX,
   });
 
-  const checkIfPositionInViewport = (lat: number, lng: number) => {
-    const bounds = mapRef?.current?.getBounds();
-
-    if (bounds) return bounds.contains([lng, lat]);
-  };
-
   const onMove = useCallback(({ viewState }: { viewState: ViewStateType }) => {
     setViewState(viewState);
   }, []);
@@ -257,8 +222,6 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
 
           if (waypointAlreadyExists) return;
         }
-
-        const waypointName = `Waypoint ${airport.name}`;
       }
     },
     [airportsOnRoute, viewState.zoom, waypoints],

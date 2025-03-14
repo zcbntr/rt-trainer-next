@@ -1,15 +1,5 @@
 import { type SimulatorUpdateData } from "./simulator";
 
-export interface WaypointURLObject {
-  id: string;
-  type: number;
-  location: [number, number];
-  index: number;
-  name: string;
-  referenceObjectId?: string;
-  description?: string;
-}
-
 export enum EmergencyType {
   None = "None",
   EngineFailure = "Engine Failure",

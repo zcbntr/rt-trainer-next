@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "use client";
 
 import * as React from "react";
@@ -104,30 +105,23 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
 
   const addWaypoint = useRoutePlannerStore((state) => state.addWaypoint);
   const moveWaypoint = useRoutePlannerStore((state) => state.moveWaypoint);
-  const setAirspaces = useAeronauticalDataStore((state) => state.setAirspaces);
 
   useEffect(() => {
     async function fetchAirspaces() {
-      // Lazy load airspaces/airports into stores
-      const freshAirspaces: Airspace[] =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        (
-          await fetch("/api/aeronautical-data/airspaces").then((res) =>
-            res.json(),
-          )
-        ).data as Airspace[];
+      // Lazy load airspaces/airports into stores - can trpc not do this typesafe?
+      const freshAirspaces: Airspace[] = (
+        await fetch("/api/aeronautical-data/airspaces").then((res) =>
+          res.json(),
+        )
+      ).data as Airspace[];
 
-      setAirspaces(freshAirspaces);
+      useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
     }
 
     async function fetchAirports() {
-      const freshAirports: Airport[] =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        (
-          await fetch("/api/aeronautical-data/airports").then((res) =>
-            res.json(),
-          )
-        ).data as Airport[];
+      const freshAirports: Airport[] = (
+        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
+      ).data as Airport[];
 
       useAeronauticalDataStore.setState({ airports: freshAirports });
     }
@@ -139,7 +133,7 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
     if (airspaces.length === 0) {
       void fetchAirspaces();
     }
-  }, [airports.length, airspaces.length, setAirspaces]);
+  }, [airports.length, airspaces.length]);
 
   const airspacesGeoJSONData = useMemo(() => {
     const airspacesToUse = showOnlyOnRouteAirspaces

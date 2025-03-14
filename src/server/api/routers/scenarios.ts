@@ -6,8 +6,6 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 
-import { lineString, bbox } from "@turf/turf";
-
 export const scenarioRouter = createTRPCRouter({
   getScenarioById: publicProcedure
     .input(z.object({ id: z.number() }))

@@ -6,7 +6,7 @@ export default async function Page() {
   return (
     <HydrateClient>
       <Link href="/">Back</Link>
-      <Simulator loadFromURL={false} />
+      <Simulator />
     </HydrateClient>
   );
 }

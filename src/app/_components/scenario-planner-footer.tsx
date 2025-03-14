@@ -192,6 +192,7 @@ const ScenarioPlannerFooter = () => {
                       </FormItem>
                     )}
                   />
+
                   {routeIssues.length > 0 && (
                     <div className="flex flex-col gap-1">
                       <div className="text-sm text-red-500">

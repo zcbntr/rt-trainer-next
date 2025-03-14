@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "use client";
 
 import { type ParseResult } from "zod";
@@ -12,14 +13,11 @@ import {
   type RadioCall,
   type RadioMessageAttempt,
 } from "~/lib/types/radio-call";
-import { type WaypointURLObject } from "~/lib/types/scenario";
-import { type AltimeterState } from "~/lib/types/simulator";
-import { type Waypoint } from "~/lib/types/waypoint";
 import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
 import MessageInputBox from "./message-input-box";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import useRadioStore from "~/app/stores/radio-store";
 import useTransponderStore from "~/app/stores/transponder-store";
 import {
@@ -32,31 +30,19 @@ import {
 import { toast } from "sonner";
 import Radio from "./radio";
 import SimulatorMap from "../maps/simulator";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import useAltimeterStore from "~/app/stores/altimeter-store";
+import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
+import { Button, buttonVariants } from "~/components/ui/button";
+import Link from "next/link";
 
 type SimulatorProps = {
   className?: string;
-  loadFromURL?: boolean;
+  scenarioId: number;
 };
 
-const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
-  const router = useRouter();
+const Simulator = ({ className, scenarioId }: SimulatorProps) => {
   const searchParams = useSearchParams();
-
-  // Scenario settings
-  let seed = "";
-  let hasEmergencies = false;
-  let callsign = "G-OFLY";
-  let prefix = "";
-  let aircraftType = "Cessna 172";
-
-  // Flag to check if critical data is missing and the user must be prompted to enter it
-  let criticalDataMissing = false;
-
-  // Scenario objects
-  let waypoints: Waypoint[] = [];
-  let airportIDs: string[] = [];
 
   // Simulator state and settings
   const radioDialMode = useRadioStore((state) => state.dialMode);
@@ -66,12 +52,9 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
   const transponderFrequency = useTransponderStore((state) => state.frequency);
 
   const altimeterPressure = useAltimeterStore((state) => state.shownPressure);
-  const setAltimeterPressure = useAltimeterStore(
-    (state) => state.setShownPressure,
-  );
 
   const atcMessage = "";
-  let userMessage: string;
+  let userMessage = "";
   let currentTarget: string;
   let currentTargetFrequency: string;
   const currentRoutePointIndex = 0;
@@ -82,266 +65,125 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
   // Page settings
   const speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
-  let speechInput: boolean;
   const speechNoiseLevel = 0;
   const readRecievedCalls = false;
   const liveFeedback = false;
-  let tutorialStep4 = false;
-  const dialogOpen = false;
+  let endOfRouteDialogOpen = false;
   let dialogTitle = "";
   let dialogDescription = "";
-
-  // Tutorial state
-  let tutorialEnabled = false;
-  const tutorialComplete = false;
-  const tutorialStep = 1;
 
   // Server state
   const nullRoute = false;
 
-  if (loadFromURL) {
-    const seedString = searchParams.get("seed");
-    const hasEmergencyString = searchParams.get("hasEmergency");
-    const waypointsString = searchParams.get("waypoints");
-    const airportsString = searchParams.get("airports");
-    const callsignString = searchParams.get("callsign");
-    const prefixString = searchParams.get("prefix");
-    const aircraftTypeString = searchParams.get("aircraftType");
-    const startPointIndexString = searchParams.get("startPoint");
-    const endPointIndexString = searchParams.get("endPoint");
-    const tutorialString = searchParams.get("tutorial");
+  const startPointIndexString = searchParams.get("startPoint");
+  const endPointIndexString = searchParams.get("endPoint");
 
-    // Check whether the seed is specified - if not then warn user
-    if (seedString != null && seedString != "") {
-      seed = seedString;
-    } else {
-      criticalDataMissing = true;
-      throw new Error("Seed not specified");
+  // Check whether start point index has been set
+  let startPointIndex = 0;
+  if (startPointIndexString != null) {
+    startPointIndex = parseInt(startPointIndexString);
+    if (startPointIndex < 0) {
+      startPointIndex = 0;
     }
+  }
 
-    // Check whether the hasEmergency is specified
-    if (hasEmergencyString != null) {
-      hasEmergencies = hasEmergencyString === "true";
+  // Check whether end point index has been set
+  let endPointIndex = -1;
+  if (endPointIndexString != null) {
+    endPointIndex = parseInt(endPointIndexString);
+    if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
+      endPointIndex = -1;
     }
-
-    // Get waypoints from the URL's JSON.stringify form
-    if (waypointsString != null) {
-      const waypointsDataArray: WaypointURLObject[] =
-        JSON.parse(waypointsString);
-      waypoints = waypointsDataArray.map((waypoint: WaypointURLObject) => {
-        return {
-          id: waypoint.id,
-          type: waypoint.type,
-          location: waypoint.location,
-          name: waypoint.name,
-          index: waypoint.index,
-          referenceObjectId: waypoint.referenceObjectId,
-          description: waypoint.description,
-        };
-      });
-      // WaypointsStore.set(waypoints);
-    } else {
-      criticalDataMissing = true;
-    }
-
-    // Get airports from the URL's JSON.stringify form
-    if (airportsString != null) {
-      airportIDs = airportsString.split(",");
-    } else {
-      criticalDataMissing = true;
-    }
-
-    // Check whether the callsign is specified
-    if (callsignString != null && callsignString != "") {
-      callsign = callsignString;
-    }
-
-    // Check whether the prefix is specified
-    if (prefixString != null) {
-      if (
-        prefixString == "" ||
-        prefixString == "STUDENT" ||
-        prefixString == "HELICOPTER" ||
-        prefixString == "POLICE" ||
-        prefixString == "SUPER" ||
-        prefixString == "FASTJET" ||
-        prefixString == "FASTPROP"
-      ) {
-        prefix = prefixString;
-      }
-    }
-
-    // Check whether the aircraft type is specified
-    if (aircraftTypeString != null && aircraftTypeString != "") {
-      aircraftType = aircraftTypeString;
-    }
-
-    // Check whether start point index has been set
-    let startPointIndex = 0;
-    if (startPointIndexString != null) {
-      startPointIndex = parseInt(startPointIndexString);
-      if (startPointIndex < 0) {
-        startPointIndex = 0;
-      }
-    }
-
-    // Check whether end point index has been set
-    let endPointIndex = -1;
-    if (endPointIndexString != null) {
-      endPointIndex = parseInt(endPointIndexString);
-      if (endPointIndex < 0 || endPointIndex >= startPointIndex) {
-        endPointIndex = -1;
-      }
-    }
-
-    // if (tutorialString != null) {
-    //   tutorialEnabled = tutorialString === "true";
-    // }
   }
 
   // Load stores if not populated
   const airspaces: Airspace[] = [];
-  //   AllAirspacesStore.subscribe((value) => {
-  //     airspaces = value;
-  //   });
-  //   if (airspaces.length === 0) fetchAirspaces();
 
   const onRouteAirspaces: Airspace[] = [];
-  //   OnRouteAirspacesStore.subscribe((value) => {
-  //     onRouteAirspaces = value;
-  //   });
 
   const airports: Airport[] = [];
-  //   AllAirportsStore.subscribe((value) => {
-  //     airports = value;
-  //   });
-  //   if (airports.length === 0) fetchAirports();
 
   const onRouteAirports: Airport[] = [];
-  //   OnRouteAirportsStore.subscribe((value) => {
-  //     onRouteAirports = value;
-  //   });
 
-  //   WaypointsStore.subscribe((value) => {
-  //     waypoints = value;
-  //   });
+  useEffect(() => {
+    async function fetchAirspaces() {
+      // Lazy load airspaces/airports into stores - can trpc not do this typesafe?
+      const freshAirspaces: Airspace[] = (
+        await fetch("/api/aeronautical-data/airspaces").then((res) =>
+          res.json(),
+        )
+      ).data as Airspace[];
 
-  let scenario: Scenario | undefined = undefined;
-
-  if (criticalDataMissing) {
-    // Set a short timeout then trigger modal to load scenario data
-    // setTimeout(() => {
-    //   const modal: ModalSettings = {
-    //     type: "component",
-    //     component: "quickLoadScenarioDataComponent",
-    //     response: (r: any) => {
-    //       if (r) {
-    //         seed = r.scenarioSeed;
-    //         hasEmergencies = r.hasEmergencies;
-    //         loadScenario();
-    //       }
-    //     },
-    //   };
-    //   modalStore.trigger(modal);
-    // }, 1000);
-
-    throw new Error("Critical data missing");
-  }
-
-  $: if (!criticalDataMissing && airports.length > 0 && airspaces.length > 0) {
-    loadScenario();
-  }
-
-  function loadScenario() {
-    try {
-      scenario = generateScenario(
-        seed,
-        waypoints,
-        onRouteAirports,
-        onRouteAirspaces,
-        hasEmergencies,
-      );
-    } catch (e) {
-      console.error(e);
-      return;
+      useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
     }
 
-    // ScenarioStore.set(scenario);
+    async function fetchAirports() {
+      const freshAirports: Airport[] = (
+        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
+      ).data as Airport[];
 
-    // if (endPointIndex == -1) {
-    //   EndPointIndexStore.set(scenario.scenarioPoints.length - 1);
-    // } else {
-    //   EndPointIndexStore.set(endPointIndex);
-    // }
-  }
+      useAeronauticalDataStore.setState({ airports: freshAirports });
+    }
 
-  //   ScenarioStore.set(scenario);
-  //   CurrentScenarioPointIndexStore.set(startPointIndex);
-  //   StartPointIndexStore.set(startPointIndex);
+    if (airports.length === 0) {
+      void fetchAirports();
+    }
 
-  //   TutorialStore.set(tutorial);
-  //   AircraftDetailsStore.set({
-  //     callsign: callsign,
-  //     prefix: prefix,
-  //     aircraftType: aircraftType,
-  //   });
-
-  if (nullRoute) {
-    dialogTitle = "No Route Generated";
-    dialogDescription =
-      "After 1000 iterations no feasible route was generated for this seed. Please try another one. The route generation is not finalised and will frequently encounter issues like this one. ";
-  }
+    if (airspaces.length === 0) {
+      void fetchAirspaces();
+    }
+  }, [airports.length, airspaces.length]);
 
   useMemo(() => {
+    /**
+     * Reads out the current atc message using the speech synthesis API, with added static noise
+     *
+     * @remarks
+     * If the speech synthesis API is not supported in the current browser, then an error is logged to the console.
+     *
+     * @returns void
+     */
+    function TTSWithNoise(noiseLevel: number): void {
+      if ("speechSynthesis" in window) {
+        // Get the speech synthesis API and audio context
+        const synth = window.speechSynthesis;
+        const audioContext = new AudioContext();
+
+        // Create speech synthesis utterance and noise buffer
+        const speech = new SpeechSynthesisUtterance(atcMessage);
+        const noiseBuffer = generateStaticNoise(45, speech.rate * 44100);
+        const noiseSource = new AudioBufferSourceNode(audioContext, {
+          buffer: noiseBuffer,
+        });
+        const gainNode = new GainNode(audioContext);
+        synth.speak(speech);
+
+        // Adjust the gain based on the noise level
+        gainNode.gain.value = noiseLevel;
+
+        // Connect nodes
+        noiseSource.connect(gainNode).connect(audioContext.destination);
+        noiseSource.start();
+
+        // Stop the noise after the speech has finished
+        speech.onend = () => {
+          noiseSource.stop();
+        };
+      } else {
+        console.error("SpeechSynthesis API is not supported in this browser.");
+      }
+    }
+
     if (readRecievedCalls && atcMessage) {
       TTSWithNoise(speechNoiseLevel);
     }
-  }, [readRecievedCalls, atcMessage, TTSWithNoise, speechNoiseLevel]);
+  }, [readRecievedCalls, atcMessage, speechNoiseLevel]);
 
   //   $: tutorialStep2 =
   //     transponderState?.dialMode == "SBY" && radioState?.dialMode == "SBY";
   //   $: tutorialStep3 =
   //     radioState?.activeFrequency ==
   //     scenario?.getCurrentPoint().updateData.currentTargetFrequency;
-
-  /**
-   * Reads out the current atc message using the speech synthesis API, with added static noise
-   *
-   * @remarks
-   * If the speech synthesis API is not supported in the current browser, then an error is logged to the console.
-   *
-   * @returns void
-   */
-  function TTSWithNoise(noiseLevel: number): void {
-    if ("speechSynthesis" in window) {
-      // Get the speech synthesis API and audio context
-      const synth = window.speechSynthesis;
-      const audioContext = new AudioContext();
-
-      // Create speech synthesis utterance and noise buffer
-      const speech = new SpeechSynthesisUtterance(atcMessage);
-      const noiseBuffer = generateStaticNoise(45, speech.rate * 44100);
-      const noiseSource = new AudioBufferSourceNode(audioContext, {
-        buffer: noiseBuffer,
-      });
-      const gainNode = new GainNode(audioContext);
-      synth.speak(speech);
-
-      // Adjust the gain based on the noise level
-      gainNode.gain.value = noiseLevel;
-
-      // Connect nodes
-      noiseSource.connect(gainNode).connect(audioContext.destination);
-      noiseSource.start();
-
-      // Stop the noise after the speech has finished
-      speech.onend = () => {
-        noiseSource.stop();
-      };
-    } else {
-      console.error("SpeechSynthesis API is not supported in this browser.");
-    }
-  }
 
   /**
    * Generates static noise for the speech synthesis API in the form of an AudioBuffer
@@ -499,7 +341,6 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
       toast.message("Correct");
     }
 
-    tutorialStep4 = true;
     // Reset failed attempts
     failedAttempts = 0;
 
@@ -549,10 +390,6 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
       message: userMessage,
     };
 
-    // console.log(
-    //   `currentRadioCall: ${currentRadioCall.attempts[currentRadioCall.attempts.length - 1]?.message}`,
-    // );
-
     // Check the call is valid
     const response = Parser.parseCall(currentRadioCall);
 
@@ -561,18 +398,7 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
     // If the user has reached the end of the route, then show a modal asking if they want to view their feedback
     if (currentRoutePointIndex == endPointIndex) {
-      const m: ModalSettings = {
-        type: "confirm",
-        title: "Scenario Complete",
-        body: "Do you want view your feedback?",
-        response: (r: boolean) => {
-          if (r) {
-            router.push("/scenario/results/");
-          }
-        },
-      };
-      modalStore.trigger(m);
-
+      endOfRouteDialogOpen = true;
       return;
     }
 
@@ -584,95 +410,36 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
     MostRecentlyReceivedMessageStore.set(response.responseCall);
   }
 
-  // function onStepHandler(e: {
-  //   detail: { state: { current: number; total: number }; step: number };
-  // }): void {
-  //   tutorialStep = e.detail.state.current + 1;
-  // }
-
-  // function onCompleteHandler(e: Event): void {
-  //   tutorialComplete = true;
-  // }
-
-  // function cancelTutorial(): void {
-  //   tutorialEnabled = false;
-  // }
-
   return (
     <div className={`flex justify-center ${className}`}>
       <div className="w-full max-w-screen-lg p-5">
-        <Dialog open={dialogOpen}>
+        <Dialog open={endOfRouteDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{dialogTitle}</DialogTitle>
-              <DialogDescription>{dialogDescription}</DialogDescription>
+              <DialogTitle>Scenario Complete</DialogTitle>
+              <DialogDescription>
+                Well done. You can now view your feedback.
+              </DialogDescription>
             </DialogHeader>
+            <div className="flex flex-row place-content-between">
+              <Button
+                onClick={() => {
+                  endOfRouteDialogOpen = false;
+                }}
+              >
+                Close
+              </Button>
+              <Link
+                href={`/scenario/${scenarioId}/results`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                View Feedback
+              </Link>
+            </div>
           </DialogContent>
         </Dialog>
-        <div className="flex flex-row flex-wrap place-content-center gap-5">
-          {/* {#if tutorialEnabled && !tutorialComplete} */}
-          {/* <div className="card bg-primary-900 rounded-lg p-3 text-white sm:mx-10 sm:w-7/12">
-            <Stepper on:complete={onCompleteHandler} on:step={onStepHandler}>
-              <Step>
-                <svelte:fragment slot="header">Get Started!</svelte:fragment>
-                Welcome to RT Trainer. This tutorial will explain how to use the
-                simulator.
-                <br />
-                Click
-                <span className="underline">next</span>
-                to continue.
-                <svelte:fragment slot="navigation">
-                  <button
-                    className="btn variant-ghost-warning"
-                    on:click={cancelTutorial}
-                  >
-                    Skip Tutorial
-                  </button>
-                </svelte:fragment>
-              </Step>
-              <Step locked={!tutorialStep2}>
-                <svelte:fragment slot="header">
-                  Turning on your Radio Stack
-                </svelte:fragment>
-                <ul className="ml-5 list-disc">
-                  <li>
-                    Turn on your radio by clicking on the dial or standby (SBY)
-                    label.
-                  </li>
-                  <li>Set your transponder to standby in the same way.</li>
-                </ul>
-              </Step>
-              <Step locked={!tutorialStep3}>
-                <svelte:fragment slot="header">
-                  Setting Your Radio Frequency
-                </svelte:fragment>
-                Set your radio frequency to the current target frequency shown
-                in the message output box.
-              </Step>
-              <Step locked={!tutorialStep4}>
-                <svelte:fragment slot="header">
-                  Make your first Radio Call
-                </svelte:fragment>
-                Now you are ready to make your first radio call.
-                <ul className="ml-5 list-disc">
-                  <li>Type your message in the input box.</li>
-                  <li>Or enable speech input and say your message out loud.</li>
-                  <li>
-                    Your callsign is `{prefix}
-                    {callsign}`. You can change this in your
-                    <a href="/profile">profile settings</a>.
-                  </li>
-                </ul>
-              </Step>
-              <Step>
-                <svelte:fragment slot="header">Well Done!</svelte:fragment>
-                You have completed the basic tutorial. Familiarise yourself with
-                the rest of the simulator and complete the route.
-              </Step>
-            </Stepper>
-          </div> */}
-          {/* {/if} */}
 
+        <div className="flex flex-row flex-wrap place-content-center gap-5">
           <div className="flex w-full flex-col place-content-evenly gap-5 sm:grid sm:grid-cols-2">
             <MessageOutputBox />
 
@@ -681,10 +448,11 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
               onMessageSubmitted={handleSubmit}
               onLiveFeedbackSettingChanged={(liveFeedback) => !liveFeedback}
               onSpeechInputSettingChanged={(speechInput) => !speechInput}
+              message={userMessage}
             />
           </div>
 
-          <Radio />
+          <Radio onSpeechInput={(transcript) => (userMessage = transcript)} />
 
           <Transponder />
 
@@ -698,10 +466,10 @@ const Simulator = ({ className, loadFromURL = true }: SimulatorProps) => {
 
           <div className="flex w-full flex-row flex-wrap gap-5 p-2 text-neutral-600/50">
             <div>
-              Your callsign: {prefix}
-              {callsign}
+              Your callsign: {"prefix"}
+              {"callsign"}
             </div>
-            <div>Your aircraft type: {aircraftType}</div>
+            <div>Your aircraft type: {"aircraftType"}</div>
           </div>
         </div>
       </div>

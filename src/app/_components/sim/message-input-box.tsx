@@ -43,10 +43,10 @@ const formSchema = z.object({
 });
 
 const MessageInputBox = ({
-  className = "",
-  disabled = false,
+  className,
+  disabled,
   speechRecognitionSupported = false,
-  message = "",
+  message,
   onLiveFeedbackSettingChanged,
   onSpeechInputSettingChanged,
   onMessageSubmitted,

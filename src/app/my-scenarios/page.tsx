@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import StaticPreviewMap from "../_components/maps/static-preview";
 import { type WaypointType } from "~/lib/types/waypoint";
 import Link from "next/link";
-import { Button, buttonVariants } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
 import { MdEdit, MdPlayArrow } from "react-icons/md";
 
 // Eventually add pagination and search

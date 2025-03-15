@@ -20,6 +20,7 @@ export default async function Page({
   let waypoints: Waypoint[] = [];
   let airspaceIds: string[] = [];
   let airportIds: string[] = [];
+  let hasEmergencyEvents = false;
 
   if (slug && parseInt(slug) >= 0) {
     const intScenarioToLoadId = parseInt(slug);
@@ -39,6 +40,8 @@ export default async function Page({
     }
 
     seed = scenario.seed;
+
+    hasEmergencyEvents = scenario.hasEmergencyEvents;
 
     waypoints = scenario.waypoints.map((waypoint) => {
       return {
@@ -80,6 +83,7 @@ export default async function Page({
         airportIds={airportIds}
         startIndex={startIndex}
         endIndex={endIndex}
+        hasEmergencyEvents={hasEmergencyEvents}
       />
     </HydrateClient>
   );

@@ -1,3 +1,5 @@
+import { type Airport } from "../types/airport";
+
 export function isCallsignStandardRegistration(callsign: string): boolean {
   return callsign.length == 6 && callsign.charAt(1) == "-";
 }
@@ -27,8 +29,8 @@ export function getAbbreviatedCallsign(
   return abbreviatedCallsign;
 }
 
-export function getShortAirportName(fullName: string): string {
-  const words = fullName.split(" ");
-  if (words.length == 1) return fullName;
+export function getShortAirportName(airport: Airport): string {
+  const words = airport.name.split(" ");
+  if (words.length == 1) return airport.name;
   else return words[0] + "";
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { type Waypoint } from "~/lib/types/waypoint";
-import React from "react";
+import React, { useEffect } from "react";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import Simulator from "./simulator";
 import useScenarioStore from "~/app/stores/scenario-store";
@@ -28,7 +28,6 @@ const SimPageComponent = ({
   endIndex,
   hasEmergencyEvents,
 }: SimPageProps) => {
-  // Push waypoints to store, look up airpsace and airport ids and add them to store
   const scenarioPoints = useScenarioStore((state) => state.scenarioPoints);
   const setScenarioPoints = useScenarioStore(
     (state) => state.setScenarioPoints,
@@ -56,30 +55,28 @@ const SimPageComponent = ({
   //   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   //   Generate scenario if not already in store and up-to-date
-  React.useEffect(() => {
-    if (
-      scenarioPoints.length == 0 &&
-      seed &&
-      waypoints &&
-      airports &&
-      airspaces &&
-      hasEmergencyEvents != undefined
-    ) {
-      const generatedScenarioPoints = generateScenario(
-        seed,
-        waypoints,
-        airports,
-        airspaces,
-        hasEmergencyEvents,
-      );
+  if (
+    scenarioPoints.length == 0 &&
+    seed &&
+    waypoints &&
+    airports &&
+    airspaces &&
+    hasEmergencyEvents != undefined
+  ) {
+    const generatedScenarioPoints = generateScenario(
+      seed,
+      waypoints,
+      airports,
+      airspaces,
+      hasEmergencyEvents,
+    );
 
-      console.log("Generated scenario points", generatedScenarioPoints);
+    console.log("Generated scenario points", generatedScenarioPoints);
 
-      setScenarioPoints(generatedScenarioPoints);
-    }
-  });
+    setScenarioPoints(generatedScenarioPoints);
+  }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (scenarioPoints.length <= 0) {
       return;
     }

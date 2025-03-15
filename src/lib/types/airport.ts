@@ -38,7 +38,7 @@ export type Airport = {
     _id: string;
     value: string;
     unit: number;
-    type: 0;
+    type: number;
     name: string;
     primary: boolean;
     publicUse: boolean;

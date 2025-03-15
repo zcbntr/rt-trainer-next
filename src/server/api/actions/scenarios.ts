@@ -24,6 +24,7 @@ export async function submitForm(
   airportIds: string[],
   airspaceIds: string[],
   waypoints: Waypoint[],
+  hasEmergencyEvents: boolean,
 ) {
   try {
     let scenarioId = -1;
@@ -50,6 +51,7 @@ export async function submitForm(
           .values({
             seed: seed,
             name: validatedFields.name,
+            hasEmergencyEvents: hasEmergencyEvents,
             createdBy: user.id,
           })
           .returning({ insertedID: scenarios.id })
@@ -140,6 +142,8 @@ export async function submitForm(
           .update(scenarios)
           .set({
             name: validatedFields.name,
+            seed: seed,
+            hasEmergencyEvents: hasEmergencyEvents,
           })
           .where(eq(scenarios.id, existingScenarioId))
           .execute();

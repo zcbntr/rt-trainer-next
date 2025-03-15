@@ -135,13 +135,16 @@ export function getParkedFrequency(airport: Airport): Frequency | undefined {
     groundOrInformationFrequency = getAGFrequency(airport);
   }
   if (groundOrInformationFrequency == undefined) {
-    groundOrInformationFrequency = new Frequency(
-      getRandomFrequencyFromSeed(seedStringToNumber(this.id), this.id),
-      9,
-      "Ground",
-      9,
-      true,
-    );
+    groundOrInformationFrequency = {
+      value: getRandomFrequencyFromSeed(
+        seedStringToNumber(airport._id),
+        airport._id,
+      ),
+      unit: 9,
+      name: "Ground",
+      type: 9,
+      primary: true,
+    };
   }
   return groundOrInformationFrequency;
 }

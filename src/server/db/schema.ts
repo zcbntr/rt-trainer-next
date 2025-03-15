@@ -134,8 +134,8 @@ export const scenarios = createTable("scenario", {
   name: varchar("name", { length: 256 }),
   description: text("description"),
   seed: varchar("seed", { length: 255 }).notNull(),
+  hasEmergencyEvents: boolean("has_emergency_events").notNull().default(false),
   private: boolean("private").notNull().default(false),
-  cover: text("cover"),
   createdBy: varchar("created_by", { length: 255 })
     .notNull()
     .references(() => users.id),

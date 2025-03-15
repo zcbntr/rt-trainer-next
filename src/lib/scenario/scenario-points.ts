@@ -1,31 +1,51 @@
 import { type Position } from "geojson";
 import { type Airport } from "../types/airport";
-import { EmergencyType, type AircraftPose, type ScenarioPoint } from "../types/scenario";
+import {
+  EmergencyType,
+  type AircraftPose,
+  type ScenarioPoint,
+} from "../types/scenario";
 import { type SimulatorUpdateData } from "../types/simulator";
-import { type calculateDistanceAlongRoute, type findIntersections, type Intersection } from "../sim-utils/route";
+import {
+  calculateDistanceAlongRoute,
+  type findIntersections,
+  type Intersection,
+} from "../sim-utils/route";
 import { type Waypoint } from "../types/waypoint";
 import { type Airspace } from "../types/airspace";
 import { seedStringToNumber } from "../utils";
 import { getSeededTimeInMinutes } from "../sim-utils";
 import { getShortAirportName } from "../sim-utils/callsigns";
+import {
+  getParkedFrequency,
+  getPointAlongRunwayVector,
+  getScenarioStartTime,
+  getTakeoffRunwayFromSeed,
+  isAirportControlled,
+} from "../sim-utils/airport-fns";
 
 export function getParkedInitialControlledUpdateData(
   _seed: number,
   airport: Airport,
 ): SimulatorUpdateData {
-  let name = airport.getParkedFrequency()?.name;
-  const freq = airport.getParkedFrequency()?.value;
+  const parkedFreq = getParkedFrequency(airport);
+  if (!parkedFreq) {
+    throw new Error("No parked frequency found for airport");
+  }
+
+  let freqName = parkedFreq.name;
+  const freqValue = parkedFreq.value;
 
   // Edge case for INFO frequencies
-  if (airport.getParkedFrequency()?.name == "INFO") {
-    name = getShortAirportName(airport.name)+ " Information";
+  if (freqName == "INFO") {
+    freqName = getShortAirportName(airport) + " Information";
   }
   return {
-    currentContext: `You are currently parked at ${getShortAirportName(airport.name)}, you should contact ${name} on ${freq}`,
+    currentContext: `You are currently parked at ${getShortAirportName(airport)}, you should contact ${freqName} on ${freqValue}`,
     callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
     squark: false,
-    currentTarget: name,
-    currentTargetFrequency: freq,
+    currentTarget: freqName,
+    currentTargetFrequency: freqValue,
     currentTransponderFrequency: "7000",
     currentPressure: 1013,
     emergency: EmergencyType.None,
@@ -36,22 +56,27 @@ export function getParkedMadeContactControlledUpdateData(
   _seed: number,
   airport: Airport,
 ): SimulatorUpdateData {
-  let name = airport.getParkedFrequency()?.name;
-  const freq = airport.getParkedFrequency()?.value;
+  const parkedFreq = getParkedFrequency(airport);
+  if (!parkedFreq) {
+    throw new Error("No parked frequency found for airport");
+  }
+
+  let freqName = parkedFreq.name;
+  const freqValue = parkedFreq.value;
 
   // Edge case for INFO frequencies
-  if (airport.getParkedFrequency()?.name == "INFO") {
-    name = airport.getShortName() + " Information";
+  if (freqName == "INFO") {
+    freqName = getShortAirportName(airport) + " Information";
   }
   return {
     currentContext: `You are currently parked at 
-			${airport.getShortName()}
+			${getShortAirportName(airport)}
 			you have made contact with
-			${name} on ${freq}, you should request taxi clearance.`,
+			${freqName} on ${freqValue}, you should request taxi clearance.`,
     callsignModified: true, // States whether callsign has been modified by ATC, e.g. shortened
     squark: false,
-    currentTarget: name,
-    currentTargetFrequency: freq,
+    currentTarget: freqName,
+    currentTargetFrequency: freqValue,
     currentTransponderFrequency: "7000",
     currentPressure: 1013,
     emergency: EmergencyType.None,
@@ -62,19 +87,24 @@ export function getParkedInitialUncontrolledUpdateData(
   _seed: number,
   airport: Airport,
 ): SimulatorUpdateData {
-  let name = airport.getParkedFrequency()?.name;
-  const freq = airport.getParkedFrequency()?.value;
+  const parkedFreq = getParkedFrequency(airport);
+  if (!parkedFreq) {
+    throw new Error("No parked frequency found for airport");
+  }
+
+  let freqName = parkedFreq.name;
+  const freqValue = parkedFreq.value;
 
   // Edge case for INFO frequencies
-  if (airport.getParkedFrequency()?.name == "INFO") {
-    name = airport.getShortName() + " Information";
+  if (freqName == "INFO") {
+    freqName = getShortAirportName(airport) + " Information";
   }
   return {
-    currentContext: `You are currently parked at ${airport.getShortName()}, you should contact ${name} on ${freq}`,
+    currentContext: `You are currently parked at ${getShortAirportName(airport)}, you should contact ${freqName} on ${freqValue}`,
     callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
     squark: false,
-    currentTarget: name,
-    currentTargetFrequency: freq,
+    currentTarget: freqName,
+    currentTargetFrequency: freqValue,
     currentTransponderFrequency: "7000",
     currentPressure: 1013,
     emergency: EmergencyType.None,
@@ -85,22 +115,27 @@ export function getParkedMadeContactUncontrolledUpdateData(
   seed: number,
   airport: Airport,
 ): SimulatorUpdateData {
-  let name = airport.getParkedFrequency()?.name;
-  const freq = airport.getParkedFrequency()?.value;
+  const parkedFreq = getParkedFrequency(airport);
+  if (!parkedFreq) {
+    throw new Error("No parked frequency found for airport");
+  }
+
+  let freqName = parkedFreq.name;
+  const freqValue = parkedFreq.value;
 
   // Edge case for INFO frequencies
-  if (airport.getParkedFrequency()?.name == "INFO") {
-    name = airport.getShortName() + " Information";
+  if (freqName == "INFO") {
+    freqName = getShortAirportName(airport) + " Information";
   }
   return {
     currentContext: `You are currently parked at 
-			${airport.getShortName()}
+			${getShortAirportName(airport)}
 			you have made contact with
-			${name} on ${freq}, you should request taxi clearance.`,
+			${freqName} on ${freqValue}, you should request taxi clearance.`,
     callsignModified: true, // States whether callsign has been modified by ATC, e.g. shortened
     squark: false,
-    currentTarget: name,
-    currentTargetFrequency: freq,
+    currentTarget: freqName,
+    currentTargetFrequency: freqValue,
     currentTransponderFrequency: "7000",
     currentPressure: 1013,
     emergency: EmergencyType.None,
@@ -120,10 +155,10 @@ export function getStartAirportScenarioPoints(
   startAirport: Airport,
 ): ScenarioPoint[] {
   let pointIndex = 0;
-  const seed = simpleHash(seedString);
+  const seed = seedStringToNumber(seedString);
   const stages: ScenarioPoint[] = [];
-  const startAerodromeTime: number = startAirport.getStartTime(seed);
-  const takeoffRunway = startAirport.getTakeoffRunway(seed);
+  const startAerodromeTime: number = getScenarioStartTime(seed);
+  const takeoffRunway = getTakeoffRunwayFromSeed(startAirport.runways, seed);
   const initialRouteHeading = Math.round(
     turf.bearing(waypoints[0].location, waypoints[1].location),
   );
@@ -131,16 +166,13 @@ export function getStartAirportScenarioPoints(
   const waypointCoords = waypoints.map((waypoint) => waypoint.location);
 
   const groundedPose: AircraftPose = {
-    position: startAirport.coordinates,
+    position: startAirport.geometry.coordinates,
     trueHeading: 0,
     altitude: 0,
     airSpeed: 0.0,
   };
 
-  const takingOffPosition = startAirport.getPointAlongTakeoffRunwayVector(
-    seed,
-    0,
-  );
+  const takingOffPosition = getPointAlongRunwayVector(takeoffRunway, 0);
   const takingOffPose: AircraftPose = {
     position: takingOffPosition,
     trueHeading: takeoffRunway.trueHeading,
@@ -148,10 +180,7 @@ export function getStartAirportScenarioPoints(
     airSpeed: 0.0,
   };
 
-  const climbingOutPosition = startAirport.getPointAlongTakeoffRunwayVector(
-    seed,
-    1.0,
-  );
+  const climbingOutPosition = getPointAlongRunwayVector(takeoffRunway, 1.0);
   const climbingOutPose: AircraftPose = {
     position: climbingOutPosition,
     trueHeading: takeoffRunway.trueHeading,
@@ -163,7 +192,7 @@ export function getStartAirportScenarioPoints(
     x.name.includes(startAirport.name),
   );
 
-  if (startAirport.isControlled() && takeoffAirspace) {
+  if (isAirportControlled(startAirport) && takeoffAirspace) {
     const firstRouteSegment = [waypoints[0].location, waypoints[1].location];
     const leavingZonePosition: Position = findIntersections(firstRouteSegment, [
       takeoffAirspace,
@@ -516,7 +545,7 @@ export function getEndAirportScenarioPoints(
     runwayVacatedPose.position,
   );
 
-  if (endAirport.isControlled()) {
+  if (isAirportControlled(endAirport)) {
     const requestJoin = new ScenarioPoint(
       pointIndex++,
       InboundForJoinStage.RequestJoin,
@@ -819,7 +848,7 @@ export function getAirborneScenarioPoints(
     previousPosition = previousScenarioPoint.pose.position;
   } else {
     timeAtPreviousPoint = getSeededTimeInMinutes(seed, 780, 840);
-    previousPosition = waypoints[0].location;
+    previousPosition = waypoints[0]!.location;
   }
 
   const waypointCoords = waypoints.map((waypoint) => waypoint.location);
@@ -1045,7 +1074,10 @@ export function getAirborneScenarioPoints(
 
     endStageIndexes.push(scenarioPoints.length - 1);
 
-    previousPosition = airspaceIntersectionPoints[i].position;
+    previousPosition = airspaceIntersectionPoints[i]!.position as [
+      number,
+      number,
+    ];
 
     timeAtPreviousPoint = timeAtCurrentPoint + 3;
 
@@ -1055,7 +1087,7 @@ export function getAirborneScenarioPoints(
   if (hasEmergency && scenarioPoints.length > 0) {
     // Add emergency before a random waypoint on the route
     const emergencyScenarioPointIndex =
-      endStageIndexes[seed % (endStageIndexes.length - 1)] - 1;
+      endStageIndexes[seed % (endStageIndexes.length - 1)]! - 1;
 
     // Get a random emergency type which is not none
     const emergencyTypeIndex = seed % (Object.keys(EmergencyType).length - 1);

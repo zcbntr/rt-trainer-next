@@ -54,6 +54,9 @@ const ScenarioPlannerFooter = () => {
   const airspacesOnRoute = useScenarioPlannerStore(
     (state) => state.airspacesOnRoute,
   );
+  const hasEmergencyEvents = useScenarioPlannerStore(
+    (state) => state.hasEmergencyEvents,
+  );
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
   const displayDuration = `${airspacesOnRoute.length * 4 + airportsOnRoute.length * 8} mins`;
@@ -96,6 +99,7 @@ const ScenarioPlannerFooter = () => {
       airportIds,
       airspaceIds,
       waypoints,
+      hasEmergencyEvents,
     );
 
     if (errors) {

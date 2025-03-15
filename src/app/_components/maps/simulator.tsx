@@ -10,7 +10,7 @@ import { type Waypoint } from "~/lib/types/waypoint";
 import { MdLocationPin } from "react-icons/md";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
-import useSimulatorStore from "~/app/stores/scenario-store";
+import useScenarioStore from "~/app/stores/scenario-store";
 
 const routeLayerStyle: LayerSpecification = {
   id: "route",
@@ -79,11 +79,11 @@ const SimulatorMap = ({ className, initialBBOX }: SimulatorMapProps) => {
   const mapRef = useRef<MapRef>(null);
 
   // Replace these with simulator store
-  const waypoints: Waypoint[] = useSimulatorStore((state) => state.waypoints);
-  const airportsOnRoute: Airport[] = useSimulatorStore(
+  const waypoints: Waypoint[] = useScenarioStore((state) => state.waypoints);
+  const airportsOnRoute: Airport[] = useScenarioStore(
     (state) => state.airportsOnRoute,
   );
-  const airspacesOnRoute: Airspace[] = useSimulatorStore(
+  const airspacesOnRoute: Airspace[] = useScenarioStore(
     (state) => state.airspacesOnRoute,
   );
 

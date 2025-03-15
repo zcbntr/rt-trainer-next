@@ -3,8 +3,6 @@
 
 import { type ParseResult } from "zod";
 import Parser from "~/lib/radio-calls/parser";
-import type Scenario from "~/lib/scenario";
-import { generateScenario } from "~/lib/scenario/scenario-generator";
 import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
 import { type Airport } from "~/lib/types/airport";
@@ -34,30 +32,23 @@ import useAltimeterStore from "~/app/stores/altimeter-store";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { Button, buttonVariants } from "~/components/ui/button";
 import Link from "next/link";
-import { type Waypoint } from "~/lib/types/waypoint";
+import useScenarioStore from "~/app/stores/scenario-store";
 
 type SimulatorProps = {
   className?: string;
-  scenarioId?: number;
-  startPointIndex?: number;
-  endPointIndex?: number;
-  waypoints?: Waypoint[];
-  airspacesOnRouteIds?: string[];
-  airportsOnRouteIds?: string[];
 };
 
-const Simulator = ({
-  className,
-  scenarioId,
-  startPointIndex,
-  endPointIndex,
-  waypoints,
-  airspacesOnRouteIds,
-  airportsOnRouteIds,
-}: SimulatorProps) => {
-  console.log(scenarioId);
-
+const Simulator = ({ className }: SimulatorProps) => {
   // Simulator state and settings
+  const scenarioPoints = useScenarioStore((state) => state.scenarioPoints);
+  const scenarioPointIndex = useScenarioStore(
+    (state) => state.scenarioPointIndex,
+  );
+
+  if (scenarioPoints.length === 0) {
+    throw new Error("No scenario points loaded");
+  }
+
   const radioDialMode = useRadioStore((state) => state.dialMode);
   const radioActiveFrequency = useRadioStore((state) => state.activeFrequency);
 
@@ -214,13 +205,13 @@ const Simulator = ({
       return false;
     } else if (
       radioActiveFrequency !=
-      scenario?.getCurrentPoint().updateData.currentTargetFrequency
+      scenarioPoints[scenarioPointIndex]?.updateData.currentTargetFrequency
     ) {
       toast.message("Error", { description: "Radio frequency incorrect" });
       return false;
     } else if (
       transponderFrequency !=
-      scenario?.getCurrentPoint().updateData.currentTransponderFrequency
+      scenarioPoints[scenarioPointIndex]?.updateData.currentTransponderFrequency
     ) {
       toast.message("Error", {
         description: "Transponder frequency incorrect",
@@ -228,7 +219,7 @@ const Simulator = ({
       return false;
     } else if (
       altimeterPressure !=
-      scenario?.getCurrentPoint().updateData.currentPressure
+      scenarioPoints[scenarioPointIndex]?.updateData.currentPressure
     ) {
       toast.message("Error", {
         description: "Altimeter pressure setting incorrect",

@@ -51,7 +51,7 @@ export default async function Page({
 
   return (
     <PlanPageComponent
-      existingRouteId={scenarioToLoadId}
+      existingScenarioId={scenarioToLoadId}
       waypoints={waypoints}
       airspaceIds={airspaceIds}
       airportIds={airportIds}

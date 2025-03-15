@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SimPageComponent from "~/app/_components/sim";
 import Simulator from "~/app/_components/sim/simulator";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { api, HydrateClient } from "~/trpc/server";
@@ -70,17 +71,14 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <div className="container mx-auto">
-        <Link href="/">Back</Link>
-        <Simulator
-          scenarioId={scenarioToLoadId}
-          startPointIndex={startIndex}
-          endPointIndex={endIndex}
-          waypoints={waypoints}
-          airspacesOnRouteIds={airspaceIds}
-          airportsOnRouteIds={airportIds}
-        />
-      </div>
+      <SimPageComponent
+        scenarioId={scenarioToLoadId}
+        waypoints={waypoints}
+        airspaceIds={airspaceIds}
+        airportIds={airportIds}
+        startIndex={startIndex}
+        endIndex={endIndex}
+      />
     </HydrateClient>
   );
 }

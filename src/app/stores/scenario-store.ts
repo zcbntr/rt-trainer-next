@@ -16,6 +16,7 @@ import {
 import { type Waypoint } from "~/lib/types/waypoint";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
+import { type ScenarioPoint } from "~/lib/types/scenario";
 
 const persistentStorage: StateStorage = {
   getItem: (key): string => {
@@ -30,31 +31,43 @@ const persistentStorage: StateStorage = {
 };
 
 const storageOptions = {
-  name: "planData",
-  storage: createJSONStorage<SimulatorStoreState>(() => persistentStorage),
+  name: "scenarioData",
+  storage: createJSONStorage<ScenarioStoreState>(() => persistentStorage),
 };
 
-interface SimulatorStoreState {
+interface ScenarioStoreState {
   scenarioId: number;
   waypoints: Waypoint[];
   airspacesOnRoute: Airspace[];
   airportsOnRoute: Airport[];
   hasEmergencyEvents: boolean;
+  scenarioPoints: ScenarioPoint[];
+  scenarioPointIndex: number;
+  scenarioStartPointIndex: number;
+  scenarioEndPointIndex: number;
   setScenarioId: (scenarioId: number) => void;
-  setWaypoints: (waypoints: Waypoint[], airspaces: Airspace[]) => void;
+  setWaypoints: (waypoints: Waypoint[]) => void;
   setAirspacesOnRoute: (airspaces: Airspace[]) => void;
   setAirportsOnRoute: (airports: Airport[]) => void;
   setHasEmergencyEvents: (hasEmergencyEvents: boolean) => void;
+  setScenarioPoints: (scenarioPoints: ScenarioPoint[]) => void;
+  setScenarioPointIndex: (index: number) => void;
+  setScenarioStartPointIndex: (index: number) => void;
+  setScenarioEndPointIndex: (index: number) => void;
 }
 
-const useSimulatorStore = create(
-  persist<SimulatorStoreState>(
+const useScenarioStore = create(
+  persist<ScenarioStoreState>(
     (set) => ({
       scenarioId: -1,
       waypoints: [],
       airspacesOnRoute: [],
       airportsOnRoute: [],
       hasEmergencyEvents: false,
+      scenarioPoints: [],
+      scenarioPointIndex: 0,
+      scenarioStartPointIndex: 0,
+      scenarioEndPointIndex: 0,
       setScenarioId: (scenarioId: number) =>
         set(() => ({ scenarioId: scenarioId })),
       setWaypoints: (_waypoints: Waypoint[]) => {
@@ -66,9 +79,17 @@ const useSimulatorStore = create(
         set(() => ({ airportsOnRoute: airports })),
       setHasEmergencyEvents: (hasEmergencyEvents: boolean) =>
         set(() => ({ hasEmergencyEvents })),
+      setScenarioPoints: (scenarioPoints: ScenarioPoint[]) =>
+        set(() => ({ scenarioPoints })),
+      setScenarioPointIndex: (index: number) =>
+        set(() => ({ scenarioPointIndex: index })),
+      setScenarioStartPointIndex: (index: number) =>
+        set(() => ({ scenarioStartPointIndex: index })),
+      setScenarioEndPointIndex: (index: number) =>
+        set(() => ({ scenarioEndPointIndex: index })),
     }),
     storageOptions,
   ),
 );
 
-export default useSimulatorStore;
+export default useScenarioStore;

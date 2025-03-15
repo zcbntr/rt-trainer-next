@@ -15,7 +15,7 @@ export function generateScenario(
   airports: Airport[],
   airspaces: Airspace[],
   hasEmergency: boolean,
-): Scenario {
+): ScenarioPoint[] {
   if (!airspaces || airspaces.length === 0) {
     throw new Error("No airspaces found");
   }
@@ -27,11 +27,11 @@ export function generateScenario(
   const scenarioPoints: ScenarioPoint[] = [];
 
   const startAirport = airports.find(
-    (x) => x.id === waypoints[0].referenceObjectId,
+    (x) => x._id === waypoints[0]?.referenceObjectId,
   );
 
   const endAirport = airports.find(
-    (x) => x.id === waypoints[waypoints.length - 1].referenceObjectId,
+    (x) => x._id === waypoints[waypoints.length - 1]?.referenceObjectId,
   );
 
   // Get all airspace along the route
@@ -59,7 +59,7 @@ export function generateScenario(
       intersectionPoints,
       startAirport,
       endAirport,
-      scenarioPoints[scenarioPoints.length - 1],
+      scenarioPoints[scenarioPoints.length - 1]!,
       hasEmergency,
     ),
   );
@@ -72,9 +72,9 @@ export function generateScenario(
         waypoints,
         airspaces,
         endAirport,
-        scenarioPoints[scenarioPoints.length - 1],
+        scenarioPoints[scenarioPoints.length - 1]!,
       ),
     );
 
-  return new Scenario(seed, waypoints, airspaces, airports, scenarioPoints);
+  return scenarioPoints;
 }

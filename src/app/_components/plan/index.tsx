@@ -11,6 +11,7 @@ import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 
 type PlanPageProps = {
   existingScenarioId?: number;
+  seed?: string;
   waypoints: Waypoint[];
   airspaceIds: string[];
   airportIds: string[];
@@ -18,6 +19,7 @@ type PlanPageProps = {
 
 const PlanPageComponent = ({
   existingScenarioId,
+  seed,
   waypoints,
   airspaceIds,
   airportIds,
@@ -26,6 +28,7 @@ const PlanPageComponent = ({
   const setExistingRouteId = useScenarioPlannerStore(
     (state) => state.setExistingScenarioId,
   );
+  const setSeed = useScenarioPlannerStore((state) => state.setSeed);
   const setWaypoints = useScenarioPlannerStore((state) => state.setWaypoints);
   const setOnRouteAirspaces = useScenarioPlannerStore(
     (state) => state.setAirspacesOnRoute,
@@ -37,9 +40,9 @@ const PlanPageComponent = ({
   const airports = useAeronauticalDataStore((state) => state.airports);
 
   React.useEffect(() => {
-    if (existingScenarioId != -1 && existingScenarioId != undefined) {
-      setExistingRouteId(existingScenarioId);
-    }
+    setExistingRouteId(existingScenarioId);
+
+    if (seed) setSeed(seed);
 
     setWaypoints(waypoints, []);
 
@@ -64,6 +67,8 @@ const PlanPageComponent = ({
     setOnRouteAirports,
     existingScenarioId,
     setExistingRouteId,
+    seed,
+    setSeed,
   ]);
 
   return (

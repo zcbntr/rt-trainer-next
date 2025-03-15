@@ -41,7 +41,8 @@ const storageOptions = {
 };
 
 interface ScenarioPlannerStoreState {
-  existingScenarioId: number;
+  existingScenarioId: number | undefined;
+  seed: string;
   waypoints: Waypoint[];
   airspacesOnRoute: Airspace[];
   airportsOnRoute: Airport[];
@@ -52,7 +53,8 @@ interface ScenarioPlannerStoreState {
   hasEmergencyEvents: boolean;
   showOnlyOnRouteAirspaces: boolean;
   showAirspacesAboveMaxFL: boolean;
-  setExistingScenarioId: (scenarioId: number) => void;
+  setExistingScenarioId: (scenarioId: number | undefined) => void;
+  setSeed: (seed: string) => void;
   setWaypoints: (waypoints: Waypoint[], airspaces: Airspace[]) => void;
   moveWaypoint: (
     waypointId: string,
@@ -79,7 +81,8 @@ interface ScenarioPlannerStoreState {
 const useScenarioPlannerStore = create(
   persist<ScenarioPlannerStoreState>(
     (set) => ({
-      existingScenarioId: -1,
+      existingScenarioId: undefined,
+      seed: "",
       waypoints: [],
       airspacesOnRoute: [],
       airportsOnRoute: [],
@@ -90,8 +93,9 @@ const useScenarioPlannerStore = create(
       hasEmergencyEvents: false,
       showOnlyOnRouteAirspaces: false,
       showAirspacesAboveMaxFL: false,
-      setExistingScenarioId: (scenarioId: number) =>
+      setExistingScenarioId: (scenarioId: number | undefined) =>
         set(() => ({ existingScenarioId: scenarioId })),
+      setSeed: (seed: string) => set(() => ({ seed })),
       setWaypoints: (_waypoints: Waypoint[], airspaces: Airspace[]) => {
         set(() => ({ waypoints: _waypoints }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));

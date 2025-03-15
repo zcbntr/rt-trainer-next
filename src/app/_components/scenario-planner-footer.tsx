@@ -37,9 +37,10 @@ import { submitForm } from "~/server/api/actions/scenarios";
 const ScenarioPlannerFooter = () => {
   const router = useRouter();
 
-  const existingScenarioId: number = useScenarioPlannerStore(
+  const existingScenarioId: number | undefined = useScenarioPlannerStore(
     (state) => state.existingScenarioId,
   );
+  const seed: string = useScenarioPlannerStore((state) => state.seed);
   const waypoints: Waypoint[] = useScenarioPlannerStore(
     (state) => state.waypoints,
   );
@@ -56,8 +57,7 @@ const ScenarioPlannerFooter = () => {
 
   const displayDistance = kmToUnit(distance, distanceUnit).toFixed(2);
   const displayDuration = `${airspacesOnRoute.length * 4 + airportsOnRoute.length * 8} mins`;
-  const saveTitle =
-    existingScenarioId >= 0 ? "Update Scenario" : "Create Scenario";
+  const saveTitle = existingScenarioId ? "Update Scenario" : "Create Scenario";
 
   const form = useForm<z.infer<typeof scenarioFormSchema>>({
     resolver: zodResolver(scenarioFormSchema),
@@ -91,6 +91,7 @@ const ScenarioPlannerFooter = () => {
 
     const { data: success, errors } = await submitForm(
       existingScenarioId,
+      seed,
       data,
       airportIds,
       airspaceIds,

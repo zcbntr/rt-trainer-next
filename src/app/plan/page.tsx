@@ -10,6 +10,7 @@ export default async function Page({
   const scenarioId = (await searchParams).edit;
 
   let scenarioToLoadId: number | undefined = undefined;
+  let seed = "";
   let waypoints: Waypoint[] = [];
   let airspaceIds: string[] = [];
   let airportIds: string[] = [];
@@ -35,6 +36,8 @@ export default async function Page({
       }
     }
 
+    seed = scenario.seed;
+
     waypoints = scenario.waypoints.map((waypoint) => {
       return {
         id: waypoint.id.toString(),
@@ -52,6 +55,7 @@ export default async function Page({
   return (
     <PlanPageComponent
       existingScenarioId={scenarioToLoadId}
+      seed={seed}
       waypoints={waypoints}
       airspaceIds={airspaceIds}
       airportIds={airportIds}

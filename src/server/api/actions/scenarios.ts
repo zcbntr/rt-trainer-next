@@ -18,7 +18,8 @@ import { transformZodErrors } from "~/lib/utils";
 import { eq } from "drizzle-orm";
 
 export async function submitForm(
-  existingRouteId: number,
+  existingScenarioId: number | undefined,
+  seed: string,
   formData: ScenarioFormSchema,
   airportIds: string[],
   airspaceIds: string[],
@@ -29,8 +30,6 @@ export async function submitForm(
 
     //validate the FormData
     const validatedFields = scenarioFormSchema.parse(formData);
-
-    // console.log({ validatedFields, airportIds, airspaceIds, waypoints });
 
     const user = await api.user.getLoggedInUser();
 
@@ -43,12 +42,13 @@ export async function submitForm(
       };
     }
 
-    if (existingRouteId < 0) {
+    if (!existingScenarioId) {
       await db.transaction(async (tx) => {
         // Create scenario row, then using the id create the waypoints, airportids, and airspaceids in the respective tables
         const scenarioRows = await tx
           .insert(scenarios)
           .values({
+            seed: seed,
             name: validatedFields.name,
             createdBy: user.id,
           })
@@ -122,7 +122,7 @@ export async function submitForm(
     } else {
       // Update existing route
       const scenario = await api.scenario.getOwnedScenarioById({
-        id: existingRouteId,
+        id: existingScenarioId,
       });
 
       if (!scenario) {
@@ -141,20 +141,20 @@ export async function submitForm(
           .set({
             name: validatedFields.name,
           })
-          .where(eq(scenarios.id, existingRouteId))
+          .where(eq(scenarios.id, existingScenarioId))
           .execute();
 
         // Update waypoints
         await tx
           .delete(waypointsTable)
-          .where(eq(waypointsTable.scenarioId, existingRouteId))
+          .where(eq(waypointsTable.scenarioId, existingScenarioId))
           .execute();
 
         await tx
           .insert(waypointsTable)
           .values(
             waypoints.map((waypoint, index) => ({
-              scenarioId: existingRouteId,
+              scenarioId: existingScenarioId,
               name: waypoint.name,
               lat: waypoint.location[1].toFixed(8),
               lon: waypoint.location[0].toFixed(8),
@@ -169,14 +169,14 @@ export async function submitForm(
         // Update airports
         await tx
           .delete(airports)
-          .where(eq(airports.scenarioId, existingRouteId))
+          .where(eq(airports.scenarioId, existingScenarioId))
           .execute();
 
         await tx
           .insert(airports)
           .values(
             airportIds.map((airportId) => ({
-              scenarioId: existingRouteId,
+              scenarioId: existingScenarioId,
               openAIPId: airportId,
             })),
           )
@@ -185,14 +185,14 @@ export async function submitForm(
         // Update airspaces
         await tx
           .delete(airspaces)
-          .where(eq(airspaces.scenarioId, existingRouteId))
+          .where(eq(airspaces.scenarioId, existingScenarioId))
           .execute();
 
         await tx
           .insert(airspaces)
           .values(
             airspaceIds.map((airspaceId) => ({
-              scenarioId: existingRouteId,
+              scenarioId: existingScenarioId,
               openAIPId: airspaceId,
             })),
           )
@@ -202,7 +202,7 @@ export async function submitForm(
       return {
         success: true,
         errors: null,
-        data: { scenarioId: existingRouteId },
+        data: { scenarioId: existingScenarioId },
       };
     }
   } catch (error) {

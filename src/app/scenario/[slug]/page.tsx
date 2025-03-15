@@ -1,6 +1,4 @@
-import Link from "next/link";
 import SimPageComponent from "~/app/_components/sim";
-import Simulator from "~/app/_components/sim/simulator";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -16,6 +14,7 @@ export default async function Page({
   const endPointIndexSearchParam = (await searchParams).endPointIndex;
 
   let scenarioToLoadId: number | undefined = undefined;
+  let seed: string | undefined = undefined;
   let startIndex: number | undefined = undefined;
   let endIndex: number | undefined = undefined;
   let waypoints: Waypoint[] = [];
@@ -38,6 +37,8 @@ export default async function Page({
     if (!scenario) {
       return <ScenarioNotFound />;
     }
+
+    seed = scenario.seed;
 
     waypoints = scenario.waypoints.map((waypoint) => {
       return {
@@ -73,6 +74,7 @@ export default async function Page({
     <HydrateClient>
       <SimPageComponent
         scenarioId={scenarioToLoadId}
+        seed={seed}
         waypoints={waypoints}
         airspaceIds={airspaceIds}
         airportIds={airportIds}

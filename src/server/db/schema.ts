@@ -133,6 +133,7 @@ export const scenarios = createTable("scenario", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   name: varchar("name", { length: 256 }),
   description: text("description"),
+  seed: varchar("seed", { length: 255 }).notNull(),
   private: boolean("private").notNull().default(false),
   cover: text("cover"),
   createdBy: varchar("created_by", { length: 255 })
@@ -166,7 +167,7 @@ export const waypoints = createTable("waypoint", {
   referenceOpenAIPId: varchar("openaip_id", { length: 255 }),
   scenarioId: integer("scenario_id")
     .notNull()
-    .references(() => scenarios.id),
+    .references(() => scenarios.id, { onDelete: "cascade" }),
   index: integer("index").notNull(),
 });
 
@@ -182,7 +183,7 @@ export const airports = createTable("airport", {
   openAIPId: varchar("openaip_id", { length: 255 }).notNull(),
   scenarioId: integer("scenario_id")
     .notNull()
-    .references(() => scenarios.id),
+    .references(() => scenarios.id, { onDelete: "cascade" }),
 });
 
 export const airportsRelations = relations(airports, ({ one }) => ({
@@ -197,7 +198,7 @@ export const airspaces = createTable("airspace", {
   openAIPId: varchar("openaip_id", { length: 255 }).notNull(),
   scenarioId: integer("scenario_id")
     .notNull()
-    .references(() => scenarios.id),
+    .references(() => scenarios.id, { onDelete: "cascade" }),
 });
 
 export const airspacesRelations = relations(airspaces, ({ one }) => ({

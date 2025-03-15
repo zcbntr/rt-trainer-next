@@ -51,6 +51,10 @@ const SimPageComponent = ({
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
+  //   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //   THIS IS NOT GETTING ALL THE REQUIRED DATA TO GENERATE A SCENARIO
+  //   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   //   Generate scenario if not already in store and up-to-date
   React.useEffect(() => {
     if (
@@ -69,6 +73,8 @@ const SimPageComponent = ({
         hasEmergencyEvents,
       );
 
+      console.log("Generated scenario points", generatedScenarioPoints);
+
       setScenarioPoints(generatedScenarioPoints);
     }
   });
@@ -78,7 +84,7 @@ const SimPageComponent = ({
       return;
     }
 
-    if (scenarioId != -1 && scenarioId != undefined) {
+    if (scenarioId) {
       setScenarioId(scenarioId);
     }
 

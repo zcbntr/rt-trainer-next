@@ -8,21 +8,42 @@ import {
 import { type SimulatorUpdateData } from "../types/simulator";
 import {
   calculateDistanceAlongRoute,
-  type findIntersections,
+  findIntersections,
   type Intersection,
 } from "../sim-utils/route";
 import { type Waypoint } from "../types/waypoint";
 import { type Airspace } from "../types/airspace";
 import { seedStringToNumber } from "../utils";
-import { getSeededTimeInMinutes } from "../sim-utils";
+import {
+  getRandomFrequencyFromSeed,
+  getRandomSqwuakCodeFromSeed,
+  getSeededTimeInMinutes,
+  lerp,
+} from "../sim-utils";
 import { getShortAirportName } from "../sim-utils/callsigns";
 import {
+  getLandingRunwayFromSeed,
   getParkedFrequency,
   getPointAlongRunwayVector,
   getScenarioStartTime,
   getTakeoffRunwayFromSeed,
   isAirportControlled,
 } from "../sim-utils/airport-fns";
+import * as turf from "@turf/turf";
+import {
+  ChangeZoneStage,
+  CircuitAndLandingStage,
+  ClimbOutStage,
+  InboundForJoinStage,
+  LandingToParkedStage,
+  PanPanStage,
+  StartUpStage,
+  TakeOffStage,
+  TaxiStage,
+} from "./stages";
+
+export const AIRCRAFT_AVERAGE_SPEED = 3.75; // km per minute. 225 km/h, 120 knots, 140 mph (Cessna 172 max cruise speed)
+export const FLIGHT_TIME_MULTIPLIER = 1.3; // Multiplier to account for climb, descent and other factors. Very rough estimate
 
 export function getParkedInitialControlledUpdateData(
   _seed: number,
@@ -160,7 +181,7 @@ export function getStartAirportScenarioPoints(
   const startAerodromeTime: number = getScenarioStartTime(seed);
   const takeoffRunway = getTakeoffRunwayFromSeed(startAirport.runways, seed);
   const initialRouteHeading = Math.round(
-    turf.bearing(waypoints[0].location, waypoints[1].location),
+    turf.bearing(waypoints[0]!.location, waypoints[1]!.location),
   );
 
   const waypointCoords = waypoints.map((waypoint) => waypoint.location);
@@ -180,7 +201,10 @@ export function getStartAirportScenarioPoints(
     airSpeed: 0.0,
   };
 
-  const climbingOutPosition = getPointAlongRunwayVector(takeoffRunway, 1.0);
+  const climbingOutPosition: Position = getPointAlongRunwayVector(
+    takeoffRunway,
+    1.0,
+  );
   const climbingOutPose: AircraftPose = {
     position: climbingOutPosition,
     trueHeading: takeoffRunway.trueHeading,
@@ -193,159 +217,170 @@ export function getStartAirportScenarioPoints(
   );
 
   if (isAirportControlled(startAirport) && takeoffAirspace) {
-    const firstRouteSegment = [waypoints[0].location, waypoints[1].location];
+    const firstRouteSegment = [waypoints[0]!.location, waypoints[1]!.location];
     const leavingZonePosition: Position = findIntersections(firstRouteSegment, [
       takeoffAirspace,
-    ])[0].position;
+    ])[0]!.position;
     const leavingZonePose: AircraftPose = {
       position: leavingZonePosition,
       trueHeading: initialRouteHeading,
       altitude: 1200,
       airSpeed: 70.0,
     };
-    const radioCheck = new ScenarioPoint(
-      pointIndex++,
-      StartUpStage.RadioCheck,
-      groundedPose,
-      getParkedInitialControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime,
-      0,
-    );
+    const radioCheck: ScenarioPoint = {
+      index: pointIndex++,
+      stage: StartUpStage.RadioCheck,
+      pose: groundedPose,
+      updateData: getParkedInitialControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime,
+      distanceAlongRoute: 0,
+    };
     stages.push(radioCheck);
 
-    const requestDepartInfo = new ScenarioPoint(
-      pointIndex++,
-      StartUpStage.DepartureInformationRequest,
-      groundedPose,
-      getParkedInitialControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime,
-      0,
-    );
+    const requestDepartInfo: ScenarioPoint = {
+      index: pointIndex++,
+      stage: StartUpStage.DepartureInformationRequest,
+      pose: groundedPose,
+      updateData: getParkedInitialControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime,
+      distanceAlongRoute: 0,
+    };
     stages.push(requestDepartInfo);
 
-    const readbackDepartInfo = new ScenarioPoint(
-      pointIndex++,
-      StartUpStage.ReadbackDepartureInformation,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 1,
-      0,
-    );
+    const readbackDepartInfo: ScenarioPoint = {
+      index: pointIndex++,
+      stage: StartUpStage.ReadbackDepartureInformation,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 1,
+      distanceAlongRoute: 0,
+    };
     stages.push(readbackDepartInfo);
 
-    const taxiRequest = new ScenarioPoint(
-      pointIndex++,
-      TaxiStage.TaxiRequest,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 1,
-      0,
-    );
+    const taxiRequest: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TaxiStage.TaxiRequest,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 1,
+      distanceAlongRoute: 0,
+    };
     stages.push(taxiRequest);
 
-    const taxiClearanceReadback = new ScenarioPoint(
-      pointIndex++,
-      TaxiStage.TaxiClearanceReadback,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 5,
-      0,
-    );
+    const taxiClearanceReadback: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TaxiStage.TaxiClearanceReadback,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 5,
+      distanceAlongRoute: 0,
+    };
     stages.push(taxiClearanceReadback);
 
-    const ReadyForDeparture = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.ReadyForDeparture,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 8,
-      0,
-    );
+    const ReadyForDeparture: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.ReadyForDeparture,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 8,
+      distanceAlongRoute: 0,
+    };
     stages.push(ReadyForDeparture);
 
-    const readbackAfterDepartureInformation = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.ReadbackAfterDepartureInformation,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 9,
-      0,
-    );
+    const readbackAfterDepartureInformation: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.ReadbackAfterDepartureInformation,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 9,
+      distanceAlongRoute: 0,
+    };
     stages.push(readbackAfterDepartureInformation);
 
-    const readbackClearance = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.ReadbackClearance,
-      groundedPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 9,
-      0,
-    );
+    const readbackClearance: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.ReadbackClearance,
+      pose: groundedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 9,
+      distanceAlongRoute: 0,
+    };
     stages.push(readbackClearance);
 
-    const readbackNextContact = new ScenarioPoint(
-      pointIndex++,
-      ClimbOutStage.ReadbackNextContact,
-      climbingOutPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 12,
-      calculateDistanceAlongRoute(waypointCoords, climbingOutPose.position),
-    );
+    const readbackNextContact: ScenarioPoint = {
+      index: pointIndex++,
+      stage: ClimbOutStage.ReadbackNextContact,
+      pose: climbingOutPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 12,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        climbingOutPose.position,
+      ),
+    };
     stages.push(readbackNextContact);
 
-    const contactNextFrequency = new ScenarioPoint(
-      pointIndex++,
-      ClimbOutStage.ContactNextFrequency,
-      climbingOutPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 15,
-      calculateDistanceAlongRoute(waypointCoords, climbingOutPose.position),
-    );
+    const contactNextFrequency: ScenarioPoint = {
+      index: pointIndex++,
+      stage: ClimbOutStage.ContactNextFrequency,
+      pose: climbingOutPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 15,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        climbingOutPose.position,
+      ),
+    };
     stages.push(contactNextFrequency);
 
-    const acknowledgeNewFrequencyRequest = new ScenarioPoint(
-      pointIndex++,
-      ClimbOutStage.AcknowledgeNewFrequencyRequest,
-      climbingOutPose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 15,
-      calculateDistanceAlongRoute(waypointCoords, climbingOutPose.position),
-    );
+    const acknowledgeNewFrequencyRequest: ScenarioPoint = {
+      index: pointIndex++,
+      stage: ClimbOutStage.AcknowledgeNewFrequencyRequest,
+      pose: climbingOutPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 15,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        climbingOutPose.position,
+      ),
+    };
     stages.push(acknowledgeNewFrequencyRequest);
 
-    const reportLeavingZone = new ScenarioPoint(
-      pointIndex++,
-      ClimbOutStage.ReportLeavingZone,
-      leavingZonePose,
-      getParkedMadeContactControlledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 18,
-      calculateDistanceAlongRoute(waypointCoords, leavingZonePose.position),
-    );
+    const reportLeavingZone: ScenarioPoint = {
+      index: pointIndex++,
+      stage: ClimbOutStage.ReportLeavingZone,
+      pose: leavingZonePose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 18,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        leavingZonePose.position,
+      ),
+    };
     stages.push(reportLeavingZone);
   } else {
-    const firstRouteSegment = [waypoints[0].location, waypoints[1].location];
+    const firstRouteSegment = [waypoints[0]!.location, waypoints[1]!.location];
     let leavingZonePosition: Position = [0, 0];
     if (takeoffAirspace)
       leavingZonePosition = findIntersections(firstRouteSegment, [
         takeoffAirspace,
-      ])[0].position;
-    // 3.3 should be 4 but this avoids a bug for the demo
+      ])[0]!.position;
     else
       leavingZonePosition = turf.destination(
-        waypoints[0].location,
-        3.3,
+        waypoints[0]!.location,
+        4,
         initialRouteHeading,
         { units: "kilometers" },
       ).geometry.coordinates;
@@ -357,81 +392,102 @@ export function getStartAirportScenarioPoints(
       airSpeed: 70.0,
     };
 
-    const radioCheck = new ScenarioPoint(
-      pointIndex++,
-      StartUpStage.RadioCheck,
-      groundedPose,
-      getParkedInitialUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime,
-      0,
-    );
+    const radioCheck: ScenarioPoint = {
+      index: pointIndex++,
+      stage: StartUpStage.RadioCheck,
+      pose: groundedPose,
+      updateData: getParkedInitialUncontrolledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime,
+      distanceAlongRoute: 0,
+    };
     stages.push(radioCheck);
 
-    const requestTaxiInformation = new ScenarioPoint(
-      pointIndex++,
-      TaxiStage.RequestTaxiInformation,
-      groundedPose,
-      getParkedInitialUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 1,
-      0,
-    );
+    const requestTaxiInformation: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TaxiStage.RequestTaxiInformation,
+      pose: groundedPose,
+      updateData: getParkedInitialUncontrolledUpdateData(seed, startAirport),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 1,
+      distanceAlongRoute: 0,
+    };
     stages.push(requestTaxiInformation);
 
-    const readbackTaxiInformation = new ScenarioPoint(
-      pointIndex++,
-      TaxiStage.AnnounceTaxiing,
-      groundedPose,
-      getParkedMadeContactUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 1,
-      0,
-    );
+    const readbackTaxiInformation: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TaxiStage.AnnounceTaxiing,
+      pose: groundedPose,
+      updateData: getParkedMadeContactUncontrolledUpdateData(
+        seed,
+        startAirport,
+      ),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 1,
+      distanceAlongRoute: 0,
+    };
     stages.push(readbackTaxiInformation);
 
-    const readyForDeparture = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.ReadyForDeparture,
-      groundedPose,
-      getParkedMadeContactUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 8,
-      0,
-    );
+    const readyForDeparture: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.ReadyForDeparture,
+      pose: groundedPose,
+      updateData: getParkedMadeContactUncontrolledUpdateData(
+        seed,
+        startAirport,
+      ),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 8,
+      distanceAlongRoute: 0,
+    };
     stages.push(readyForDeparture);
 
-    const acknowledgeTraffic = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.AcknowledgeTraffic,
-      groundedPose,
-      getParkedMadeContactUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 9,
-      0,
-    );
+    const acknowledgeTraffic: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.AcknowledgeTraffic,
+      pose: groundedPose,
+      updateData: getParkedMadeContactUncontrolledUpdateData(
+        seed,
+        startAirport,
+      ),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 9,
+      distanceAlongRoute: 0,
+    };
     stages.push(acknowledgeTraffic);
 
-    const reportTakingOff = new ScenarioPoint(
-      pointIndex++,
-      TakeOffStage.AnnounceTakingOff,
-      takingOffPose,
-      getParkedMadeContactUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 10,
-      calculateDistanceAlongRoute(waypointCoords, takingOffPose.position),
-    );
+    const reportTakingOff: ScenarioPoint = {
+      index: pointIndex++,
+      stage: TakeOffStage.AnnounceTakingOff,
+      pose: takingOffPose,
+      updateData: getParkedMadeContactUncontrolledUpdateData(
+        seed,
+        startAirport,
+      ),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 10,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        takingOffPose.position,
+      ),
+    };
     stages.push(reportTakingOff);
 
-    const reportLeavingZone = new ScenarioPoint(
-      pointIndex++,
-      ClimbOutStage.AnnounceLeavingZone,
-      leavingZonePose,
-      getParkedMadeContactUncontrolledUpdateData(seed, startAirport),
-      0,
-      startAerodromeTime + 15,
-      calculateDistanceAlongRoute(waypointCoords, leavingZonePose.position),
-    );
+    const reportLeavingZone: ScenarioPoint = {
+      index: pointIndex++,
+      stage: ClimbOutStage.AnnounceLeavingZone,
+      pose: leavingZonePose,
+      updateData: getParkedMadeContactUncontrolledUpdateData(
+        seed,
+        startAirport,
+      ),
+      nextWaypointIndex: 0,
+      timeAtPoint: startAerodromeTime + 15,
+      distanceAlongRoute: calculateDistanceAlongRoute(
+        waypointCoords,
+        leavingZonePose.position,
+      ),
+    };
     stages.push(reportLeavingZone);
   }
 
@@ -451,7 +507,7 @@ export function getEndAirportScenarioPoints(
   const previousPointTime = previousScenarioPoint.timeAtPoint;
   const distanceToLandingAirportFromPrevPoint = turf.distance(
     previousScenarioPoint.pose.position,
-    endAirport.coordinates,
+    endAirport.geometry.coordinates,
     { units: "kilometers" },
   );
 
@@ -464,10 +520,10 @@ export function getEndAirportScenarioPoints(
       (distanceToLandingAirportFromPrevPoint / AIRCRAFT_AVERAGE_SPEED) *
         FLIGHT_TIME_MULTIPLIER,
     );
-  const landingRunway = endAirport.getLandingRunway(seed);
+  const landingRunway = getLandingRunwayFromSeed(endAirport.runways, seed);
 
   const parkedPose: AircraftPose = {
-    position: endAirport.coordinates,
+    position: endAirport.geometry.coordinates,
     trueHeading: 0,
     altitude: 0,
     airSpeed: 0.0,
@@ -476,8 +532,8 @@ export function getEndAirportScenarioPoints(
   /* Safety Sense: "When arriving at an ATC aerodrome you should call 15 NM or 5 minutes
 	 flying time from the ATZ boundary (whichever is greater)"*/
   const requestJoinDistance = -16.0 + (seed % 20) * 0.1;
-  const requestJoinLocation = endAirport.getPointAlongLandingRunwayVector(
-    seed,
+  const requestJoinLocation = getPointAlongRunwayVector(
+    landingRunway,
     requestJoinDistance,
   );
   const requestJoinPose: AircraftPose = {
@@ -492,8 +548,8 @@ export function getEndAirportScenarioPoints(
   );
 
   const followTrafficDistance = -7.0 + (seed % 20) * 0.1;
-  const followTrafficLocation = endAirport.getPointAlongLandingRunwayVector(
-    seed,
+  const followTrafficLocation = getPointAlongRunwayVector(
+    landingRunway,
     -followTrafficDistance,
   );
   const followTrafficPose: AircraftPose = {
@@ -508,8 +564,8 @@ export function getEndAirportScenarioPoints(
   );
 
   const reportFinalDistance = -4.0 + (seed % 20) * 0.1;
-  const reportFinalLocation = endAirport.getPointAlongLandingRunwayVector(
-    seed,
+  const reportFinalLocation = getPointAlongRunwayVector(
+    landingRunway,
     reportFinalDistance,
   );
   const reportFinalPose: AircraftPose = {
@@ -524,7 +580,7 @@ export function getEndAirportScenarioPoints(
   );
 
   const onRunwayPose: AircraftPose = {
-    position: endAirport.getPointAlongLandingRunwayVector(seed, -0.05),
+    position: getPointAlongRunwayVector(landingRunway, -0.05),
     trueHeading: landingRunway.trueHeading,
     altitude: 0.0,
     airSpeed: 0.0,
@@ -535,7 +591,7 @@ export function getEndAirportScenarioPoints(
   );
 
   const runwayVacatedPose: AircraftPose = {
-    position: endAirport.coordinates,
+    position: endAirport.geometry.coordinates,
     trueHeading: 0,
     altitude: 0.0,
     airSpeed: 0.0,
@@ -546,279 +602,279 @@ export function getEndAirportScenarioPoints(
   );
 
   if (isAirportControlled(endAirport)) {
-    const requestJoin = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.RequestJoin,
-      requestJoinPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 10,
-      requestJoinDistanceAlongRoute,
-    );
+    const requestJoin: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.RequestJoin,
+      pose: requestJoinPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 10,
+      distanceAlongRoute: requestJoinDistanceAlongRoute,
+    };
     stages.push(requestJoin);
 
-    const reportDetails = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.ReportDetails,
-      requestJoinPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 10,
-      requestJoinDistanceAlongRoute,
-    );
+    const reportDetails: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.ReportDetails,
+      pose: requestJoinPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 10,
+      distanceAlongRoute: requestJoinDistanceAlongRoute,
+    };
     stages.push(reportDetails);
 
-    const readbackOverheadJoinClearance = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.ReadbackOverheadJoinClearance,
-      requestJoinPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 9,
-      requestJoinDistanceAlongRoute,
-    );
+    const readbackOverheadJoinClearance: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.ReadbackOverheadJoinClearance,
+      pose: requestJoinPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 9,
+      distanceAlongRoute: requestJoinDistanceAlongRoute,
+    };
     stages.push(readbackOverheadJoinClearance);
 
-    const reportAirodromeInSight = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.ReportAirportInSight,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 9,
-      followTrafficDistanceAlongRoute,
-    );
+    const reportAirodromeInSight: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.ReportAirportInSight,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 9,
+      distanceAlongRoute: followTrafficDistanceAlongRoute,
+    };
     stages.push(reportAirodromeInSight);
 
-    const contactTower = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.ContactTower,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 8,
-      followTrafficDistanceAlongRoute,
-    );
+    const contactTower: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.ContactTower,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 8,
+      distanceAlongRoute: followTrafficDistanceAlongRoute,
+    };
     stages.push(contactTower);
 
-    const reportStatus = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportStatus,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 8,
-      followTrafficDistanceAlongRoute,
-    );
+    const reportStatus: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportStatus,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 8,
+      distanceAlongRoute: followTrafficDistanceAlongRoute,
+    };
     stages.push(reportStatus);
 
-    const readbackLandingInformation = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReadbackLandingInformation,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 7,
-      followTrafficDistanceAlongRoute,
-    );
+    const readbackLandingInformation: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReadbackLandingInformation,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 7,
+      distanceAlongRoute: followTrafficDistanceAlongRoute,
+    };
     stages.push(readbackLandingInformation);
 
-    const reportDescending = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportDescending,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 7,
-      followTrafficDistance,
-    );
+    const reportDescending: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportDescending,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 7,
+      distanceAlongRoute: followTrafficDistance,
+    };
     stages.push(reportDescending);
 
-    const wilcoReportDownwind = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.WilcoReportDownwind,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 6,
-      followTrafficDistance,
-    );
+    const wilcoReportDownwind: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.WilcoReportDownwind,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 6,
+      distanceAlongRoute: followTrafficDistance,
+    };
     stages.push(wilcoReportDownwind);
 
-    const reportDownwind = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportDownwind,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 6,
-      followTrafficDistance,
-    );
+    const reportDownwind: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportDownwind,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 6,
+      distanceAlongRoute: followTrafficDistance,
+    };
     stages.push(reportDownwind);
 
-    const wilcoFollowTraffic = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.WilcoFollowTraffic,
-      followTrafficPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 5,
-      followTrafficDistance,
-    );
+    const wilcoFollowTraffic: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.WilcoFollowTraffic,
+      pose: followTrafficPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 5,
+      distanceAlongRoute: followTrafficDistance,
+    };
     stages.push(wilcoFollowTraffic);
 
-    const reportFinal = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportFinal,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 4,
-      reportFinalDistanceAlongRoute,
-    );
+    const reportFinal: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportFinal,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 4,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(reportFinal);
 
-    const readbackContinueApproach = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReadbackContinueApproach,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 3,
-      reportFinalDistanceAlongRoute,
-    );
+    const readbackContinueApproach: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReadbackContinueApproach,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 3,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(readbackContinueApproach);
 
-    const readbackLandingClearance = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReadbackLandingClearance,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 3,
-      reportFinalDistanceAlongRoute,
-    );
+    const readbackLandingClearance: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReadbackLandingClearance,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 3,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(readbackLandingClearance);
 
-    const readbackVacateRunwayRequest = new ScenarioPoint(
-      pointIndex++,
-      LandingToParkedStage.ReadbackVacateRunwayRequest,
-      onRunwayPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 2,
-      onRunwayDistanceAlongRoute,
-    );
+    const readbackVacateRunwayRequest: ScenarioPoint = {
+      index: pointIndex++,
+      stage: LandingToParkedStage.ReadbackVacateRunwayRequest,
+      pose: onRunwayPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 2,
+      distanceAlongRoute: onRunwayDistanceAlongRoute,
+    };
     stages.push(readbackVacateRunwayRequest);
 
-    const reportVacatedRunway = new ScenarioPoint(
-      pointIndex++,
-      LandingToParkedStage.ReportVacatedRunway,
-      runwayVacatedPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime + 5,
-      runwayVacatedDistanceAlongRoute,
-    );
+    const reportVacatedRunway: ScenarioPoint = {
+      index: pointIndex++,
+      stage: LandingToParkedStage.ReportVacatedRunway,
+      pose: runwayVacatedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime + 5,
+      distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+    };
     stages.push(reportVacatedRunway);
 
-    const readbackTaxiInformation = new ScenarioPoint(
-      pointIndex++,
-      LandingToParkedStage.ReadbackTaxiInformation,
-      parkedPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime + 5,
-      runwayVacatedDistanceAlongRoute,
-    );
+    const readbackTaxiInformation: ScenarioPoint = {
+      index: pointIndex++,
+      stage: LandingToParkedStage.ReadbackTaxiInformation,
+      pose: parkedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime + 5,
+      distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+    };
     stages.push(readbackTaxiInformation);
   } else {
-    const requestJoin = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.RequestJoin,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 10,
-      reportFinalDistanceAlongRoute,
-    );
+    const requestJoin: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.RequestJoin,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 10,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(requestJoin);
 
-    const reportDetails = new ScenarioPoint(
-      pointIndex++,
-      InboundForJoinStage.ReportDetails,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 10,
-      reportFinalDistanceAlongRoute,
-    );
+    const reportDetails: ScenarioPoint = {
+      index: pointIndex++,
+      stage: InboundForJoinStage.ReportDetails,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 10,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(reportDetails);
 
-    const reportCrosswindJoin = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportCrosswindJoin,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 9,
-      reportFinalDistanceAlongRoute,
-    );
+    const reportCrosswindJoin: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportCrosswindJoin,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 9,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(reportCrosswindJoin);
 
-    const reportDownwind = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportDownwind,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 6,
-      reportFinalDistanceAlongRoute,
-    );
+    const reportDownwind: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportDownwind,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 6,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(reportDownwind);
 
-    const reportFinal = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReportFinal,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 4,
-      reportFinalDistanceAlongRoute,
-    );
+    const reportFinal: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReportFinal,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 4,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(reportFinal);
 
-    const readbackContinueApproach = new ScenarioPoint(
-      pointIndex++,
-      CircuitAndLandingStage.ReadbackContinueApproach,
-      reportFinalPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime - 3,
-      reportFinalDistanceAlongRoute,
-    );
+    const readbackContinueApproach: ScenarioPoint = {
+      index: pointIndex++,
+      stage: CircuitAndLandingStage.ReadbackContinueApproach,
+      pose: reportFinalPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime - 3,
+      distanceAlongRoute: reportFinalDistanceAlongRoute,
+    };
     stages.push(readbackContinueApproach);
 
-    const reportVacatedRunway = new ScenarioPoint(
-      pointIndex++,
-      LandingToParkedStage.ReportVacatedRunway,
-      runwayVacatedPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime + 5,
-      runwayVacatedDistanceAlongRoute,
-    );
+    const reportVacatedRunway: ScenarioPoint = {
+      index: pointIndex++,
+      stage: LandingToParkedStage.ReportVacatedRunway,
+      pose: runwayVacatedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime + 5,
+      distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+    };
     stages.push(reportVacatedRunway);
 
-    const reportTaxiing = new ScenarioPoint(
-      pointIndex++,
-      LandingToParkedStage.ReportTaxiing,
-      parkedPose,
-      getParkedMadeContactControlledUpdateData(seed, endAirport),
-      waypoints.length - 1,
-      landingTime + 5,
-      runwayVacatedDistanceAlongRoute,
-    );
+    const reportTaxiing: ScenarioPoint = {
+      index: pointIndex++,
+      stage: LandingToParkedStage.ReportTaxiing,
+      pose: parkedPose,
+      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
+      nextWaypointIndex: waypoints.length - 1,
+      timeAtPoint: landingTime + 5,
+      distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+    };
     stages.push(reportTaxiing);
   }
 
@@ -842,7 +898,7 @@ export function getAirborneScenarioPoints(
   const scenarioPoints: ScenarioPoint[] = [];
   const endStageIndexes: number[] = [];
   let timeAtPreviousPoint: number;
-  let previousPosition: [number, number] = [0, 0];
+  let previousPosition: Position = [0, 0];
   if (previousScenarioPoint) {
     timeAtPreviousPoint = previousScenarioPoint.timeAtPoint;
     previousPosition = previousScenarioPoint.pose.position;
@@ -867,14 +923,14 @@ export function getAirborneScenarioPoints(
   for (let i = startIntersection; i < airspaceIntersectionPoints.length; i++) {
     const distanceFromPrevPoint: number = turf.distance(
       previousPosition,
-      airspaceIntersectionPoints[i].position,
+      airspaceIntersectionPoints[i]!.position,
       { units: "kilometers" },
     );
     let distanceToNextPoint: number = -1;
     if (i < airspaceIntersectionPoints.length - 1) {
       distanceToNextPoint = turf.distance(
-        airspaceIntersectionPoints[i].position,
-        airspaceIntersectionPoints[i + 1].position,
+        airspaceIntersectionPoints[i]!.position,
+        airspaceIntersectionPoints[i + 1]!.position,
         { units: "kilometers" },
       );
     }
@@ -888,14 +944,14 @@ export function getAirborneScenarioPoints(
       );
 
     const heading = Math.round(
-      turf.bearingToAngle(
-        turf.bearing(previousPosition, airspaceIntersectionPoints[i].position),
+      turf.bearingToAzimuth(
+        turf.bearing(previousPosition, airspaceIntersectionPoints[i]!.position),
       ),
     );
 
     const preIntersectionPose: AircraftPose = {
       position: turf.destination(
-        airspaceIntersectionPoints[i].position,
+        airspaceIntersectionPoints[i]!.position,
         -0.5,
         heading,
         { units: "kilometers" },
@@ -910,7 +966,7 @@ export function getAirborneScenarioPoints(
     );
 
     const intersectionPose: AircraftPose = {
-      position: airspaceIntersectionPoints[i].position,
+      position: airspaceIntersectionPoints[i]!.position,
       trueHeading: heading,
       altitude: 2000,
       airSpeed: 130,
@@ -921,12 +977,12 @@ export function getAirborneScenarioPoints(
     );
 
     const currentAirspace = airspaces.find(
-      (x) => x.id == airspaceIntersectionPoints[i].airspaceId,
-    ) as Airspace;
+      (x) => x._id == airspaceIntersectionPoints[i]?.airspaceId,
+    )!;
 
     const nextAirspace = airspaces.find(
-      (x) => x.id == airspaceIntersectionPoints[i + 1]?.airspaceId,
-    ) as Airspace;
+      (x) => x._id == airspaceIntersectionPoints[i + 1]?.airspaceId,
+    )!;
 
     // If the distance to the next airspace is less than 10m
     // then we are switching immediately from one to another
@@ -939,14 +995,14 @@ export function getAirborneScenarioPoints(
     }
 
     // Add logic to determine what stages to add at each point
-    if (!airspaceIntersectionPoints[i].enteringAirspace || switchingAirspace) {
-      const currentFreq = getRandomFrequency(seed, currentAirspace.id);
+    if (!airspaceIntersectionPoints[i]!.enteringAirspace || switchingAirspace) {
+      const currentFreq = getRandomFrequencyFromSeed(seed, currentAirspace._id);
 
-      const requestFrequencyChange = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.RequestFrequencyChange,
-        preIntersectionPose,
-        {
+      const requestFrequencyChange: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.RequestFrequencyChange,
+        pose: preIntersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you should request a frequency change to ${currentFreq}`,
           callsignModified: false,
           squark: false,
@@ -956,17 +1012,17 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint,
-        preIntersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint,
+        distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(requestFrequencyChange);
 
-      const acknowledgeApproval = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.AcknowledgeApproval,
-        preIntersectionPose,
-        {
+      const acknowledgeApproval: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.AcknowledgeApproval,
+        pose: preIntersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${currentFreq}, you should acknowledge this.`,
           callsignModified: false,
           squark: false,
@@ -976,26 +1032,26 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint + 1,
-        preIntersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint + 1,
+        distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(acknowledgeApproval);
     }
 
-    if (airspaceIntersectionPoints[i].enteringAirspace || switchingAirspace) {
-      let newFreq = getRandomFrequency(seed, currentAirspace.id);
-      let squarkCode = getRandomSqwuakCode(seed, currentAirspace.id);
+    if (airspaceIntersectionPoints[i]!.enteringAirspace || switchingAirspace) {
+      let newFreq = getRandomFrequencyFromSeed(seed, currentAirspace._id);
+      let squarkCode = getRandomSqwuakCodeFromSeed(seed, currentAirspace._id);
       if (switchingAirspace) {
-        newFreq = getRandomFrequency(seed, nextAirspace.id);
-        squarkCode = getRandomSqwuakCode(seed, nextAirspace.id);
+        newFreq = getRandomFrequencyFromSeed(seed, nextAirspace._id);
+        squarkCode = getRandomSqwuakCodeFromSeed(seed, nextAirspace._id);
       }
 
-      const contactNewFrequency = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.ContactNewFrequency,
-        preIntersectionPose,
-        {
+      const contactNewFrequency: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.ContactNewFrequency,
+        pose: preIntersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you should contact the new frequency ${newFreq}`,
           callsignModified: false,
           squark: false,
@@ -1005,17 +1061,17 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint + 1,
-        preIntersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint + 1,
+        distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(contactNewFrequency);
 
-      const passMessage = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.PassMessage,
-        preIntersectionPose,
-        {
+      const passMessage: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.PassMessage,
+        pose: preIntersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you should pass your message to the new frequency ${newFreq}`,
           callsignModified: false,
           squark: false,
@@ -1025,17 +1081,17 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint + 2,
-        preIntersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint + 2,
+        distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(passMessage);
 
-      const squawk = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.Squawk,
-        preIntersectionPose,
-        {
+      const squawk: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.Squawk,
+        pose: preIntersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you should squawk the correct code`,
           callsignModified: false,
           squark: false,
@@ -1045,17 +1101,17 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint + 2,
-        preIntersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint + 2,
+        distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(squawk);
 
-      const readbackApproval = new ScenarioPoint(
-        pointIndex++,
-        ChangeZoneStage.ReadbackApproval,
-        intersectionPose,
-        {
+      const readbackApproval: ScenarioPoint = {
+        index: pointIndex++,
+        stage: ChangeZoneStage.ReadbackApproval,
+        pose: intersectionPose,
+        updateData: {
           currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${newFreq}, you should acknowledge this.`,
           callsignModified: false,
           squark: false,
@@ -1065,10 +1121,10 @@ export function getAirborneScenarioPoints(
           currentPressure: 1013,
           emergency: EmergencyType.None,
         },
-        i + 1,
-        timeAtCurrentPoint + 3,
-        intersectionPoseDistanceAlongRoute,
-      );
+        nextWaypointIndex: i + 1,
+        timeAtPoint: timeAtCurrentPoint + 3,
+        distanceAlongRoute: intersectionPoseDistanceAlongRoute,
+      };
       scenarioPoints.push(readbackApproval);
     }
 
@@ -1091,7 +1147,7 @@ export function getAirborneScenarioPoints(
 
     // Get a random emergency type which is not none
     const emergencyTypeIndex = seed % (Object.keys(EmergencyType).length - 1);
-    const emergencyType = Object.values(EmergencyType)[emergencyTypeIndex + 1];
+    const emergencyType = Object.values(EmergencyType)[emergencyTypeIndex + 1]!;
 
     // Generate the points to add on the route
     // Get the percentage of the distance between the two points to add the emergency at
@@ -1099,30 +1155,31 @@ export function getAirborneScenarioPoints(
     // This minimises the chance of the emergency ending after the next actual route point time
     const lerpPercentage: number = (seed % 85) / 100 + 0.05;
     const segmentDistance: number = turf.distance(
-      scenarioPoints[emergencyScenarioPointIndex].pose.position,
-      scenarioPoints[emergencyScenarioPointIndex + 1].pose.position,
+      scenarioPoints[emergencyScenarioPointIndex]!.pose.position,
+      scenarioPoints[emergencyScenarioPointIndex + 1]!.pose.position,
     );
     const emergencyPosition: Position = turf.along(
       turf.lineString([
-        scenarioPoints[emergencyScenarioPointIndex].pose.position,
-        scenarioPoints[emergencyScenarioPointIndex + 1].pose.position,
+        scenarioPoints[emergencyScenarioPointIndex]!.pose.position,
+        scenarioPoints[emergencyScenarioPointIndex + 1]!.pose.position,
       ]),
       segmentDistance * lerpPercentage,
     ).geometry.coordinates;
-    emergencyPosition[0] = parseFloat(emergencyPosition[0].toFixed(8));
-    emergencyPosition[1] = parseFloat(emergencyPosition[1].toFixed(8));
+    emergencyPosition[0] = parseFloat(emergencyPosition[0]!.toFixed(8));
+    emergencyPosition[1] = parseFloat(emergencyPosition[1]!.toFixed(8));
 
     const emergencyTime: number = Math.round(
       lerp(
-        scenarioPoints[emergencyScenarioPointIndex].timeAtPoint,
-        scenarioPoints[emergencyScenarioPointIndex + 1].timeAtPoint,
+        scenarioPoints[emergencyScenarioPointIndex]!.timeAtPoint,
+        scenarioPoints[emergencyScenarioPointIndex + 1]!.timeAtPoint,
         lerpPercentage,
       ),
     );
 
     const emergencyPose: AircraftPose = {
       position: emergencyPosition,
-      trueHeading: scenarioPoints[emergencyScenarioPointIndex].pose.trueHeading,
+      trueHeading:
+        scenarioPoints[emergencyScenarioPointIndex]!.pose.trueHeading,
       altitude: 1200.0,
       airSpeed: 90.0,
     };
@@ -1131,71 +1188,74 @@ export function getAirborneScenarioPoints(
       emergencyPose.position,
     );
 
-    const declareEmergency = new ScenarioPoint(
-      pointIndex++,
-      PanPanStage.DeclareEmergency,
-      emergencyPose,
-      {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget}, you should declare an emergency of type ${emergencyType}`,
+    const declareEmergency: ScenarioPoint = {
+      index: pointIndex++,
+      stage: PanPanStage.DeclareEmergency,
+      pose: emergencyPose,
+      updateData: {
+        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you should declare an emergency of type ${emergencyType}`,
         callsignModified: false,
         squark: false,
         currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget,
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
         currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex].updateData
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData
             .currentTargetFrequency,
         currentTransponderFrequency: "7000",
         currentPressure: 1013,
         emergency: emergencyType,
       },
-      scenarioPoints[emergencyScenarioPointIndex].nextWaypointIndex,
-      emergencyTime,
-      emergencyPoseDistanceAlongRoute,
-    );
+      nextWaypointIndex:
+        scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
+      timeAtPoint: emergencyTime,
+      distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+    };
 
-    const wilcoInstructions = new ScenarioPoint(
-      pointIndex++,
-      PanPanStage.WilcoInstructions,
-      emergencyPose,
-      {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget}, you should acknowledge the emergency instructions`,
+    const wilcoInstructions: ScenarioPoint = {
+      index: pointIndex++,
+      stage: PanPanStage.WilcoInstructions,
+      pose: emergencyPose,
+      updateData: {
+        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you should acknowledge the emergency instructions`,
         callsignModified: false,
         squark: false,
         currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget,
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
         currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex].updateData
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData
             .currentTargetFrequency,
         currentTransponderFrequency: "7000",
         currentPressure: 1013,
         emergency: emergencyType,
       },
-      scenarioPoints[emergencyScenarioPointIndex].nextWaypointIndex,
-      emergencyTime + 1,
-      emergencyPoseDistanceAlongRoute,
-    );
+      nextWaypointIndex:
+        scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
+      timeAtPoint: emergencyTime + 1,
+      distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+    };
 
-    const cancelPanPan = new ScenarioPoint(
-      pointIndex++,
-      PanPanStage.CancelPanPan,
-      emergencyPose,
-      {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget}, you have resolved your emergency, you should cancel the emergency call`,
+    const cancelPanPan: ScenarioPoint = {
+      index: pointIndex++,
+      stage: PanPanStage.CancelPanPan,
+      pose: emergencyPose,
+      updateData: {
+        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you have resolved your emergency, you should cancel the emergency call`,
         callsignModified: false,
         squark: false,
         currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex].updateData.currentTarget,
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
         currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex].updateData
+          scenarioPoints[emergencyScenarioPointIndex]!.updateData
             .currentTargetFrequency,
         currentTransponderFrequency: "7000",
         currentPressure: 1013,
         emergency: emergencyType,
       },
-      scenarioPoints[emergencyScenarioPointIndex].nextWaypointIndex,
-      emergencyTime + 4,
-      emergencyPoseDistanceAlongRoute,
-    );
+      nextWaypointIndex:
+        scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
+      timeAtPoint: emergencyTime + 4,
+      distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+    };
 
     scenarioPoints.splice(
       emergencyScenarioPointIndex,

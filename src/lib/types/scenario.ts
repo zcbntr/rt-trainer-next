@@ -1,3 +1,4 @@
+import { type Position } from "geojson";
 import { type SimulatorUpdateData } from "./simulator";
 
 export enum EmergencyType {
@@ -8,7 +9,7 @@ export enum EmergencyType {
 
 /* Represents location, heading altitude and airSpeed of the aircraft. Term borrowed from robotics */
 export type AircraftPose = {
-  position: [number, number];
+  position: Position;
   trueHeading: number;
   altitude: number;
   airSpeed: number;

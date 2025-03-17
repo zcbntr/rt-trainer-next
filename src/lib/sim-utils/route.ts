@@ -2,8 +2,8 @@ import type { Position } from "geojson";
 import * as turf from "@turf/turf";
 import { type Airspace } from "../types/airspace";
 import { getAirspaceLowerLimitFL } from "./airspaces";
-import { Airport } from "../types/airport";
-import { Waypoint } from "../types/waypoint";
+import { type Airport } from "../types/airport";
+import { type Waypoint } from "../types/waypoint";
 
 export function kmToUnit(km: number, unit: string): number {
   switch (unit) {

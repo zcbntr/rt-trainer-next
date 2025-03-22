@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "use client";
 
 import { type Waypoint } from "~/lib/types/waypoint";
@@ -6,6 +7,8 @@ import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import Simulator from "./simulator";
 import useScenarioStore from "~/app/stores/scenario-store";
 import { generateScenario } from "~/lib/scenario/scenario-generator";
+import { type Airspace } from "~/lib/types/airspace";
+import { type Airport } from "~/lib/types/airport";
 
 type SimPageProps = {
   scenarioId?: number;
@@ -54,33 +57,71 @@ const SimPageComponent = ({
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
-  //   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  //   THIS IS NOT GETTING ALL THE REQUIRED DATA TO GENERATE A SCENARIO
-  //   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  useEffect(() => {
+    async function fetchAirspaces() {
+      // Lazy load airspaces/airports into stores - can trpc not do this typesafe?
+      const freshAirspaces: Airspace[] = (
+        await fetch("/api/aeronautical-data/airspaces").then((res) =>
+          res.json(),
+        )
+      ).data as Airspace[];
 
-  //   Generate scenario if not already in store and up-to-date
-  if (
-    scenarioPoints.length == 0 &&
-    seed &&
-    waypoints &&
-    airports &&
-    airspaces &&
-    hasEmergencyEvents != undefined
-  ) {
-    const generatedScenarioPoints = generateScenario(
-      seed,
-      callsign,
-      prefix,
-      waypoints,
-      airports,
-      airspaces,
-      hasEmergencyEvents,
-    );
+      useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
+    }
 
-    console.log("Generated scenario points", generatedScenarioPoints);
+    async function fetchAirports() {
+      const freshAirports: Airport[] = (
+        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
+      ).data as Airport[];
 
-    setScenarioPoints(generatedScenarioPoints);
-  }
+      useAeronauticalDataStore.setState({ airports: freshAirports });
+    }
+
+    if (airports.length === 0) {
+      void fetchAirports();
+    }
+
+    if (airspaces.length === 0) {
+      void fetchAirspaces();
+    }
+  }, [airports.length, airspaces.length]);
+
+  useEffect(() => {
+    // Generate scenario if not already in store and up-to-date
+    // Check that all required data is available
+    if (
+      scenarioPoints.length == 0 &&
+      seed &&
+      waypoints &&
+      airports.length > 0 &&
+      airspaces.length > 0 &&
+      hasEmergencyEvents != undefined
+    ) {
+      const generatedScenarioPoints = generateScenario(
+        seed,
+        callsign,
+        prefix,
+        waypoints,
+        airports,
+        airspaces,
+        hasEmergencyEvents,
+      );
+
+      console.log("Generated scenario points", generatedScenarioPoints);
+
+      setScenarioPoints(generatedScenarioPoints);
+    }
+  }, [
+    scenarioPoints,
+    seed,
+    callsign,
+    prefix,
+    waypoints,
+    airports,
+    airspaces,
+    hasEmergencyEvents,
+    setScenarioPoints,
+  ]);
 
   useEffect(() => {
     if (scenarioPoints.length <= 0) {

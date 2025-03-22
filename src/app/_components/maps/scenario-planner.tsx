@@ -208,13 +208,15 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
   }, [airports]);
 
   useEffect(() => {
-    if (waypoints.length < 2) {
+    // If no waypoints, fit map to UK
+    if (waypoints.length == 0) {
       mapRef.current?.fitBounds([-7.65108, 50.521311, 1.825189, 58.203818], {
         padding: 50,
       });
       return;
     }
 
+    // Fit map to bounding box of waypoints
     const [x1, y1, x2, y2] = turf.bbox(
       turf.lineString(waypoints.map((waypoint) => waypoint.location)),
     );

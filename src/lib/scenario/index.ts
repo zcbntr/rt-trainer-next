@@ -3,6 +3,9 @@ import { type Airspace } from "../types/airspace";
 import { type ScenarioPoint } from "../types/scenario";
 import { type Waypoint } from "../types/waypoint";
 
+export const AIRCRAFT_AVERAGE_SPEED = 3.75; // km per minute. 225 km/h, 120 knots, 140 mph (Cessna 172 max cruise speed)
+export const FLIGHT_TIME_MULTIPLIER = 1.3; // Multiplier to account for climb, descent and other factors. Very rough estimate
+
 export default class Scenario {
   seed: string;
 

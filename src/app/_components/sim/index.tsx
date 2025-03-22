@@ -10,6 +10,8 @@ import { generateScenario } from "~/lib/scenario/scenario-generator";
 type SimPageProps = {
   scenarioId?: number;
   seed?: string;
+  callsign: string;
+  prefix: string;
   waypoints?: Waypoint[];
   airspaceIds?: string[];
   airportIds?: string[];
@@ -21,6 +23,8 @@ type SimPageProps = {
 const SimPageComponent = ({
   scenarioId,
   seed,
+  callsign,
+  prefix,
   waypoints,
   airspaceIds,
   airportIds,
@@ -65,6 +69,8 @@ const SimPageComponent = ({
   ) {
     const generatedScenarioPoints = generateScenario(
       seed,
+      callsign,
+      prefix,
       waypoints,
       airports,
       airspaces,

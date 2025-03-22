@@ -1,9 +1,8 @@
-import fs from "fs";
-
 export interface RadioCallRule {
   requiredOrder: string[];
   keywords: string[];
   examples: string[];
+  response: string;
 }
 
 export interface ValidationResult {
@@ -14,9 +13,8 @@ export interface ValidationResult {
 export default class RadioCallValidator {
   private schema: Record<string, RadioCallRule>;
 
-  constructor(schemaPath: string = "radio_calls.json") {
-    const fileData = fs.readFileSync(schemaPath, "utf-8");
-    this.schema = JSON.parse(fileData);
+  constructor(schema: Record<string, RadioCallRule>) {
+    this.schema = schema;
   }
 
   public validateCall(callType: string, userCall: string): ValidationResult {
@@ -70,9 +68,9 @@ export default class RadioCallValidator {
 }
 
 // Example usage:
-const validator = new RadioCallValidator();
-const result = validator.validateCall(
-  "radio_check",
-  "Heathrow Ground, Radio Check, 112.380, G-OFLY",
-);
-console.log(result);
+// const validator = new RadioCallValidator(schema);
+// const result = validator.validateCall(
+//   "radio_check",
+//   "Heathrow Ground, Radio Check, 112.380, G-OFLY",
+// );
+// console.log(result);

@@ -4,22 +4,18 @@ import {
   isAirportControlled,
 } from "~/lib/sim-utils/airport-fns";
 import { calculateDistanceAlongRoute } from "~/lib/sim-utils/route";
-import { Airport } from "~/lib/types/airport";
-import { Airspace } from "~/lib/types/airspace";
-import { AircraftPose, ScenarioPoint } from "~/lib/types/scenario";
-import { Waypoint } from "~/lib/types/waypoint";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
+import { type AircraftPose, type ScenarioPoint } from "~/lib/types/scenario";
+import { type Waypoint } from "~/lib/types/waypoint";
 import { seedStringToNumber } from "~/lib/utils";
-import {
-  AIRCRAFT_AVERAGE_SPEED,
-  FLIGHT_TIME_MULTIPLIER,
-  getParkedMadeContactControlledUpdateData,
-} from "./update-data";
 import {
   InboundForJoinStage,
   CircuitAndLandingStage,
   LandingToParkedStage,
 } from "../stages";
 import { distance } from "@turf/turf";
+import { AIRCRAFT_AVERAGE_SPEED, FLIGHT_TIME_MULTIPLIER } from "..";
 
 export function getEndAirportScenarioPoints(
   pointIndex: number,

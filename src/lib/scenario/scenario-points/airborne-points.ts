@@ -27,9 +27,7 @@ import {
   lineString,
 } from "@turf/turf";
 import { type Position } from "geojson";
-
-export const AIRCRAFT_AVERAGE_SPEED = 3.75; // km per minute. 225 km/h, 120 knots, 140 mph (Cessna 172 max cruise speed)
-export const FLIGHT_TIME_MULTIPLIER = 1.3; // Multiplier to account for climb, descent and other factors. Very rough estimate
+import { AIRCRAFT_AVERAGE_SPEED, FLIGHT_TIME_MULTIPLIER } from "..";
 
 export function getAirborneScenarioPoints(
   pointIndex: number,

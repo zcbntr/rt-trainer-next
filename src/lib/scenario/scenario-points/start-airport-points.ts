@@ -1,11 +1,11 @@
-import { Airport } from "~/lib/types/airport";
-import { Airspace } from "~/lib/types/airspace";
+import { type Airport } from "~/lib/types/airport";
+import { type Airspace } from "~/lib/types/airspace";
 import {
-  AircraftPose,
+  type AircraftPose,
   EmergencyType,
-  ScenarioPoint,
+  type ScenarioPoint,
 } from "~/lib/types/scenario";
-import { Waypoint } from "~/lib/types/waypoint";
+import { type Waypoint } from "~/lib/types/waypoint";
 import { seedStringToNumber } from "~/lib/utils";
 import {
   generateMETORData,
@@ -15,8 +15,8 @@ import {
   getTakeoffRunwayFromSeed,
   isAirportControlled,
 } from "~/lib/sim-utils/airport-fns";
-import { Position } from "geojson";
-import { METORDataSample } from "~/lib/types/metor-data";
+import { type Position } from "geojson";
+import { type METORDataSample } from "~/lib/types/metor-data";
 import getMETORSample from "~/lib/sim-utils/metor-fns";
 import {
   calculateDistanceAlongRoute,
@@ -29,8 +29,6 @@ import {
   TakeOffStage,
   TaxiStage,
 } from "../stages";
-import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
-import { getTakeoffRunwayTaxiwayHoldingPoint } from "~/lib/sim-utils/radio-call";
 
 /* Get the start aerodrome states. This includes all stages of:     
     Start up,
@@ -169,12 +167,6 @@ export function getStartAirportScenarioPoints(
     };
     stages.push(readbackDepartInfo);
 
-    const taxiRequestResponse = `${prefix} ${replaceWithPhoneticAlphabet(
-      callsign,
-    )}, taxi to holding point ${getTakeoffRunwayTaxiwayHoldingPoint()}. Hold short of runway ${
-      takeoffRunway.designator
-    }, QNH ${metorSample.pressure}`;
-
     const taxiRequest: ScenarioPoint = {
       index: pointIndex++,
       stage: TaxiStage.TaxiRequest,
@@ -214,10 +206,6 @@ export function getStartAirportScenarioPoints(
       emergency: EmergencyType.None,
     };
     stages.push(taxiClearanceReadback);
-
-    const readyForDepartureResponse = `${prefix} ${replaceWithPhoneticAlphabet(
-      callsign,
-    )}, runway ${takeoffRunway.designator}, QNH ${metorSample.pressure}`;
 
     const readyForDeparture: ScenarioPoint = {
       index: pointIndex++,

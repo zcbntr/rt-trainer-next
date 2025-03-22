@@ -17,6 +17,7 @@ import { type Waypoint } from "~/lib/types/waypoint";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { type ScenarioPoint } from "~/lib/types/scenario";
+import { RadioCall } from "~/lib/types/radio-call";
 
 const persistentStorage: StateStorage = {
   getItem: (key): string => {
@@ -45,6 +46,9 @@ interface ScenarioStoreState {
   scenarioPointIndex: number;
   scenarioStartPointIndex: number;
   scenarioEndPointIndex: number;
+  currentRadioCall: RadioCall | undefined;
+  mostRecentlyRecievedATCRadioCall: string | undefined;
+  radioCallHistory: RadioCall[];
   setScenarioId: (scenarioId: number) => void;
   setWaypoints: (waypoints: Waypoint[]) => void;
   setAirspacesOnRoute: (airspaces: Airspace[]) => void;
@@ -54,6 +58,9 @@ interface ScenarioStoreState {
   setScenarioPointIndex: (index: number) => void;
   setScenarioStartPointIndex: (index: number) => void;
   setScenarioEndPointIndex: (index: number) => void;
+  setCurrentRadioCall: (radioCall: RadioCall) => void;
+  setMostRecentlyRecievedATCRadioCall: (radioCall: string) => void;
+  pushRadioCallToHistory: (radioCall: RadioCall) => void;
 }
 
 const useScenarioStore = create(
@@ -68,6 +75,9 @@ const useScenarioStore = create(
       scenarioPointIndex: 0,
       scenarioStartPointIndex: 0,
       scenarioEndPointIndex: 0,
+      currentRadioCall: undefined,
+      mostRecentlyRecievedATCRadioCall: undefined,
+      radioCallHistory: [],
       setScenarioId: (scenarioId: number) =>
         set(() => ({ scenarioId: scenarioId })),
       setWaypoints: (_waypoints: Waypoint[]) => {
@@ -87,6 +97,14 @@ const useScenarioStore = create(
         set(() => ({ scenarioStartPointIndex: index })),
       setScenarioEndPointIndex: (index: number) =>
         set(() => ({ scenarioEndPointIndex: index })),
+      setCurrentRadioCall: (radioCall: RadioCall) =>
+        set(() => ({ currentRadioCall: radioCall })),
+      setMostRecentlyRecievedATCRadioCall: (radioCall: string) =>
+        set(() => ({ mostRecentlyRecievedATCRadioCall: radioCall })),
+      pushRadioCallToHistory: (radioCall: RadioCall) =>
+        set((state) => ({
+          radioCallHistory: [...state.radioCallHistory, radioCall],
+        })),
     }),
     storageOptions,
   ),

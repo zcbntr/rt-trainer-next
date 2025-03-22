@@ -1,0 +1,112 @@
+{
+    "radiocalls": [
+        {
+            "radio_check": {
+                "required_order": [
+                    "target",
+                    "message",
+                    "frequency",
+                    "caller"
+                ],
+                "keywords": [
+                    "radio check"
+                ],
+                "examples": [
+                    "Heathrow Ground, Radio Check, 112.380, G-OFLY"
+                ],
+                "response": "<prefix> <caller>, <target> readability 5"
+            }
+        },
+        {
+            "departure_request": {
+                "required_order": [
+                    "target",
+                    "caller",
+                    "message",
+                    "departure_info"
+                ],
+                "keywords": [
+                    "request departure"
+                ],
+                "examples": [
+                    "Heathrow Tower, G-OFLY, request departure, Runway 27L"
+                ],
+                "response": "<prefix> <callsign>, runway <takeoffRunwayDesignator>, surface wind <windDirection> <windSpeed> knots, QNH <pressure>, temperature <temperature> dewpoint <dewpoint>"
+            }
+        },
+        {
+            "departure_info_readback": {
+                "required_order": [
+                    "runway_designator",
+                    "pressure",
+                    "caller"
+                ],
+                "keywords": [],
+                "examples": [],
+                "response": ""
+            }
+        },
+        {
+            "taxi_request": {
+                "required_order": [
+                    "caller",
+                    "destination"
+                ],
+                "keywords": [
+                    "request taxi"
+                ],
+                "examples": [
+                    "Student Golf Lima Yankee, by south side hangers, request taxi for vfr flight to Birmingham"
+                ],
+                "response": "<prefix> <callsign>, taxi to holding point runway <runwayHoldingPoint>. Hold short of runway <runwayDesignator>"
+            }
+        },
+        {
+            "taxi_clearance_readback": {
+                "required_order": [
+                    "runway_holding_point",
+                    "runway_designator",
+                    "caller"
+                ],
+                "keywords": [
+                    "taxi",
+                    "runway",
+                    "holding point"
+                ],
+                "examples": [],
+                "response": ""
+            }
+        },
+        {
+            "taxi_information_request": {
+                "required_order": [
+                    "caller",
+                    "destination"
+                ],
+                "keywords": [
+                    "request taxi information"
+                ],
+                "examples": [
+                    "Heathrow Ground, G-OFLY, request taxi information for vfr flight to Birmingham"
+                ],
+                "response": "<prefix> <callsign>, runway <runway_designator>, QNH <pressure>"
+            }
+        },
+        {
+            "taxi_announcement": {
+                "required_order": [
+                    "caller",
+                    "runway",
+                    "pressure"
+                ],
+                "keywords": [
+                    "taxiing"
+                ],
+                "examples": [
+                    "Heathrow Ground, G-OFLY, taxi announcement for vfr flight to Birmingham"
+                ],
+                "response": ""
+            }
+        }
+    ]
+}

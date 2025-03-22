@@ -11,28 +11,34 @@ import {
   TakeOffStage,
   TaxiStage,
 } from "../scenario/stages";
-import { type Feedback } from "../types/feedback";
+import {
+  assertCallContainsConsecutiveCriticalWords,
+  assertCallContainsFrequency,
+  assertCallContainsUserCallsign,
+  assertCallStartsWithConsecutiveWords,
+  getFrequencyPhonetics,
+  getUserCallsignPhoneticsWithPrefix,
+} from "../sim-utils/radio-call";
+import { Airport } from "../types/airport";
+import { Airspace } from "../types/airspace";
 import { type METORDataSample } from "../types/metor-data";
 import { type RadioCall } from "../types/radio-call";
-
-/* List of mistakes made by the user and the response from the radio target */
-export interface ParseResult {
-  feedback: Feedback;
-  responseCall: string;
-  expectedUserCall: string;
-}
-
-/* Context which must be given to the parser for use in parsing. */
-export interface CallParsingContext {
-  radioCall: string;
-  seed: string;
-}
+import { Runway } from "../types/runway";
+import { ScenarioPoint } from "../types/scenario";
+import { Waypoint } from "../types/waypoint";
 
 export default class Parser {
-  public static parseCall(radioCall: RadioCall): ParseResult {
-    switch (radioCall.scenarioPointStage) {
+  public static parseCall(
+    radioCall: string,
+    context: CallParsingContext,
+  ): ParseResult {
+    const currentPoint = context.scenarioPoints[context.scenarioPointIndex];
+    if (!currentPoint) {
+      throw new Error("No current scenario point");
+    }
+    switch (currentPoint.stage) {
       case StartUpStage.RadioCheck:
-        return this.parseRadioCheck(radioCall);
+        return this.parseRadioCheck(radioCall, context);
       case StartUpStage.DepartureInformationRequest:
         return this.parseDepartureInformationRequest(radioCall);
       case StartUpStage.ReadbackDepartureInformation:
@@ -107,27 +113,57 @@ export default class Parser {
         return this.parseVFRPositionReport(radioCall);
       default:
         throw new Error(
-          "Unimplemented route point type: " + radioCall.scenarioPointStage,
+          "Unimplemented route point type: " + currentPoint.stage,
         );
     }
   }
 
   // Example: Wellesbourne Information, student Golf Oscar Foxtrot Lima Yankee, radio check One Eight Zero Decimal Zero Three
-  public static parseRadioCheck(radioCall: RadioCall): ParseResult {
-    const expectedRadioCall = `${radioCall.currentTarget}, ${radioCall.getUserCallsignPhoneticsWithPrefix()}, request radio check on ${radioCall.getCurrentRadioFrequencyPhonetics()}`;
+  public static parseRadioCheck(
+    radioCall: string,
+    context: CallParsingContext,
+  ): ParseResult {
+    // Check required context is present
+    if (
+      context.currentPoint.updateData.currentTargetFrequency == undefined ||
+      context.currentPoint.updateData.currentTarget == undefined
+    ) {
+      throw new Error("Missing critical context data");
+    }
 
-    radioCall.assertCallContainsCurrentRadioFrequency(true);
-    radioCall.assertCallStartsWithTargetCallsign(true);
-    radioCall.assertCallContainsUserCallsign(true);
-    radioCall.assertCallContainsConsecutiveCriticalWords(["radio", "check"]);
+    const userCallsignPhoneticsWithPrefix = getUserCallsignPhoneticsWithPrefix(
+      context.callsign,
+      context.prefix,
+    ).toUpperCase();
+
+    const expectedRadioCall = `${context.currentPoint.updateData.currentTarget}, ${userCallsignPhoneticsWithPrefix}, request radio check on ${getFrequencyPhonetics(context.currentPoint.updateData.currentTargetFrequency!)}`;
+
+    // Collect mistakes
+    const mistakes: Mistake[] = [];
+    mistakes.push(
+      // Call should contain the current frequency
+      assertCallContainsFrequency(
+        radioCall,
+        context.currentPoint.updateData.currentTargetFrequency,
+        Severity.Severe,
+      )!,
+      // Call should start with the target callsign
+      assertCallStartsWithConsecutiveWords(
+        radioCall,
+        context.currentPoint.updateData.currentTarget.split(" "),
+        Severity.Severe,
+      )!,
+      // Call should contain the user's callsign, identifying the speaker
+      assertCallContainsUserCallsign(true)!,
+      // Call should contain the phrase "radio check" - the purpose of the call
+      assertCallContainsConsecutiveCriticalWords(["radio", "check"])!,
+    );
 
     // Return ATC response
-    const atcResponse = `${radioCall
-      .getUserCallsignPhoneticsWithPrefix()
-      .toUpperCase()}, ${radioCall.getCurrentTarget()}, readability 5, pass your message.`;
+    const atcResponse = `${userCallsignPhoneticsWithPrefix}, ${context.currentPoint.updateData.currentTarget}, readability 5, pass your message.`;
 
     return {
-      feedback: radioCall.getFeedback(),
+      mistakes: mistakes,
       responseCall: atcResponse,
       expectedUserCall: expectedRadioCall,
     };
@@ -163,8 +199,9 @@ export default class Parser {
   // Example: Runway 24, QNH 1013, Student Golf Lima Yankee
   public static parseDepartureInformationReadback(
     radioCall: RadioCall,
+    departureRunway: Runway,
   ): ParseResult {
-    const runwayName: string = radioCall.getTakeoffRunway().designator;
+    const runwayName: string = departureRunway.designator;
     const expectedRadioCall = `Runway ${runwayName} QNH ${radioCall
       .getStartAirportMETORSample()
       .getPressureString()} ${radioCall.getTargetAllocatedCallsign()}`;
@@ -207,7 +244,7 @@ export default class Parser {
     };
   }
 
-  // Example: Taxi holding point alpha. Hold short of runway 24, QNH 1013, Student Golf Lima Yankee
+  // Example: Taxi holding point alpha. Hold short of runway 24, Student Golf Lima Yankee
   public static parseTaxiClearanceReadback(radioCall: RadioCall): ParseResult {
     const expectedRadioCall = `${radioCall.getTargetAllocatedCallsign()} taxi holding point ${radioCall.getTakeoffRunwayTaxiwayHoldingPoint()} runway ${
       radioCall.getTakeoffRunway().designator

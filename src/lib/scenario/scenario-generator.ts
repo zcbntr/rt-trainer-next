@@ -2,15 +2,15 @@ import { type Airport } from "../types/airport";
 import { type Airspace } from "../types/airspace";
 import { type ScenarioPoint } from "../types/scenario";
 import { type Waypoint } from "../types/waypoint";
-import {
-  getStartAirportScenarioPoints,
-  getAirborneScenarioPoints,
-  getEndAirportScenarioPoints,
-} from "./scenario-points";
 import { findIntersections } from "../sim-utils/route";
+import { getStartAirportScenarioPoints } from "./scenario-points/start-airport-points";
+import { getAirborneScenarioPoints } from "./scenario-points/airborne-points";
+import { getEndAirportScenarioPoints } from "./scenario-points/end-airport-points";
 
 export function generateScenario(
   seed: string,
+  callsign: string,
+  prefix: string,
   waypoints: Waypoint[],
   airports: Airport[],
   airspaces: Airspace[],
@@ -44,6 +44,8 @@ export function generateScenario(
     scenarioPoints.push(
       ...getStartAirportScenarioPoints(
         seed,
+        callsign,
+        prefix,
         waypoints,
         airspaces,
         startAirport,

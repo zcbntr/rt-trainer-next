@@ -1,5 +1,6 @@
 import { type Position } from "geojson";
 import { type SimulatorUpdateData } from "./simulator";
+import { Frequency } from "./frequency";
 
 export enum EmergencyType {
   None = "None",
@@ -39,8 +40,14 @@ export type ScenarioPoint = {
   index: number;
   stage: string;
   pose: AircraftPose;
-  updateData: SimulatorUpdateData;
   nextWaypointIndex: number;
   timeAtPoint: number;
   distanceAlongRoute: number;
-}
+  currentContext: string | undefined;
+  callsignModified: boolean; // States whether callsign has been modified by ATC, e.g. shortened
+  squark: boolean;
+  currentTargetFrequency: Frequency;
+  currentTransponderFrequency: string;
+  currentPressure: number;
+  emergency: EmergencyType;
+};

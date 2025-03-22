@@ -1,9 +1,8 @@
-import { type Feedback } from "./feedback";
 import { type Waypoint } from "./waypoint";
 
 export type RadioMessageAttempt = {
   message: string;
-  feedback?: Feedback;
+  mistakes?: string[];
 };
 
 export type RadioCall = {

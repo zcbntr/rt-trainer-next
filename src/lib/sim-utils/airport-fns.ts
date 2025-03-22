@@ -54,7 +54,10 @@ export function getTakeoffTransitionAltitude(_airport: Airport): number {
  * @param seed - Seed of the scenario
  * @returns Runway suitable for landing
  */
-export function getLandingRunwayFromSeed(runways: Runway[], seed: number): Runway {
+export function getLandingRunwayFromSeed(
+  runways: Runway[],
+  seed: number,
+): Runway {
   if (runways.length == 0) {
     throw new Error("No suitable landing runway found - no runways provided");
   }

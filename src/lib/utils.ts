@@ -175,3 +175,8 @@ export const transformZodErrors = (error: z.ZodError) => {
 export const numberToAlphabetLetter = (num: number): string => {
   return String.fromCharCode(65 + (num % 26));
 };
+
+export const getShorthandDirection = (degrees: number): string => {
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return directions[Math.round(degrees / 45) % 8]!;
+};

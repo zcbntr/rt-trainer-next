@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "use client";
 
-import { type ParseResult } from "zod";
-import Parser from "~/lib/radio-calls/parser";
 import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
 import { type Airport } from "~/lib/types/airport";
@@ -11,6 +9,7 @@ import {
   type RadioCall,
   type RadioMessageAttempt,
 } from "~/lib/types/radio-call";
+import radiocalls from "~/lib/radio-calls/radio-calls.json";
 import Altimeter from "./altimeter";
 import Transponder from "./transponder";
 import MessageOutputBox from "./message-output-box";
@@ -33,6 +32,11 @@ import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { Button, buttonVariants } from "~/components/ui/button";
 import Link from "next/link";
 import useScenarioStore from "~/app/stores/scenario-store";
+import { callContainsUserCallsign } from "~/lib/sim-utils/radio-call";
+import useAircraftDataStore from "~/app/stores/aircraft-data-store";
+import RadioCallValidator, {
+  ValidationResult,
+} from "~/lib/radio-calls/validator";
 
 type SimulatorProps = {
   className?: string;
@@ -40,9 +44,23 @@ type SimulatorProps = {
 
 const Simulator = ({ className }: SimulatorProps) => {
   // Simulator state and settings
+  const scenarioId = useScenarioStore((state) => state.scenarioId);
   const scenarioPoints = useScenarioStore((state) => state.scenarioPoints);
   const scenarioPointIndex = useScenarioStore(
     (state) => state.scenarioPointIndex,
+  );
+  const setScenarioPointIndex = useScenarioStore(
+    (state) => state.setScenarioPointIndex,
+  );
+  const currentRadioCall = useScenarioStore((state) => state.currentRadioCall);
+  const setMostRecentlyRecievedATCRadioCall = useScenarioStore(
+    (state) => state.setMostRecentlyRecievedATCRadioCall,
+  );
+  const pushRadioCallToHistory = useScenarioStore(
+    (state) => state.pushRadioCallToHistory,
+  );
+  const endPointIndex = useScenarioStore(
+    (state) => state.scenarioEndPointIndex,
   );
 
   if (scenarioPoints.length === 0) {
@@ -57,14 +75,18 @@ const Simulator = ({ className }: SimulatorProps) => {
 
   const altimeterPressure = useAltimeterStore((state) => state.shownPressure);
 
+  const callsign = useAircraftDataStore((state) => state.callsign);
+  const aircraftType = useAircraftDataStore((state) => state.type);
+  const prefix = useAircraftDataStore((state) => state.prefix);
+
+  const validator = new RadioCallValidator("radio-calls.json");
+
   const atcMessage = "";
   let userMessage = "";
   let currentTarget: string;
   let currentTargetFrequency: string;
   const currentRoutePointIndex = 0;
   let failedAttempts = 0;
-  let currentRadioCall: RadioCall;
-  let currentMessageAttempt: RadioMessageAttempt;
   let currentSimContext: string;
 
   // Page settings
@@ -73,8 +95,7 @@ const Simulator = ({ className }: SimulatorProps) => {
   const readRecievedCalls = false;
   const liveFeedback = false;
   let endOfRouteDialogOpen = false;
-  let dialogTitle = "";
-  let dialogDescription = "";
+  let repeatMistakeDialogOpen = false;
 
   // Load stores if not populated
   const airspaces: Airspace[] = [];
@@ -205,21 +226,20 @@ const Simulator = ({ className }: SimulatorProps) => {
       return false;
     } else if (
       radioActiveFrequency !=
-      scenarioPoints[scenarioPointIndex]?.updateData.currentTargetFrequency
+      scenarioPoints[scenarioPointIndex]?.currentTargetFrequency.value
     ) {
       toast.message("Error", { description: "Radio frequency incorrect" });
       return false;
     } else if (
       transponderFrequency !=
-      scenarioPoints[scenarioPointIndex]?.updateData.currentTransponderFrequency
+      scenarioPoints[scenarioPointIndex]?.currentTransponderFrequency
     ) {
       toast.message("Error", {
         description: "Transponder frequency incorrect",
       });
       return false;
     } else if (
-      altimeterPressure !=
-      scenarioPoints[scenarioPointIndex]?.updateData.currentPressure
+      altimeterPressure != scenarioPoints[scenarioPointIndex]?.currentPressure
     ) {
       toast.message("Error", {
         description: "Altimeter pressure setting incorrect",
@@ -237,59 +257,49 @@ const Simulator = ({ className }: SimulatorProps) => {
    * This function handles the feedback given by and adjusts the simulator state accordingly.
    * A modal is shown if the user has made 3 mistakes in a row, asking if they want to be given the correct call.
    *
-   * @param parseResult - The result of parsing
+   * @param validationResult - The result of validation function
    * @returns void
    */
-  function handleFeedback(parseResult: ParseResult): boolean {
-    // Update stores with the radio call and feedback
-    const feedback = parseResult.feedback;
+  function handleMistakes(validationResult: ValidationResult): boolean {
+    // If scenario not loaded (no radio call), then do nothing
+    if (!currentRadioCall) {
+      return false;
+    }
 
-    currentRadioCall.setFeedback(feedback);
-    RadioCallsHistoryStore.update((value) => {
-      value.push(currentRadioCall);
-      return value;
-    });
+    // Update stores with the radio call and feedback
+    const currentAttempt =
+      currentRadioCall.attempts[currentRadioCall.attempts.length - 1];
+    if (currentAttempt == undefined) {
+      throw new Error("No current attempt");
+    }
+    currentAttempt.mistakes = validationResult.mistakes;
+
+    pushRadioCallToHistory(currentRadioCall);
 
     if (liveFeedback) {
       // Do nothing if the call was flawless
-      if (!feedback.isFlawless()) {
+      if (validationResult.mistakes.length !== 0) {
         // Show current mistakes
-        const t: ToastSettings = {
-          message: feedback.getMistakes().join("<br>"),
-          timeout: 15000,
-          hoverable: true,
-          background: "variant-filled-warning",
-        };
-        toastStore.trigger(t);
+        toast.message("Correct with minor mistakes", {
+          description: validationResult.mistakes.join("<br>"),
+        });
       }
     }
 
     // Get whether there are severe mistakes, and record all minor ones
-    const callsignMentioned: boolean =
-      currentRadioCall.callContainsUserCallsign();
-    const minorMistakes: string[] = feedback.getMinorMistakes();
-    const severeMistakes: string[] = feedback.getSevereMistakes();
+    const callsignMentioned: boolean = callContainsUserCallsign(
+      currentAttempt.message,
+      callsign,
+      prefix,
+    );
 
     // Handle mistakes
-    if (severeMistakes.length > 0) {
+    if (validationResult.mistakes.length > 0) {
       failedAttempts++;
 
       if (failedAttempts >= 3) {
         // Show a modal asking the user if they want to be given the correct call or keep trying
-        const m: ModalSettings = {
-          type: "confirm",
-          title: "Mistake",
-          body: "Do you want to be given the correct call?",
-          response: (r: boolean) => {
-            if (r) {
-              // Put the correct call in the input box
-              ExpectedUserMessageStore.set(parseResult.expectedUserCall);
-            } else {
-              failedAttempts = -7;
-            }
-          },
-        };
-        modalStore.trigger(m);
+        repeatMistakeDialogOpen = true;
 
         return false;
       }
@@ -312,13 +322,8 @@ const Simulator = ({ className }: SimulatorProps) => {
       }
 
       return false;
-    } else if (minorMistakes.length > 0) {
-      // Show a toast with the minor mistakes and advance scenario
-      toast.message("Correct with minor mistakes", {
-        description: minorMistakes.join("<br>"),
-      });
     } else {
-      toast.message("Correct");
+      toast.message("Flawless");
     }
 
     // Reset failed attempts
@@ -347,13 +352,7 @@ const Simulator = ({ className }: SimulatorProps) => {
     }
 
     // Check sim state matches expected state
-    if (scenario == undefined) {
-      console.log("Error: No route");
-      modalStore.trigger({
-        type: "alert",
-        title: "Scenario Error",
-        body: "No scenario is loaded. Refresh the page to try again.",
-      });
+    if (scenarioId == undefined) {
       return;
     }
 
@@ -363,18 +362,20 @@ const Simulator = ({ className }: SimulatorProps) => {
       return;
     }
 
+    const currentScenarioPoint = scenarioPoints[scenarioPointIndex];
+    if (currentScenarioPoint == undefined) {
+      throw new Error("No current scenario point");
+    }
+
     console.log(`User message: ${userMessage}`);
 
-    // Create radio call object
-    currentMessageAttempt = {
-      message: userMessage,
-    };
-
-    // Check the call is valid
-    const response = Parser.parseCall(currentRadioCall);
+    const result: ValidationResult = validator.validateCall(
+      currentScenarioPoint.stage,
+      userMessage,
+    );
 
     // Adjust the simulator state based on the feedback
-    if (!handleFeedback(response)) return;
+    if (!handleMistakes(result)) return;
 
     // If the user has reached the end of the route, then show a modal asking if they want to view their feedback
     if (currentRoutePointIndex == endPointIndex) {
@@ -383,11 +384,8 @@ const Simulator = ({ className }: SimulatorProps) => {
     }
 
     // Update the simulator with the next scenario point
-    CurrentScenarioPointIndexStore.update((value) => {
-      value++;
-      return value;
-    });
-    MostRecentlyReceivedMessageStore.set(response.responseCall);
+    setScenarioPointIndex(scenarioPointIndex + 1);
+    setMostRecentlyRecievedATCRadioCall(userMessage);
   }
 
   if (scenarioId == undefined) {
@@ -420,6 +418,35 @@ const Simulator = ({ className }: SimulatorProps) => {
               >
                 View Feedback
               </Link>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={repeatMistakeDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Repeat Mistakes</DialogTitle>
+              <DialogDescription>
+                Would you like to be given the correct radio call?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-row place-content-between">
+              <Button
+                onClick={() => {
+                  repeatMistakeDialogOpen = false;
+                  userMessage = currentRadioCall?.expectedMessage;
+                }}
+              >
+                Get Correct Call
+              </Button>
+              <Button
+                onClick={() => {
+                  repeatMistakeDialogOpen = false;
+                  failedAttempts = -2;
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

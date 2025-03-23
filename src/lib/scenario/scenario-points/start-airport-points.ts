@@ -39,10 +39,10 @@ import {
 export function getStartAirportScenarioPoints(
   seedString: string,
   callsign: string,
-  prefix: string,
   waypoints: Waypoint[],
   airspaces: Airspace[],
   startAirport: Airport,
+  prefix?: string,
 ): ScenarioPoint[] {
   let pointIndex = 0;
   const seed = seedStringToNumber(seedString);

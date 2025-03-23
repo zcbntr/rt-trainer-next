@@ -10,11 +10,11 @@ import { getEndAirportScenarioPoints } from "./scenario-points/end-airport-point
 export function generateScenario(
   seed: string,
   callsign: string,
-  prefix: string,
   waypoints: Waypoint[],
   airports: Airport[],
   airspaces: Airspace[],
   hasEmergency: boolean,
+  prefix?: string,
 ): ScenarioPoint[] {
   if (!airspaces || airspaces.length === 0) {
     throw new Error("No airspaces found");
@@ -45,10 +45,10 @@ export function generateScenario(
       ...getStartAirportScenarioPoints(
         seed,
         callsign,
-        prefix,
         waypoints,
         airspaces,
         startAirport,
+        prefix,
       ),
     );
 

@@ -3,12 +3,6 @@
 
 import { isCallsignStandardRegistration } from "~/lib/sim-utils/callsigns";
 import { replaceWithPhoneticAlphabet } from "~/lib/sim-utils/phonetics";
-import { type Airport } from "~/lib/types/airport";
-import { type Airspace } from "~/lib/types/airspace";
-import {
-  type RadioCall,
-  type RadioMessageAttempt,
-} from "~/lib/types/radio-call";
 import radiocalls from "~/lib/radio-calls/radio-calls.json";
 import Altimeter from "./altimeter";
 import Transponder from "./transponder";
@@ -26,16 +20,15 @@ import {
 import { toast } from "sonner";
 import Radio from "./radio";
 import SimulatorMap from "../maps/simulator";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import useAltimeterStore from "~/app/stores/altimeter-store";
-import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { Button, buttonVariants } from "~/components/ui/button";
 import Link from "next/link";
 import useScenarioStore from "~/app/stores/scenario-store";
 import { callContainsUserCallsign } from "~/lib/sim-utils/radio-call";
 import useAircraftDataStore from "~/app/stores/aircraft-data-store";
 import RadioCallValidator, {
-  ValidationResult,
+  type ValidationResult,
 } from "~/lib/radio-calls/validator";
 
 type SimulatorProps = {
@@ -79,7 +72,7 @@ const Simulator = ({ className }: SimulatorProps) => {
   const aircraftType = useAircraftDataStore((state) => state.type);
   const prefix = useAircraftDataStore((state) => state.prefix);
 
-  const validator = new RadioCallValidator("radio-calls.json");
+  const validator = new RadioCallValidator(radiocalls);
 
   const atcMessage = "";
   let userMessage = "";
@@ -96,44 +89,6 @@ const Simulator = ({ className }: SimulatorProps) => {
   const liveFeedback = false;
   let endOfRouteDialogOpen = false;
   let repeatMistakeDialogOpen = false;
-
-  // Load stores if not populated
-  const airspaces: Airspace[] = [];
-
-  const onRouteAirspaces: Airspace[] = [];
-
-  const airports: Airport[] = [];
-
-  const onRouteAirports: Airport[] = [];
-
-  useEffect(() => {
-    async function fetchAirspaces() {
-      // Lazy load airspaces/airports into stores - can trpc not do this typesafe?
-      const freshAirspaces: Airspace[] = (
-        await fetch("/api/aeronautical-data/airspaces").then((res) =>
-          res.json(),
-        )
-      ).data as Airspace[];
-
-      useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
-    }
-
-    async function fetchAirports() {
-      const freshAirports: Airport[] = (
-        await fetch("/api/aeronautical-data/airports").then((res) => res.json())
-      ).data as Airport[];
-
-      useAeronauticalDataStore.setState({ airports: freshAirports });
-    }
-
-    if (airports.length === 0) {
-      void fetchAirports();
-    }
-
-    if (airspaces.length === 0) {
-      void fetchAirspaces();
-    }
-  }, [airports.length, airspaces.length]);
 
   useMemo(() => {
     /**

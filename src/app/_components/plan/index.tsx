@@ -5,7 +5,7 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { ScenarioPlannerSidebar } from "~/app/_components/scenario-planner-sidebar";
 import ScenarioPlannerFooter from "~/app/_components/scenario-planner-footer";
 import { type Waypoint } from "~/lib/types/waypoint";
-import React from "react";
+import React, { useEffect } from "react";
 import useScenarioPlannerStore from "~/app/stores/plan-store";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 
@@ -39,7 +39,7 @@ const PlanPageComponent = ({
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);
   const airports = useAeronauticalDataStore((state) => state.airports);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setExistingRouteId(existingScenarioId);
 
     if (seed) setSeed(seed);

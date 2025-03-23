@@ -37,6 +37,7 @@ export async function getAllUKAirportsFromOpenAIP(): Promise<Airport[]> {
 
     const data: unknown = await response.json();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     return [...data.items] as Airport[];
   } catch (error: unknown) {
     console.error("Error: ", error);
@@ -69,6 +70,7 @@ export async function getAllUKAirspaceFromOpenAIP(): Promise<Airspace[]> {
 
     const data: unknown = await response1.json();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     return [...data.items] as Airspace[];
   } catch (error: unknown) {
     console.error("Error: ", error);

@@ -10,11 +10,11 @@ import { generateScenario } from "~/lib/scenario/scenario-generator";
 import { type Airspace } from "~/lib/types/airspace";
 import { type Airport } from "~/lib/types/airport";
 
-type SimPageProps = {
+export type SimPageProps = {
   scenarioId?: number;
   seed?: string;
-  callsign: string;
-  prefix: string;
+  callsign?: string;
+  prefix?: string;
   waypoints?: Waypoint[];
   airspaceIds?: string[];
   airportIds?: string[];
@@ -66,6 +66,12 @@ const SimPageComponent = ({
         )
       ).data as Airspace[];
 
+      if (freshAirspaces.length < 100) {
+        throw new Error(
+          "Some airspaces could not be loaded. This may be due to an OpenAIP outage. Please contact support if this persists.",
+        );
+      }
+
       useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
     }
 
@@ -74,14 +80,20 @@ const SimPageComponent = ({
         await fetch("/api/aeronautical-data/airports").then((res) => res.json())
       ).data as Airport[];
 
+      if (freshAirports.length < 50) {
+        throw new Error(
+          "Some airports could not be loaded. This may be due to an OpenAIP outage. Please contact support if this persists.",
+        );
+      }
+
       useAeronauticalDataStore.setState({ airports: freshAirports });
     }
 
-    if (airports.length === 0) {
+    if (airports.length < 50) {
       void fetchAirports();
     }
 
-    if (airspaces.length === 0) {
+    if (airspaces.length < 100) {
       void fetchAirspaces();
     }
   }, [airports.length, airspaces.length]);
@@ -92,6 +104,7 @@ const SimPageComponent = ({
     if (
       scenarioPoints.length == 0 &&
       seed &&
+      callsign &&
       waypoints &&
       airports.length > 0 &&
       airspaces.length > 0 &&
@@ -100,11 +113,11 @@ const SimPageComponent = ({
       const generatedScenarioPoints = generateScenario(
         seed,
         callsign,
-        prefix,
         waypoints,
         airports,
         airspaces,
         hasEmergencyEvents,
+        prefix,
       );
 
       console.log("Generated scenario points", generatedScenarioPoints);

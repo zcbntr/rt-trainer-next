@@ -115,6 +115,12 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
         )
       ).data as Airspace[];
 
+      if (freshAirspaces.length < 100) {
+        throw new Error(
+          "Some airspaces could not be loaded. This may be due to an OpenAIP outage. Please contact support if this persists.",
+        );
+      }
+
       useAeronauticalDataStore.setState({ airspaces: freshAirspaces });
     }
 
@@ -123,14 +129,20 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
         await fetch("/api/aeronautical-data/airports").then((res) => res.json())
       ).data as Airport[];
 
+      if (freshAirports.length < 50) {
+        throw new Error(
+          "Some airports could not be loaded. This may be due to an OpenAIP outage. Please contact support if this persists.",
+        );
+      }
+
       useAeronauticalDataStore.setState({ airports: freshAirports });
     }
 
-    if (airports.length === 0) {
+    if (airports.length < 50) {
       void fetchAirports();
     }
 
-    if (airspaces.length === 0) {
+    if (airspaces.length < 100) {
       void fetchAirspaces();
     }
   }, [airports.length, airspaces.length]);

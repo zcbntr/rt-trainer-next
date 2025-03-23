@@ -1,4 +1,4 @@
-import SimPageComponent from "~/app/_components/sim";
+import SimPageWrapper from "~/app/_components/sim/sim-page-wrapper";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -75,8 +75,10 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <SimPageComponent
+      <SimPageWrapper
         scenarioId={scenarioToLoadId}
+        callsign={"G-OFLY"}
+        prefix={"STUDENT"}
         seed={seed}
         waypoints={waypoints}
         airspaceIds={airspaceIds}

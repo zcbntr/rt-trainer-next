@@ -17,7 +17,7 @@ import { type Waypoint } from "~/lib/types/waypoint";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { type ScenarioPoint } from "~/lib/types/scenario";
-import { RadioCall } from "~/lib/types/radio-call";
+import { type RadioCall } from "~/lib/types/radio-call";
 
 const persistentStorage: StateStorage = {
   getItem: (key): string => {

@@ -144,25 +144,26 @@ export function getAirborneScenarioPoints(
 
     // Add logic to determine what stages to add at each point
     if (!airspaceIntersectionPoints[i]!.enteringAirspace || switchingAirspace) {
-      const currentFreq = getRandomFrequencyFromSeed(seed, currentAirspace._id);
+      const currentFreq = getRandomFrequencyFromSeed(
+        seed,
+        currentAirspace.name,
+        currentAirspace._id,
+      );
 
       const requestFrequencyChange: ScenarioPoint = {
         index: pointIndex++,
         stage: ChangeZoneStage.RequestFrequencyChange,
         pose: preIntersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you should request a frequency change to ${currentFreq}`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: currentFreq,
-          currentTransponderFrequency: "7000",
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint,
         distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+        currentContext: `You are currently flying in ${currentAirspace.name}, you should request a frequency change to ${currentFreq.value}`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: currentFreq,
+        currentTransponderFrequency: "7000",
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
       };
       scenarioPoints.push(requestFrequencyChange);
 
@@ -170,28 +171,33 @@ export function getAirborneScenarioPoints(
         index: pointIndex++,
         stage: ChangeZoneStage.AcknowledgeApproval,
         pose: preIntersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${currentFreq}, you should acknowledge this.`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: currentFreq,
-          currentTransponderFrequency: "7000",
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint + 1,
         distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+        currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${currentFreq.value}, you should acknowledge this.`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: currentFreq,
+        currentTransponderFrequency: "7000",
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
       };
       scenarioPoints.push(acknowledgeApproval);
     }
 
     if (airspaceIntersectionPoints[i]!.enteringAirspace || switchingAirspace) {
-      let newFreq = getRandomFrequencyFromSeed(seed, currentAirspace._id);
+      let newFreq = getRandomFrequencyFromSeed(
+        seed,
+        nextAirspace.name,
+        currentAirspace._id,
+      );
       let squarkCode = getRandomSqwuakCodeFromSeed(seed, currentAirspace._id);
       if (switchingAirspace) {
-        newFreq = getRandomFrequencyFromSeed(seed, nextAirspace._id);
+        newFreq = getRandomFrequencyFromSeed(
+          seed,
+          nextAirspace.name,
+          nextAirspace._id,
+        );
         squarkCode = getRandomSqwuakCodeFromSeed(seed, nextAirspace._id);
       }
 
@@ -199,19 +205,16 @@ export function getAirborneScenarioPoints(
         index: pointIndex++,
         stage: ChangeZoneStage.ContactNewFrequency,
         pose: preIntersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you should contact the new frequency ${newFreq}`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: newFreq,
-          currentTransponderFrequency: "7000",
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint + 1,
         distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+        currentContext: `You are currently flying in ${currentAirspace.name}, you should contact the new frequency ${newFreq.value}`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: newFreq,
+        currentTransponderFrequency: "7000",
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
       };
       scenarioPoints.push(contactNewFrequency);
 
@@ -219,19 +222,16 @@ export function getAirborneScenarioPoints(
         index: pointIndex++,
         stage: ChangeZoneStage.PassMessage,
         pose: preIntersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you should pass your message to the new frequency ${newFreq}`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: newFreq,
-          currentTransponderFrequency: "7000",
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint + 2,
         distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
+        currentContext: `You are currently flying in ${currentAirspace.name}, you should pass your message to the new frequency ${newFreq.value}`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: newFreq,
+        currentTransponderFrequency: "7000",
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
       };
       scenarioPoints.push(passMessage);
 
@@ -239,16 +239,13 @@ export function getAirborneScenarioPoints(
         index: pointIndex++,
         stage: ChangeZoneStage.Squawk,
         pose: preIntersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you should squawk the correct code`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: newFreq,
-          currentTransponderFrequency: squarkCode,
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
+        currentContext: `You are currently flying in ${currentAirspace.name}, you should squawk the correct code`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: newFreq,
+        currentTransponderFrequency: squarkCode,
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint + 2,
         distanceAlongRoute: preIntersectionPoseDistanceAlongRoute,
@@ -259,16 +256,13 @@ export function getAirborneScenarioPoints(
         index: pointIndex++,
         stage: ChangeZoneStage.ReadbackApproval,
         pose: intersectionPose,
-        updateData: {
-          currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${newFreq}, you should acknowledge this.`,
-          callsignModified: false,
-          squark: false,
-          currentTarget: currentAirspace.name,
-          currentTargetFrequency: newFreq,
-          currentTransponderFrequency: "7000",
-          currentPressure: 1013,
-          emergency: EmergencyType.None,
-        },
+        currentContext: `You are currently flying in ${currentAirspace.name}, you have been approved to change frequency to ${newFreq.value}, you should acknowledge this.`,
+        callsignModified: false,
+        squark: false,
+        currentTargetFrequency: newFreq,
+        currentTransponderFrequency: "7000",
+        currentPressure: 1013,
+        emergency: EmergencyType.None,
         nextWaypointIndex: i + 1,
         timeAtPoint: timeAtCurrentPoint + 3,
         distanceAlongRoute: intersectionPoseDistanceAlongRoute,
@@ -340,69 +334,54 @@ export function getAirborneScenarioPoints(
       index: pointIndex++,
       stage: PanPanStage.DeclareEmergency,
       pose: emergencyPose,
-      updateData: {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you should declare an emergency of type ${emergencyType}`,
-        callsignModified: false,
-        squark: false,
-        currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
-        currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData
-            .currentTargetFrequency,
-        currentTransponderFrequency: "7000",
-        currentPressure: 1013,
-        emergency: emergencyType,
-      },
       nextWaypointIndex:
         scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
       timeAtPoint: emergencyTime,
       distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+      currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency.name}, you should declare an emergency of type ${emergencyType}`,
+      callsignModified: false,
+      squark: false,
+      currentTargetFrequency:
+        scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: emergencyType,
     };
 
     const wilcoInstructions: ScenarioPoint = {
       index: pointIndex++,
       stage: PanPanStage.WilcoInstructions,
       pose: emergencyPose,
-      updateData: {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you should acknowledge the emergency instructions`,
-        callsignModified: false,
-        squark: false,
-        currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
-        currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData
-            .currentTargetFrequency,
-        currentTransponderFrequency: "7000",
-        currentPressure: 1013,
-        emergency: emergencyType,
-      },
       nextWaypointIndex:
         scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
       timeAtPoint: emergencyTime + 1,
       distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+      currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency.name}, you should acknowledge the emergency instructions`,
+      callsignModified: false,
+      squark: false,
+      currentTargetFrequency:
+        scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: emergencyType,
     };
 
     const cancelPanPan: ScenarioPoint = {
       index: pointIndex++,
       stage: PanPanStage.CancelPanPan,
       pose: emergencyPose,
-      updateData: {
-        currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget}, you have resolved your emergency, you should cancel the emergency call`,
-        callsignModified: false,
-        squark: false,
-        currentTarget:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData.currentTarget,
-        currentTargetFrequency:
-          scenarioPoints[emergencyScenarioPointIndex]!.updateData
-            .currentTargetFrequency,
-        currentTransponderFrequency: "7000",
-        currentPressure: 1013,
-        emergency: emergencyType,
-      },
       nextWaypointIndex:
         scenarioPoints[emergencyScenarioPointIndex]!.nextWaypointIndex,
       timeAtPoint: emergencyTime + 4,
       distanceAlongRoute: emergencyPoseDistanceAlongRoute,
+      currentContext: `You are currently flying in ${scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency.name}, you have resolved your emergency, you should cancel the emergency call`,
+      callsignModified: false,
+      squark: false,
+      currentTargetFrequency:
+        scenarioPoints[emergencyScenarioPointIndex]!.currentTargetFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: emergencyType,
     };
 
     scenarioPoints.splice(

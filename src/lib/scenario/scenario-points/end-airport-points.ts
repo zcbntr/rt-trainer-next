@@ -1,12 +1,18 @@
 import {
   getLandingRunwayFromSeed,
+  getParkedFrequency,
   getPointAlongRunwayVector,
+  getTowerFrequency,
   isAirportControlled,
 } from "~/lib/sim-utils/airport-fns";
 import { calculateDistanceAlongRoute } from "~/lib/sim-utils/route";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
-import { type AircraftPose, type ScenarioPoint } from "~/lib/types/scenario";
+import {
+  EmergencyType,
+  type AircraftPose,
+  type ScenarioPoint,
+} from "~/lib/types/scenario";
 import { type Waypoint } from "~/lib/types/waypoint";
 import { seedStringToNumber } from "~/lib/utils";
 import {
@@ -33,6 +39,7 @@ export function getEndAirportScenarioPoints(
     endAirport.geometry.coordinates,
     { units: "kilometers" },
   );
+  const endAirportShortName = endAirport.name.split(" ")[0];
 
   const waypointCoords = waypoints.map((waypoint) => waypoint.location);
 
@@ -125,14 +132,22 @@ export function getEndAirportScenarioPoints(
   );
 
   if (isAirportControlled(endAirport)) {
+    const towerFrequency = getTowerFrequency(endAirport)!;
+
     const requestJoin: ScenarioPoint = {
       index: pointIndex++,
       stage: InboundForJoinStage.RequestJoin,
       pose: requestJoinPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 10,
       distanceAlongRoute: requestJoinDistanceAlongRoute,
+      currentContext: `You are currently approaching ${endAirportShortName}, you should contact ${towerFrequency.name} on ${towerFrequency.value}`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(requestJoin);
 
@@ -140,10 +155,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: InboundForJoinStage.ReportDetails,
       pose: requestJoinPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 10,
       distanceAlongRoute: requestJoinDistanceAlongRoute,
+      currentContext: `You are currently in contact with ${endAirportShortName} on ${towerFrequency.value}, you should report your current position`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportDetails);
 
@@ -151,10 +172,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: InboundForJoinStage.ReadbackOverheadJoinClearance,
       pose: requestJoinPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 9,
       distanceAlongRoute: requestJoinDistanceAlongRoute,
+      currentContext: `You are currently being cleared to join circuits at ${endAirportShortName}, you should read back your join clearence to ${towerFrequency.name} on ${towerFrequency.value}`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackOverheadJoinClearance);
 
@@ -162,10 +189,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: InboundForJoinStage.ReportAirportInSight,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 9,
       distanceAlongRoute: followTrafficDistanceAlongRoute,
+      currentContext: `You have spotted the airodrome (${endAirportShortName}), you should report this to ${towerFrequency.name} on ${towerFrequency.value}`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportAirodromeInSight);
 
@@ -173,10 +206,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: InboundForJoinStage.ContactTower,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 8,
       distanceAlongRoute: followTrafficDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(contactTower);
 
@@ -184,10 +223,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportStatus,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 8,
       distanceAlongRoute: followTrafficDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportStatus);
 
@@ -195,10 +240,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReadbackLandingInformation,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 7,
       distanceAlongRoute: followTrafficDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackLandingInformation);
 
@@ -206,10 +257,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportDescending,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 7,
       distanceAlongRoute: followTrafficDistance,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportDescending);
 
@@ -217,10 +274,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.WilcoReportDownwind,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 6,
       distanceAlongRoute: followTrafficDistance,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(wilcoReportDownwind);
 
@@ -228,10 +291,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportDownwind,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 6,
       distanceAlongRoute: followTrafficDistance,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportDownwind);
 
@@ -239,10 +308,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.WilcoFollowTraffic,
       pose: followTrafficPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 5,
       distanceAlongRoute: followTrafficDistance,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(wilcoFollowTraffic);
 
@@ -250,10 +325,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportFinal,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 4,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportFinal);
 
@@ -261,10 +342,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReadbackContinueApproach,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 3,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackContinueApproach);
 
@@ -272,10 +359,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReadbackLandingClearance,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 3,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackLandingClearance);
 
@@ -283,10 +376,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: LandingToParkedStage.ReadbackVacateRunwayRequest,
       pose: onRunwayPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 2,
       distanceAlongRoute: onRunwayDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackVacateRunwayRequest);
 
@@ -294,10 +393,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: LandingToParkedStage.ReportVacatedRunway,
       pose: runwayVacatedPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime + 5,
       distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportVacatedRunway);
 
@@ -305,21 +410,35 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: LandingToParkedStage.ReadbackTaxiInformation,
       pose: parkedPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime + 5,
       distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: towerFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackTaxiInformation);
   } else {
+    const groundFrequency = getParkedFrequency(endAirport)!;
+
     const requestJoin: ScenarioPoint = {
       index: pointIndex++,
       stage: InboundForJoinStage.RequestJoin,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 10,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(requestJoin);
 
@@ -327,10 +446,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: InboundForJoinStage.ReportDetails,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 10,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportDetails);
 
@@ -338,10 +463,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportCrosswindJoin,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 9,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportCrosswindJoin);
 
@@ -349,10 +480,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportDownwind,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 6,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportDownwind);
 
@@ -360,10 +497,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReportFinal,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 4,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportFinal);
 
@@ -371,10 +514,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: CircuitAndLandingStage.ReadbackContinueApproach,
       pose: reportFinalPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime - 3,
       distanceAlongRoute: reportFinalDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(readbackContinueApproach);
 
@@ -382,10 +531,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: LandingToParkedStage.ReportVacatedRunway,
       pose: runwayVacatedPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime + 5,
       distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportVacatedRunway);
 
@@ -393,10 +548,16 @@ export function getEndAirportScenarioPoints(
       index: pointIndex++,
       stage: LandingToParkedStage.ReportTaxiing,
       pose: parkedPose,
-      updateData: getParkedMadeContactControlledUpdateData(seed, endAirport),
       nextWaypointIndex: waypoints.length - 1,
       timeAtPoint: landingTime + 5,
       distanceAlongRoute: runwayVacatedDistanceAlongRoute,
+      currentContext: `Not Implemented`,
+      callsignModified: false, // States whether callsign has been modified by ATC, e.g. shortened
+      squark: false,
+      currentTargetFrequency: groundFrequency,
+      currentTransponderFrequency: "7000",
+      currentPressure: 1013,
+      emergency: EmergencyType.None,
     };
     stages.push(reportTaxiing);
   }

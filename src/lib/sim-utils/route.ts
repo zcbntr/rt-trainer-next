@@ -224,12 +224,12 @@ export function getRouteIssues(
     issues.push("Route has less than 2 waypoints");
   }
 
-  if (airports.length < 2) {
-    issues.push("Route has less than 2 airports");
-  }
-
   if (airspaces.length < 1) {
     issues.push("Route has no airspaces");
+  }
+
+  if (airports.length < 2) {
+    issues.push("Route has less than 2 airports");
   }
 
   return issues;

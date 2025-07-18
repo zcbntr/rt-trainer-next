@@ -100,7 +100,11 @@ const useScenarioPlannerStore = create(
         set(() => ({ waypoints: _waypoints }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
         set((state) => ({
-          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+          airspacesOnRoute: updateAirspacesOnRoute(
+            state.waypoints,
+            airspaces,
+            state.maxFL,
+          ),
         }));
       },
       moveWaypoint: (
@@ -117,7 +121,11 @@ const useScenarioPlannerStore = create(
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
         set((state) => ({
-          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+          airspacesOnRoute: updateAirspacesOnRoute(
+            state.waypoints,
+            airspaces,
+            state.maxFL,
+          ),
         }));
       },
       addWaypoint: (waypoint: Waypoint, airspaces: Airspace[]) => {
@@ -126,7 +134,11 @@ const useScenarioPlannerStore = create(
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
         set((state) => ({
-          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+          airspacesOnRoute: updateAirspacesOnRoute(
+            state.waypoints,
+            airspaces,
+            state.maxFL,
+          ),
         }));
       },
       removeWaypoint: (waypointId: string, airspaces: Airspace[]) => {
@@ -135,7 +147,11 @@ const useScenarioPlannerStore = create(
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
         set((state) => ({
-          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+          airspacesOnRoute: updateAirspacesOnRoute(
+            state.waypoints,
+            airspaces,
+            state.maxFL,
+          ),
         }));
       },
       swapWaypoints: (
@@ -148,7 +164,11 @@ const useScenarioPlannerStore = create(
         }));
         set((state) => ({ distanceKM: updateDistance(state.waypoints) }));
         set((state) => ({
-          airspacesOnRoute: updateAirspacesOnRoute(state.waypoints, airspaces),
+          airspacesOnRoute: updateAirspacesOnRoute(
+            state.waypoints,
+            airspaces,
+            state.maxFL,
+          ),
         }));
       },
       setAirspacesOnRoute: (airspaces: Airspace[]) =>
@@ -175,6 +195,7 @@ export default useScenarioPlannerStore;
 function updateAirspacesOnRoute(
   waypoints: Waypoint[],
   airspaces: Airspace[],
+  maxFL: number,
 ): Airspace[] {
   if (!airspaces || !waypoints || waypoints.length < 2) {
     return [];
@@ -184,6 +205,7 @@ function updateAirspacesOnRoute(
     isAirspaceIncludedInRoute(
       waypoints.map((waypoint) => waypoint.location),
       airspace,
+      maxFL,
     ),
   );
   return airspacesOnRoute;

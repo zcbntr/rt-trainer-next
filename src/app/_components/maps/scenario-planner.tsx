@@ -62,6 +62,9 @@ const airportLayerStyle: LayerSpecification = {
     "icon-image": "airport-15",
     "icon-size": 1,
   },
+  paint: {
+    "icon-color": "#08C",
+  },
 };
 
 type RoutePlannerProps = {
@@ -345,7 +348,7 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
           if (waypointAlreadyExists) return;
         }
 
-        const waypointName = `Waypoint ${airport.name}`;
+        const waypointName = `${airport.name}`;
 
         addWaypoint(
           {
@@ -357,6 +360,11 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
           },
           airspaces,
         );
+
+        // Add airport to route
+        useScenarioPlannerStore.setState((state) => ({
+          airportsOnRoute: [...state.airportsOnRoute, airport],
+        }));
       }
     },
     [addWaypoint, airports, viewState.zoom, waypoints, airspaces],

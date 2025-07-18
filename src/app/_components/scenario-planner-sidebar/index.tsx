@@ -19,11 +19,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { Command } from "lucide-react";
+import { Warehouse } from "lucide-react";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { useRouter } from "next/navigation";
 import AircraftSection from "./aircraft-section";
 import RouteSection from "./route-section";
 import ScenarioSettingsSection from "./scenario-settings-section";
@@ -58,7 +57,6 @@ export function ScenarioPlannerSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { setOpen } = useSidebar();
-  const router = useRouter();
   const sidebarSection = useSidebarStore((state) => state.section);
   const setSidebarSection = useSidebarStore((state) => state.setSection);
 
@@ -97,7 +95,7 @@ export function ScenarioPlannerSidebar({
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
                 <Link href="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <Command className="size-4" />
+                    <Warehouse className="size-4" />
                   </div>
                 </Link>
               </SidebarMenuButton>

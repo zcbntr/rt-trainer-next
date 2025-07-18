@@ -17,6 +17,8 @@ import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { getAirspaceLowerLimitFL } from "~/lib/sim-utils/airspaces";
 
+const AIRPORT_CLICK_THRESHOLD = 3500; // in meters, scaled by zoom level by dividing by zoom^4
+
 const routeLayerStyle: LayerSpecification = {
   id: "route",
   type: "line",
@@ -57,8 +59,8 @@ const airportLayerStyle: LayerSpecification = {
   type: "symbol",
   source: "airports",
   layout: {
-    "icon-image": "circle-stroked-15",
-    "icon-size": 0.5,
+    "icon-image": "airport-15",
+    "icon-size": 1,
   },
 };
 
@@ -228,14 +230,26 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
       return;
     }
 
-    // Fit map to bounding box of waypoints
-    const [x1, y1, x2, y2] = turf.bbox(
-      turf.lineString(waypoints.map((waypoint) => waypoint.location)),
-    );
+    // If only one waypoint, fly to that waypoint
+    if (waypoints.length < 2) {
+      const waypoint = waypoints[0];
+      if (waypoint) {
+        mapRef.current?.flyTo({
+          center: waypoint.location,
+          zoom: 10,
+        });
+        return;
+      }
+      // Else fit map to bounding box of waypoints
+    } else {
+      const [x1, y1, x2, y2] = turf.bbox(
+        turf.lineString(waypoints.map((waypoint) => waypoint.location)),
+      );
 
-    mapRef.current?.fitBounds([x1, y1, x2, y2], {
-      padding: 70,
-    });
+      mapRef.current?.fitBounds([x1, y1, x2, y2], {
+        padding: 200,
+      });
+    }
   }, [waypoints]);
 
   const routeMarkers = useMemo(() => {
@@ -308,7 +322,10 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
 
       // Check if the nearest airport is close enough to the click location,
       // threshold scaled by zoom level to make it harder to accidentally add waypoints
-      if (distanceToNearestPoint < 2000 / Math.pow(viewState.zoom, 4)) {
+      if (
+        distanceToNearestPoint <
+        AIRPORT_CLICK_THRESHOLD / Math.pow(viewState.zoom, 4)
+      ) {
         const airport = airports.find(
           (airport) =>
             airport.geometry.coordinates[0] ==

@@ -19,7 +19,7 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "sonner";
 import Radio from "./radio";
-import SimulatorMap from "../maps/simulator";
+import SimulatorMap from "../maps/simulator-map";
 import { useMemo } from "react";
 import useAltimeterStore from "~/app/stores/altimeter-store";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -46,8 +46,8 @@ const Simulator = ({ className }: SimulatorProps) => {
     (state) => state.setScenarioPointIndex,
   );
   const currentRadioCall = useScenarioStore((state) => state.currentRadioCall);
-  const setMostRecentlyRecievedATCRadioCall = useScenarioStore(
-    (state) => state.setMostRecentlyRecievedATCRadioCall,
+  const setMostRecentlyReceivedATCRadioCall = useScenarioStore(
+    (state) => state.setMostRecentlyReceivedATCRadioCall,
   );
   const pushRadioCallToHistory = useScenarioStore(
     (state) => state.pushRadioCallToHistory,
@@ -85,7 +85,7 @@ const Simulator = ({ className }: SimulatorProps) => {
   // Page settings
   const speechRecognitionSupported = false; // Speech recognition is not supported in all browsers e.g. firefox - can be resolved with a polyfill
   const speechNoiseLevel = 0;
-  const readRecievedCalls = false;
+  const readReceivedCalls = false;
   const liveFeedback = false;
   let endOfRouteDialogOpen = false;
   let repeatMistakeDialogOpen = false;
@@ -130,10 +130,10 @@ const Simulator = ({ className }: SimulatorProps) => {
       }
     }
 
-    if (readRecievedCalls && atcMessage) {
+    if (readReceivedCalls && atcMessage) {
       TTSWithNoise(speechNoiseLevel);
     }
-  }, [readRecievedCalls, atcMessage, speechNoiseLevel]);
+  }, [readReceivedCalls, atcMessage, speechNoiseLevel]);
 
   //   $: tutorialStep2 =
   //     transponderState?.dialMode == "SBY" && radioState?.dialMode == "SBY";
@@ -340,7 +340,7 @@ const Simulator = ({ className }: SimulatorProps) => {
 
     // Update the simulator with the next scenario point
     setScenarioPointIndex(scenarioPointIndex + 1);
-    setMostRecentlyRecievedATCRadioCall(userMessage);
+    setMostRecentlyReceivedATCRadioCall(userMessage);
   }
 
   if (scenarioId == undefined) {

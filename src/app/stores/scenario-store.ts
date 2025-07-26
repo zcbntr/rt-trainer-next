@@ -59,7 +59,7 @@ interface ScenarioStoreState {
   setScenarioStartPointIndex: (index: number) => void;
   setScenarioEndPointIndex: (index: number) => void;
   setCurrentRadioCall: (radioCall: RadioCall) => void;
-  setMostRecentlyRecievedATCRadioCall: (radioCall: string) => void;
+  setMostRecentlyReceivedATCRadioCall: (radioCall: string) => void;
   pushRadioCallToHistory: (radioCall: RadioCall) => void;
 }
 
@@ -99,7 +99,7 @@ const useScenarioStore = create(
         set(() => ({ scenarioEndPointIndex: index })),
       setCurrentRadioCall: (radioCall: RadioCall) =>
         set(() => ({ currentRadioCall: radioCall })),
-      setMostRecentlyRecievedATCRadioCall: (radioCall: string) =>
+      setMostRecentlyReceivedATCRadioCall: (radioCall: string) =>
         set(() => ({ mostRecentlyRecievedATCRadioCall: radioCall })),
       pushRadioCallToHistory: (radioCall: RadioCall) =>
         set((state) => ({

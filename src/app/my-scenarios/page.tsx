@@ -3,7 +3,7 @@ import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import TopNav from "~/app/_components/topnav";
 import { redirect } from "next/navigation";
-import StaticPreviewMap from "../_components/maps/static-preview";
+import StaticPreviewMap from "../_components/maps/static-preview-map";
 import { type WaypointType } from "~/lib/types/waypoint";
 import Link from "next/link";
 import { buttonVariants } from "~/components/ui/button";

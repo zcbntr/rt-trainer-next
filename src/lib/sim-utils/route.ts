@@ -102,7 +102,7 @@ export function findIntersections(
         if (pointIndex < route.length - 1) {
           const nextPoint = route[pointIndex + 1];
           if (!nextPoint) {
-            throw new Error("Invalid route tested againt for intersections");
+            throw new Error("Next point was not found in findIntersections");
           }
 
           const lineSegment = turf.lineString([point, nextPoint]);

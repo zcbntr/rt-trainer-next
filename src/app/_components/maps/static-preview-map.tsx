@@ -10,7 +10,7 @@ type StaticPreviewMapProps = {
   height: number;
 };
 
-// Currently doesnt show airspaces or airports, just the route
+// Currently doesn't show airspaces or airports, just the route
 const StaticPreviewMap = async ({
   className,
   waypoints,
@@ -41,10 +41,11 @@ const StaticPreviewMap = async ({
     ),
   );
 
-  const imageURL = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${markerString},path-4+f00-0.5(${encodeURIComponent(polylineEncoding as string)})/auto/${width}x${height}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}`;
+  const imageURL = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${markerString},path-4+f00-0.5(${encodeURIComponent(polylineEncoding)})/auto/${width}x${height}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_API_KEY}`;
 
   return (
     <div className={`${className} relative`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={imageURL} alt={"Scenario Map"}></img>
     </div>
   );

@@ -113,7 +113,7 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
 
   useEffect(() => {
     async function fetchAirspaces() {
-      // Lazy load airspaces/airports into stores - can trpc not do this typesafe?
+      // Lazy load airspaces/airports into stores - can trpc not do this type safe?
       const freshAirspaces: Airspace[] = (
         await fetch("/api/aeronautical-data/airspaces").then((res) =>
           res.json(),

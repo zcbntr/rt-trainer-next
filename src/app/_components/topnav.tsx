@@ -15,6 +15,7 @@ import {
   MdHome,
   MdSettings,
   MdPerson,
+  MdHeadsetMic,
 } from "react-icons/md";
 import { initials } from "~/lib/utils";
 import { auth, signOut } from "~/server/auth";
@@ -24,11 +25,9 @@ export default async function TopNav() {
 
   if (!session) {
     return (
-      <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-3 md:px-6">
+      <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-2 md:px-6">
         <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="text-4xl font-bold">
-            RT-Trainer
-          </Link>
+          {rtTrainerLogo()}
           <nav className="items-center space-x-6 md:flex">
             <div className="flex place-content-center">
               <SignInButton />
@@ -46,11 +45,9 @@ export default async function TopNav() {
     }
 
     return (
-      <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-3 md:px-6">
+      <header className="border-b border-[#e0e0e0] bg-[#f5f5f5] px-2 py-2 md:px-6">
         <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="text-4xl font-bold">
-            RT-Trainer
-          </Link>
+          {rtTrainerLogo()}
 
           <nav className="flex flex-row items-center space-x-3">
             <div className="flex flex-col place-content-center">
@@ -63,7 +60,11 @@ export default async function TopNav() {
                         alt={`${loggedInUser?.name}'s avatar`}
                       />
                       <AvatarFallback>
-                        {loggedInUser?.name ? initials(loggedInUser?.name) : <MdPerson />}
+                        {loggedInUser?.name ? (
+                          initials(loggedInUser?.name)
+                        ) : (
+                          <MdPerson />
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -114,4 +115,15 @@ export default async function TopNav() {
       </header>
     );
   }
+}
+
+function rtTrainerLogo() {
+  return (
+    <Link href="/" className="text-2xl font-bold">
+      <div className="flex flex-row items-center gap-2">
+        <MdHeadsetMic />
+        RT-Trainer
+      </div>
+    </Link>
+  );
 }

@@ -15,12 +15,20 @@ import { randomString } from "~/lib/utils";
 
 const ScenarioSettingsSection = () => {
   const maxFL = useScenarioPlannerStore((state) => state.maxFL);
-  const distanceUnit = useScenarioPlannerStore((state) => state.distanceDisplayUnit);
+  const distanceUnit = useScenarioPlannerStore(
+    (state) => state.distanceDisplayUnit,
+  );
   const scenarioSeed = useScenarioPlannerStore((state) => state.scenarioSeed);
-  const hasEmergencyEvents = useScenarioPlannerStore((state) => state.hasEmergencyEvents);
-  const setDistanceUnit = useScenarioPlannerStore((state) => state.setDistanceUnit);
+  const hasEmergencyEvents = useScenarioPlannerStore(
+    (state) => state.hasEmergencyEvents,
+  );
+  const setDistanceUnit = useScenarioPlannerStore(
+    (state) => state.setDistanceUnit,
+  );
   const setMaxFL = useScenarioPlannerStore((state) => state.setMaxFL);
-  const setScenarioSeed = useScenarioPlannerStore((state) => state.setScenarioSeed);
+  const setScenarioSeed = useScenarioPlannerStore(
+    (state) => state.setScenarioSeed,
+  );
   const setHasEmergencyEvents = useScenarioPlannerStore(
     (state) => state.setHasEmergencyEvents,
   );

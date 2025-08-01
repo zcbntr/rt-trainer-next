@@ -24,7 +24,9 @@ const RouteSection = () => {
   );
   const setWaypoints = useScenarioPlannerStore((state) => state.setWaypoints);
   // const swapWaypoints = useRouteStore((state) => state.swapWaypoints);
-  const removeWaypoint = useScenarioPlannerStore((state) => state.removeWaypoint);
+  const removeWaypoint = useScenarioPlannerStore(
+    (state) => state.removeWaypoint,
+  );
 
   //   For route gen
   const airspaces = useAeronauticalDataStore((state) => state.airspaces);

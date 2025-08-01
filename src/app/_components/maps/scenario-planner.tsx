@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import Map, { Source, Layer, Marker, type MapRef } from "react-map-gl/mapbox";
+import Map, { Source, Layer, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { type LayerSpecification, type MapMouseEvent } from "mapbox-gl";
 import * as turf from "@turf/turf";
@@ -11,11 +11,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Waypoint, WaypointType } from "~/lib/types/waypoint";
 import { randomString } from "~/lib/utils";
 import { getNRandomPhoneticAlphabetLetters } from "~/lib/sim-utils/phonetics";
-import { MdLocationPin } from "react-icons/md";
 import useAeronauticalDataStore from "~/app/stores/aeronautical-data-store";
 import { type Airport } from "~/lib/types/airport";
 import { type Airspace } from "~/lib/types/airspace";
 import { getAirspaceLowerLimitFL } from "~/lib/sim-utils/airspaces";
+import { isInUKBoundary } from "~/lib/utils/geojson-utils";
+import { RouteMarker } from "../plan/plan-router-marker";
 
 const AIRPORT_CLICK_THRESHOLD = 3500; // in meters, scaled by zoom level by dividing by zoom^4
 
@@ -79,7 +80,10 @@ type ViewStateType = {
   lnglatBounds?: [number, number, number, number];
 };
 
-const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
+export const ScenarioPlannerMap = ({
+  className,
+  initialBBOX,
+}: RoutePlannerProps) => {
   if (!process.env.NEXT_PUBLIC_MAPBOX_API_KEY) {
     throw new Error(
       "REACT_APP_MAPBOX_ACCESS_TOKEN is not defined in the environment",
@@ -251,34 +255,10 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
 
       mapRef.current?.fitBounds([x1, y1, x2, y2], {
         padding: 200,
+        duration: 1000,
       });
     }
   }, [waypoints]);
-
-  const routeMarkers = useMemo(() => {
-    return waypoints.map((waypoint) => {
-      return (
-        <Marker
-          key={waypoint.id}
-          longitude={waypoint.location[0]}
-          latitude={waypoint.location[1]}
-          color="red"
-          draggable
-          offset={[0, -16]}
-          // Could do on drag but this would not be performant
-          // Instead visuals could update on drag but not route date
-          // Otherwise we would do a lot of unnecessary calculations
-          onDragEnd={(e) => {
-            moveWaypoint(waypoint.id, [e.lngLat.lng, e.lngLat.lat], airspaces);
-          }}
-        >
-          <div className="flex rounded-full p-4">
-            <MdLocationPin size="3em" color="red" />
-          </div>
-        </Marker>
-      );
-    });
-  }, [moveWaypoint, waypoints, airspaces]);
 
   const routeLine = useMemo(() => {
     if (waypoints.length < 2) {
@@ -386,16 +366,18 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
       // e.g. Waypoint Golf X-Ray
       const waypointName = `Waypoint ${getNRandomPhoneticAlphabetLetters(2)}`;
 
-      addWaypoint(
-        {
-          id: `waypoint-${randomString(6)}`,
-          location: [e.lngLat.lng, e.lngLat.lat],
-          type: WaypointType.GPS,
-          index: waypoints.length,
-          name: waypointName,
-        },
-        airspaces,
-      );
+      if (isInUKBoundary(e.lngLat.toArray())) {
+        addWaypoint(
+          {
+            id: `waypoint-${randomString(6)}`,
+            location: [e.lngLat.lng, e.lngLat.lat],
+            type: WaypointType.GPS,
+            index: waypoints.length,
+            name: waypointName,
+          },
+          airspaces,
+        );
+      }
     },
     [addWaypoint, waypoints, airspaces],
   );
@@ -426,10 +408,15 @@ const RoutePlannerMap = ({ className, initialBBOX }: RoutePlannerProps) => {
         <Source id="matzs" type="geojson" data={matzsGeoJSONData}>
           <Layer {...matzLayerStyle} />
         </Source>
-        {routeMarkers}
+        {waypoints.map((waypoint) => (
+          <RouteMarker
+            key={waypoint.id}
+            waypoint={waypoint}
+            airspaces={airspaces}
+            onValidMove={moveWaypoint}
+          />
+        ))}
       </Map>
     </div>
   );
 };
-
-export default RoutePlannerMap;

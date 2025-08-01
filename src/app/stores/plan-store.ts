@@ -57,7 +57,7 @@ interface ScenarioPlannerStoreState {
   setSeed: (seed: string) => void;
   setWaypoints: (waypoints: Waypoint[], airspaces: Airspace[]) => void;
   moveWaypoint: (
-    waypointId: string,
+    id: string,
     newLocation: [number, number],
     airspaces: Airspace[],
   ) => void;

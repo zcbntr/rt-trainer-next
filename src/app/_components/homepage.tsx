@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 // import planeGraphic from "~/../../public/images/planeGraphic.svg";
 
@@ -56,7 +55,7 @@ export default function Home() {
                 Quick route
               </Link>
               <Link
-                href="/scenario-planner"
+                href="/plan"
                 className="btn md:btn-lg variant-filled-surface w-full md:w-fit"
               >
                 Create a scenario
